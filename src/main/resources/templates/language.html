@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${appName}">Language Page</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="card text-border">
+    <h1 th:text="${lang.name}">Languages</h1>
+</div>
+
+<div class="card">
+    <div>
+        <table class="table">
+            <tbody>
+            <tr>
+                <th>Family</th>
+                <td><a th:href="@{/language/${lang.familyId}}" th:text="${lang.family.name}">Undefined</a></td>
+            </tr>
+            <tr>
+                <th>Parent</th>
+                <td><a th:href="@{/language/${lang.parentId}}" th:text="${lang.parent.name}">Undefined</a></td>
+            </tr>
+            <tr>
+                <th>Level</th>
+                <td th:text="${lang.level}"></td>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td th:text="${lang.description}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

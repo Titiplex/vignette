@@ -47,3 +47,30 @@ h1, h2, h3, h4, h5, h6 {
 .text {
     margin: 10px;
 }
+
+.form {
+    margin: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+    justify-content: center;
+}
+
+.field {
+    margin: 6px;
+    padding: 6px;
+}
+
+.field > .input-label {
+    background-color: #FFFFFF;
+    border-radius: 6px;
+    margin-right: 5px;
+}
+
+.field > label > input {
+    border-radius: 6px;
+    padding: 10px;
+    border: 1px solid #000;
+    margin-left: 5px;
+}

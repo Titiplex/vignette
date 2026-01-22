@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${appName}">Register</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="card text-border">
+    <h1>Register</h1>
+</div>
+<div class="card">
+    <form th:action="@{/register}" method="post" th:object="${form}" class="form">
+        <div class="field">
+            <label>
+                Username
+                <input th:field="*{username}" />
+            </label>
+        </div>
+        <div class="field">
+            <label>
+                Email
+                <input th:field="*{email}" />
+            </label>
+        </div>
+        <div class="field">
+            <label>
+                Password
+                <input type="password" th:field="*{password}" />
+            </label>
+        </div>
+
+        <button type="submit">Create account</button>
+        <p th:if="${error}" th:text="${error}"></p>
+    </form>
+</div>
+</body>
+</html>

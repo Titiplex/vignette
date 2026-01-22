@@ -1,10 +1,8 @@
 package org.titiplex.persistence.model;
 
-import io.quarkus.security.jpa.*;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.titiplex.config.CustomPasswordProvider;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -13,31 +11,28 @@ import java.util.Set;
 @Getter
 @Setter
 @Table(name = "user_")
-@UserDefinition
 public final class User extends Author {
-    @Column(name = "username", unique = true)
-    @Username
+
+    @Column(nullable = false, unique = true)
     private String username;
 
-    @Column(name = "email", unique = true, nullable = false)
+    @Column(nullable = false, unique = true)
     private String email;
 
-    @Password(value = PasswordType.CUSTOM, provider = CustomPasswordProvider.class)
-    @Column(name = "password", nullable = false)
-    private String password;
+    @Column(nullable = false)
+    private String passwordHash;
 
-    @ManyToMany(fetch = FetchType.EAGER) // Roles are often fetched eagerly or lazily depending on needs
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id")
+            inverseJoinColumns = @JoinColumn(name = "role_name")
     )
-    @Roles
     private Set<Role> roles = new HashSet<>();
 
-    @OneToMany(mappedBy = "author", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "author", fetch = FetchType.EAGER)
     private Set<Thumbnail> thumbnails = new HashSet<>();
 
-    @OneToMany(mappedBy = "author", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "author", fetch = FetchType.EAGER)
     private Set<Scenario> scenarios = new HashSet<>();
 }

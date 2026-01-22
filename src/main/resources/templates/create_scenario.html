@@ -5,6 +5,44 @@
     <title>Title</title>
 </head>
 <body>
+<form th:action="@{/scenario/create}" th:object="${form}" method="post">
+
+    <label>Title</label>
+    <label>
+        <input type="text" th:field="*{title}" />
+    </label>
+
+    <label>Description</label>
+    <label>
+        <textarea th:field="*{description}"></textarea>
+    </label>
+
+    <label>Language</label>
+    <label>
+        <input type="text" id="langFilter" placeholder="Search language..." />
+        <select th:field="*{languageId}" required id="langSelect">
+            <option value="" disabled selected>-- choose --</option>
+            <option th:each="l : ${langList}"
+                    th:value="${l.id}"
+                    th:text="${l.name}">
+            </option>
+        </select>
+        <script>
+            const filter = document.getElementById('langFilter');
+            const select = document.getElementById('langSelect');
+            const options = Array.from(select.options);
+
+            filter.addEventListener('input', () => {
+                const q = filter.value.toLowerCase();
+                options.forEach(opt => {
+                    opt.hidden = !opt.text.toLowerCase().includes(q);
+                });
+            });
+        </script>
+    </label>
+
+    <button type="submit">Create</button>
+</form>
 
 </body>
 </html>

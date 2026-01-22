@@ -4,6 +4,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.titiplex.api.dto.LanguageDto;
+import org.titiplex.api.dto.LanguageOption;
 import org.titiplex.persistence.model.Language;
 import org.titiplex.persistence.repo.LanguageRepository;
 
@@ -68,5 +69,13 @@ public class LanguageService {
     @Transactional
     public List<Language> saveAll(List<Language> languages) {
         return new ArrayList<>(repo.saveAll(languages));
+    }
+
+    public List<LanguageOption> listOptions() {
+        return repo.listOptions();
+    }
+
+    public boolean existsById(String id) {
+        return repo.existsById(id);
     }
 }

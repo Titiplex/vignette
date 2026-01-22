@@ -48,6 +48,6 @@ public class Scenario {
             nullable = false)
     private Language language;
 
-    @OneToMany(mappedBy = "scenario", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "scenario", fetch = FetchType.EAGER)
     private Set<Thumbnail> thumbnails;
 }

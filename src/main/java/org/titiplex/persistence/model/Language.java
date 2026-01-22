@@ -83,9 +83,9 @@ public class Language {
     /**
      * Get children of Language / Family.
      */
-    @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "parent", fetch = FetchType.EAGER)
     private Set<Language> children = new HashSet<>();
 
-    @OneToMany(mappedBy = "language", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "language", fetch = FetchType.EAGER)
     private Set<Scenario> scenarios = new HashSet<>();
 }

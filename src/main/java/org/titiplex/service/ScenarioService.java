@@ -33,4 +33,10 @@ public class ScenarioService {
         scenario.setLanguage(languageService.getLanguage(languageId));
         return this.repo.save(scenario);
     }
+
+    public Scenario getScenario(Long id) {
+        Scenario scenario = new Scenario();
+        scenario.setTitle("Scenario not found");
+        return repo.findById(id).orElse(scenario);
+    }
 }

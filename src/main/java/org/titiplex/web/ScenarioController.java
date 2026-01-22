@@ -7,6 +7,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.titiplex.api.dto.ScenarioForm;
 import org.titiplex.service.LanguageService;
@@ -63,6 +64,13 @@ public class ScenarioController {
             model.addAttribute("langList", languageService.listOptions());
             return "create_scenario";
         }
+    }
+
+    @GetMapping("/scenario/{id}")
+    public String scenarioDetailsPage(Model model, @PathVariable Long id) {
+        model.addAttribute("appName", appName);
+        model.addAttribute("scenario", scenarioService.getScenario(id));
+        return "scenario";
     }
 
 

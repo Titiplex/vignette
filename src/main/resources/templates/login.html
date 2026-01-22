@@ -12,22 +12,26 @@
 <div class="card">
     <form th:action="@{/login}" method="post" class="form">
         <div class="field">
+            <label>Username</label>
             <label>
-                Username
                 <input name="username"/>
             </label>
         </div>
         <div class="field">
+            <label>Password</label>
             <label>
-                Password
                 <input type="password" name="password"/>
             </label>
         </div>
 
-        <button type="submit">Login</button>
+        <div>
+            <button type="submit">Login</button>
+        </div>
 
-        <p th:if="${param.error}">Bad credentials</p>
-        <p th:if="${param.registered}">Account created, you can login.</p>
+        <div>
+            <p th:if="${param.error}">Bad credentials</p>
+            <p th:if="${param.registered}">Account created, you can login.</p>
+        </div>
     </form>
 </div>
 

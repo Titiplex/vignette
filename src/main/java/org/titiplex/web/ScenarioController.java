@@ -5,16 +5,14 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.*;
 import org.titiplex.api.dto.ScenarioForm;
 import org.titiplex.service.LanguageService;
 import org.titiplex.service.ScenarioService;
 import org.titiplex.service.UserService;
 
 @Controller
+@RequestMapping("/scenario")
 public class ScenarioController {
 
     private final LanguageService languageService;
@@ -31,7 +29,7 @@ public class ScenarioController {
     }
 
     @PreAuthorize("hasRole('USER')")
-    @GetMapping("/scenario/create")
+    @GetMapping("/create")
     public String createScenario(Model model) {
         model.addAttribute("form", new ScenarioForm("", "", ""));
         model.addAttribute("appName", appName);
@@ -40,7 +38,7 @@ public class ScenarioController {
     }
 
     @PreAuthorize("hasRole('USER')")
-    @PostMapping("/scenario/create")
+    @PostMapping("/create")
     public String createScenario(@ModelAttribute("form") ScenarioForm form,
                                  Authentication auth,
                                  Model model) {
@@ -66,7 +64,7 @@ public class ScenarioController {
         }
     }
 
-    @GetMapping("/scenario/{id}")
+    @GetMapping("/{id}")
     public String scenarioDetailsPage(Model model, @PathVariable Long id) {
         model.addAttribute("appName", appName);
         model.addAttribute("scenario", scenarioService.getScenario(id));

@@ -39,7 +39,7 @@ public class AuthController {
             return "redirect:/login?registered";
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
-            return "register";
+            return "error";
         }
     }
 }

@@ -24,14 +24,14 @@ public class DbUserDetailsService implements UserDetailsService {
         User u = users.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException(username));
 
-        List<SimpleGrantedAuthority> auth = u.getRoles().stream()
+        List<SimpleGrantedAuthority> auths = u.getRoles().stream()
                 .map(r -> new SimpleGrantedAuthority(r.getName()))
                 .toList();
 
-        return org.springframework.security.core.userdetails.User
-                .withUsername(u.getUsername())
-                .password(u.getPasswordHash())
-                .authorities(auth)
-                .build();
+        return new org.springframework.security.core.userdetails.User(
+                u.getUsername(),
+                u.getPasswordHash(),
+                auths
+        );
     }
 }

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Register</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="card text-border"><h1>Register</h1></div>
+
+<div class="card">
+    <form id="registerForm" class="form">
+        <div class="field"><label>Username</label><label><input name="username" required /></label></div>
+        <div class="field"><label>Email</label><label><input name="email" type="email" required /></label></div>
+        <div class="field"><label>Password</label><label><input name="password" type="password" required /></label></div>
+        <div><button type="submit">Create account</button></div>
+        <p id="error" class="error"></p>
+    </form>
+</div>
+
+<script type="module" src="/pages/register.js"></script>
+</body>
+</html>

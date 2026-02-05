@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Create Scenario</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="card text-border"><h1>Create a Scenario</h1></div>
+
+<div class="card">
+    <form id="scenarioForm" class="form">
+        <div class="field">
+            <label>Title</label>
+            <label><input type="text" name="title" required /></label>
+        </div>
+
+        <div class="field">
+            <label>Description</label>
+            <label><textarea name="description"></textarea></label>
+        </div>
+
+        <div class="field">
+            <label>Language</label>
+            <label>
+                <input type="text" id="langFilter" placeholder="Search language." />
+                <select name="languageId" id="langSelect" required>
+                    <option value="" disabled selected>-- choose --</option>
+                </select>
+            </label>
+        </div>
+
+        <div><button type="submit">Create</button></div>
+        <p id="error" class="error"></p>
+    </form>
+</div>
+
+<script type="module" src="/pages/create_scenario.js"></script>
+</body>
+</html>

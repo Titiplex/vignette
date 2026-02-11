@@ -1,0 +1,76 @@
+.card {
+    background-color: #91d7f2;
+    box-shadow: 2px 2px 5px #888;
+    margin: 5px 5px 8px;
+    padding: 5px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    text-align: center;
+}
+
+.table {
+    background-color: #FFFFFFFF;
+    margin: 5px auto;
+    padding: 10px;
+}
+
+.table > th, td {
+    margin: 5px;
+}
+
+.table > th {
+    text-align: left;
+}
+
+.card, .table {
+    border: 1px solid #000;
+    border-radius: 6px;
+}
+
+.index {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    padding: 10px;
+}
+
+.index > div {
+    margin: 5px auto;
+}
+
+.text-border {
+    text-shadow: 4px 4px 6px white;
+}
+
+.text {
+    margin: 10px;
+}
+
+.form {
+    margin: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+    justify-content: center;
+}
+
+.field {
+    margin: 6px;
+    padding: 6px;
+}
+
+.field > .input-label {
+    background-color: #FFFFFF;
+    border-radius: 6px;
+    margin-right: 5px;
+}
+
+.field > label > input {
+    border-radius: 6px;
+    padding: 10px;
+    border: 1px solid #000;
+    margin-left: 5px;
+}

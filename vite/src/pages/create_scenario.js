@@ -1,4 +1,4 @@
-import {apiFetch, setAccessToken} from "api/rest.js";
+import {apiFetch, setAccessToken} from "../api/rest.js";
 
 // restore token si refresh
 const t = sessionStorage.getItem("accessToken");

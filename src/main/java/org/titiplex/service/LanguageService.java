@@ -80,5 +80,6 @@ public class LanguageService {
     }
 
     public List<LanguageOptionDto> searchOptions(String q, int limit) {
+        return repo.listOptions(q).subList(0, limit);
     }
 }

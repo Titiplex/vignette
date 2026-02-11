@@ -1,4 +1,4 @@
-import { apiFetch, setAccessToken } from "api/rest.js";
+import { apiFetch, setAccessToken } from "../api/rest.js";
 
 const form = document.getElementById("loginForm");
 const error = document.getElementById("error");

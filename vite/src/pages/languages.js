@@ -1,4 +1,5 @@
-import {apiFetch} from "api/rest.js";
+import "../style.css";
+import {apiFetch} from "../api/rest.js";
 
 function qp(name, def) {
     const u = new URL(window.location.href);
@@ -22,7 +23,8 @@ async function main() {
     const size = 50;
 
     const data = await apiFetch(`/api/languages?page=${page}&size=${size}`);
-    // suppose: { content: [...], number, totalPages, hasNext, hasPrevious }
+    // Spring Page JSON: { content, number, totalPages, ... }
+
     const tbody = document.getElementById("tbody");
     tbody.innerHTML = "";
 
@@ -30,16 +32,20 @@ async function main() {
         const tr = document.createElement("tr");
         tr.innerHTML = `
       <td>${l.id}</td>
-      <td><a href="/front/pages/language.html?id=${encodeURIComponent(l.id)}">${l.name ?? ""}</a></td>
+      <td><a href="/pages/language.html?id=${encodeURIComponent(l.id)}">${l.name ?? ""}</a></td>
       <td>${l.level ?? ""}</td>
-      <td>${l.familyName ?? "-"}</td>
-      <td>${l.parentName ?? "-"}</td>
+      <td>${l.family ?? "-"}</td>
+      <td>${l.parent ?? "-"}</td>
     `;
         tbody.appendChild(tr);
     }
 
+    const totalPages = data.totalPages ?? 0;
     document.getElementById("pageInfo").textContent =
-        `Page ${data.number + 1} / ${data.totalPages}`;
+        totalPages > 0 ? `Page ${data.number + 1} / ${totalPages}` : "No pages";
+
+    const hasPrevious = data.number > 0;
+    const hasNext = data.number < totalPages - 1;
 
     const pager = document.getElementById("pager");
     pager.innerHTML = "";
@@ -47,54 +53,74 @@ async function main() {
     if (data.number > 0) {
         const a = document.createElement("a");
         a.textContent = "« First";
-        a.href = "javascript:void(0)";
-        a.onclick = () => setPage(0);
+        a.href = "#";
+        a.onclick = (e) => {
+            e.preventDefault();
+            setPage(0);
+        };
         pager.appendChild(a);
     }
 
-    if (data.hasPrevious) {
+    if (hasPrevious) {
         const a = document.createElement("a");
         a.style.marginLeft = "8px";
         a.textContent = "‹ Prev";
-        a.href = "javascript:void(0)";
-        a.onclick = () => setPage(data.number - 1);
+        a.href = "#";
+        a.onclick = (e) => {
+            e.preventDefault();
+            setPage(data.number - 1);
+        };
         pager.appendChild(a);
     }
 
-    if (data.totalPages > 0) {
-        const {start, end} = pageWindow(data.number, data.totalPages, 2);
+    if (totalPages > 0) {
+        const {start, end} = pageWindow(data.number, totalPages, 2);
         for (let p = start; p <= end; p++) {
             const span = document.createElement("span");
             span.style.margin = "0 4px";
+
             if (p === data.number) {
                 span.innerHTML = `<strong>${p + 1}</strong>`;
             } else {
-                span.innerHTML = `<a href="javascript:void(0)">${p + 1}</a>`;
-                span.querySelector("a").onclick = () => setPage(p);
+                const a = document.createElement("a");
+                a.href = "#";
+                a.textContent = String(p + 1);
+                a.onclick = (e) => {
+                    e.preventDefault();
+                    setPage(p);
+                };
+                span.appendChild(a);
             }
             pager.appendChild(span);
         }
     }
 
-    if (data.hasNext) {
+    if (hasNext) {
         const a = document.createElement("a");
         a.style.marginLeft = "8px";
         a.textContent = "Next ›";
-        a.href = "javascript:void(0)";
-        a.onclick = () => setPage(data.number + 1);
+        a.href = "#";
+        a.onclick = (e) => {
+            e.preventDefault();
+            setPage(data.number + 1);
+        };
         pager.appendChild(a);
     }
 
-    if (data.number < data.totalPages - 1) {
+    if (data.number < totalPages - 1) {
         const a = document.createElement("a");
         a.style.marginLeft = "8px";
         a.textContent = "Last »";
-        a.href = "javascript:void(0)";
-        a.onclick = () => setPage(data.totalPages - 1);
+        a.href = "#";
+        a.onclick = (e) => {
+            e.preventDefault();
+            setPage(totalPages - 1);
+        };
         pager.appendChild(a);
     }
 }
 
 main().catch(e => {
-    document.getElementById("pageInfo").textContent = e.message;
+    const el = document.getElementById("pageInfo");
+    if (el) el.textContent = e.message;
 });

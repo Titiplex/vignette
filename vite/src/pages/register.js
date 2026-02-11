@@ -1,4 +1,4 @@
-import { apiFetch } from "api/rest.js";
+import { apiFetch } from "../api/rest.js";
 
 const form = document.getElementById("registerForm");
 const error = document.getElementById("error");

@@ -6,26 +6,38 @@
     <link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
-<div class="card text-border"><h1>Languages</h1></div>
+<header class="main-header">
+    <div class="sticky-header">
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/pages/login">Login</a></li>
+        </ul>
+    </div>
+    <div class="card text-border">
+        <h1>Languages</h1>
+    </div>
+</header>
 
-<div class="card">
-    <table class="table">
-        <thead>
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Level</th>
-            <th>Family</th>
-            <th>Parent</th>
-        </tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-    </table>
-</div>
+<div>
+    <div class="card">
+        <table class="table">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Level</th>
+                <th>Family</th>
+                <th>Parent</th>
+            </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+        </table>
+    </div>
 
-<div class="index">
-    <div><span id="pageInfo"></span></div>
-    <div id="pager"></div>
+    <div class="index">
+        <div><span id="pageInfo"></span></div>
+        <div id="pager"></div>
+    </div>
 </div>
 
 <script type="module" src="/src/pages/languages.js"></script>

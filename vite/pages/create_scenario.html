@@ -6,33 +6,45 @@
     <link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
-<div class="card text-border"><h1>Create a Scenario</h1></div>
+<header class="main-header">
+    <div class="sticky-header">
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/pages/login">Login</a></li>
+        </ul>
+    </div>
+    <div class="card text-border">
+        <h1>Create a Scenario</h1>
+    </div>
+</header>
 
-<div class="card">
-    <form id="scenarioForm" class="form">
-        <div class="field">
-            <label>Title</label>
-            <label><input type="text" name="title" required /></label>
-        </div>
+<div>
+    <div class="card">
+        <form id="scenarioForm" class="form">
+            <div class="field">
+                <label>Title</label>
+                <label><input type="text" name="title" required /></label>
+            </div>
 
-        <div class="field">
-            <label>Description</label>
-            <label><textarea name="description"></textarea></label>
-        </div>
+            <div class="field">
+                <label>Description</label>
+                <label><textarea name="description"></textarea></label>
+            </div>
 
-        <div class="field">
-            <label>Language</label>
-            <label>
-                <input type="text" id="langFilter" placeholder="Search language." />
-                <select name="languageId" id="langSelect" required>
-                    <option value="" disabled selected>-- choose --</option>
-                </select>
-            </label>
-        </div>
+            <div class="field">
+                <label>Language</label>
+                <label>
+                    <input type="text" id="langFilter" placeholder="Search language." />
+                    <select name="languageId" id="langSelect" required>
+                        <option value="" disabled selected>-- choose --</option>
+                    </select>
+                </label>
+            </div>
 
-        <div><button type="submit">Create</button></div>
-        <p id="error" class="error"></p>
-    </form>
+            <div><button type="submit">Create</button></div>
+            <p id="error" class="error"></p>
+        </form>
+    </div>
 </div>
 
 <script type="module" src="/src/pages/create_scenario.js"></script>

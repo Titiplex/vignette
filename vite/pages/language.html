@@ -6,37 +6,48 @@
     <link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
-<div class="card text-border">
-    <h1>Languages</h1>
-    <h2 id="name"></h2>
-</div>
 
-<div class="card">
-    <div>
-        <table class="table">
-            <tbody>
-            <tr>
-                <th>Family</th>
-                <td id="family"></td>
-            </tr>
-            <tr>
-                <th>Parent</th>
-                <td id="parent"></td>
-            </tr>
-            <tr>
-                <th>Level</th>
-                <td id="level"></td>
-            </tr>
-            <tr>
-                <th>Description</th>
-                <td id="desc"></td>
-            </tr>
-            </tbody>
-        </table>
+<header class="main-header">
+    <div class="sticky-header">
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/pages/login">Login</a></li>
+        </ul>
     </div>
-</div>
+    <div class="card text-border">
+        <h1>Languages</h1>
+        <h2 id="name"></h2>
+    </div>
+</header>
+
 <div>
-    <p><span id="info"></span></p>
+    <div class="card">
+        <div>
+            <table class="table">
+                <tbody>
+                <tr>
+                    <th>Family</th>
+                    <td id="family"></td>
+                </tr>
+                <tr>
+                    <th>Parent</th>
+                    <td id="parent"></td>
+                </tr>
+                <tr>
+                    <th>Level</th>
+                    <td id="level"></td>
+                </tr>
+                <tr>
+                    <th>Description</th>
+                    <td id="desc"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div>
+        <p><span id="info"></span></p>
+    </div>
 </div>
 <script type="module" src="/src/pages/language.js"></script>
 </body>

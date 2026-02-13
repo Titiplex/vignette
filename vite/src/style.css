@@ -1,3 +1,8 @@
+html, body {
+    margin: 0;
+    padding: 0;
+}
+
 .card {
     background-color: #91d7f2;
     box-shadow: 2px 2px 5px #888;
@@ -73,4 +78,48 @@ h1, h2, h3, h4, h5, h6 {
     padding: 10px;
     border: 1px solid #000;
     margin-left: 5px;
+}
+
+.main-header {
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.sticky-header {
+    position: sticky;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    margin-bottom: 10px;
+    background-color: #888888;
+    padding: 8px;
+}
+
+.sticky-header > ul {
+    list-style-type: none;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: row;
+}
+
+.sticky-header > ul > li {
+    /*padding: 8px;*/
+}
+
+.sticky-header > ul > li > a {
+    text-decoration: none;
+    transition: color 0.3s;
+    color: #000000;
+    height: 100%;
+    background-color: #FFFFFF;
+    border-radius: 6px;
+    padding: 3px;
+}
+
+.sticky-header > ul > li > a:hover {
+    background-color: lightgray;
 }

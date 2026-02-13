@@ -6,16 +6,28 @@
     <link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
-<div class="card text-border"><h1>Register</h1></div>
+<header class="main-header">
+    <div class="sticky-header">
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/pages/login">Login</a></li>
+        </ul>
+    </div>
+    <div class="card text-border">
+        <h1>Register</h1>
+    </div>
+</header>
 
-<div class="card">
-    <form id="registerForm" class="form">
-        <div class="field"><label>Username</label><label><input name="username" required /></label></div>
-        <div class="field"><label>Email</label><label><input name="email" type="email" required /></label></div>
-        <div class="field"><label>Password</label><label><input name="password" type="password" required /></label></div>
-        <div><button type="submit">Create account</button></div>
-        <p id="error" class="error"></p>
-    </form>
+<div>
+    <div class="card">
+        <form id="registerForm" class="form">
+            <div class="field"><label>Username</label><label><input name="username" required /></label></div>
+            <div class="field"><label>Email</label><label><input name="email" type="email" required /></label></div>
+            <div class="field"><label>Password</label><label><input name="password" type="password" required /></label></div>
+            <div><button type="submit">Create account</button></div>
+            <p id="error" class="error"></p>
+        </form>
+    </div>
 </div>
 
 <script type="module" src="/src/pages/register.js"></script>

@@ -2,6 +2,7 @@ package org.titiplex.api;
 
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
+import org.titiplex.api.dto.LanguageDto;
 import org.titiplex.api.dto.LanguageOptionDto;
 import org.titiplex.api.dto.LanguageRowDto;
 import org.titiplex.persistence.model.Language;
@@ -33,8 +34,8 @@ public class LanguageApiController {
     }
 
     @GetMapping("/{id}")
-    public Language getOne(@PathVariable String id) {
-        return languageService.getLanguage(id);
+    public LanguageDto getOne(@PathVariable String id) {
+        return languageService.getOneDto(id);
     }
 
     // Todo

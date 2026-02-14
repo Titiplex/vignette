@@ -19,7 +19,7 @@ form.addEventListener("submit", async (e) => {
 
         sessionStorage.setItem("accessToken", res.accessToken);
 
-        window.location.href = "/front/pages/home.html";
+        window.location.href = "/home.html";
     } catch (err) {
         error.textContent = err.message;
     }

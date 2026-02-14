@@ -20,7 +20,7 @@ public class UserService {
         this.encoder = passwordEncoder;
     }
 
-    public void register(String username, String email, String rawPassword) {
+    public User register(String username, String email, String rawPassword) {
         if (users.existsByUsername(username)) throw new IllegalArgumentException("username taken");
         if (users.existsByEmail(email)) throw new IllegalArgumentException("email taken");
 
@@ -32,7 +32,7 @@ public class UserService {
         u.setPasswordHash(encoder.encode(rawPassword));
         u.getRoles().add(userRole);
 
-        users.save(u);
+        return users.save(u);
     }
 
     public User getUserById(Long id) {
@@ -45,5 +45,13 @@ public class UserService {
         User u = new User();
         u.setUsername("User not found");
         return users.findByUsername(username).orElse(u);
+    }
+
+    public boolean existsByUsername(String username) {
+        return users.existsByUsername(username);
+    }
+
+    public boolean existsByEmail(String email) {
+        return users.existsByEmail(email);
     }
 }

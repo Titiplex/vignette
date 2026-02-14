@@ -1,6 +1,7 @@
 package org.titiplex.api;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -13,7 +14,7 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.web.bind.annotation.*;
 import org.titiplex.persistence.model.User;
-import org.titiplex.persistence.repo.UserRepository;
+import org.titiplex.service.UserService;
 
 import java.time.Instant;
 import java.util.List;
@@ -24,9 +25,9 @@ public class AuthApiController {
 
     private final AuthenticationManager authManager;
     private final JwtEncoder jwtEncoder;
-    private final UserRepository users;
+    private final UserService users;
 
-    public AuthApiController(AuthenticationManager authManager, JwtEncoder jwtEncoder, UserRepository users) {
+    public AuthApiController(AuthenticationManager authManager, JwtEncoder jwtEncoder, UserService users) {
         this.authManager = authManager;
         this.jwtEncoder = jwtEncoder;
         this.users = users;
@@ -44,6 +45,7 @@ public class AuthApiController {
         var auth = authManager.authenticate(
                 new UsernamePasswordAuthenticationToken(req.username(), req.password())
         );
+        request.changeSessionId();
 
         // 1) session cookie (JSESSIONID)
         SecurityContext context = SecurityContextHolder.createEmptyContext();
@@ -83,8 +85,34 @@ public class AuthApiController {
 
     @GetMapping("/me")
     public MeResponse me(Authentication auth) {
-        User u = users.findByUsername(auth.getName()).orElseThrow();
+        User u = users.getUserByUsername(auth.getName());
+        if (u == null) throw new IllegalStateException("user not found");
         var roles = auth.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
         return new MeResponse(u.getId(), u.getUsername(), roles);
+    }
+
+    public record RegisterRequest(String username, String email, String password) {
+    }
+
+    public record RegisterResponse(Long id, String username) {
+    }
+
+    @PostMapping("/register")
+    @ResponseStatus(HttpStatus.CREATED)
+    public RegisterResponse register(@RequestBody RegisterRequest req) {
+        if (req.username() == null || req.username().isBlank()) throw new IllegalArgumentException("username required");
+        if (req.email() == null || req.email().isBlank()) throw new IllegalArgumentException("email required");
+        if (req.password() == null || req.password().length() < 8)
+            throw new IllegalArgumentException("password too short");
+
+        if (users.existsByUsername(req.username())) throw new IllegalArgumentException("username already used");
+        if (users.existsByEmail(req.email())) throw new IllegalArgumentException("email already used");
+
+        var username = req.username().trim();
+        var email = req.email().trim();
+        var pwd = req.password();
+
+        User u = users.register(username, email, pwd);
+        return new RegisterResponse(u.getId(), u.getUsername());
     }
 }

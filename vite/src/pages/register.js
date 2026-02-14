@@ -15,7 +15,7 @@ form.addEventListener("submit", async (e) => {
 
     try {
         await apiFetch("/api/auth/register", { method: "POST", body });
-        window.location.href = "/front/pages/login.html";
+        window.location.href = "/pages/login.html";
     } catch (err) {
         error.textContent = err.message;
     }

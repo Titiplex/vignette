@@ -44,7 +44,7 @@ form.addEventListener("submit", async (e) => {
     try {
         const created = await apiFetch("/api/scenarios", {method: "POST", body});
         // suppose: {id: 123}
-        window.location.href = `/front/pages/scenario.html?id=${created.id}`;
+        window.location.href = `/pages/scenario.html?id=${created.id}`;
     } catch (err) {
         error.textContent = err.message;
         if ((err.message || "").includes("401")) {

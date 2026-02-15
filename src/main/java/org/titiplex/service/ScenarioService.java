@@ -9,7 +9,8 @@ public class ScenarioService {
     private final ScenarioRepository repo;
     private final UserService userService;
     private final LanguageService languageService;
-    public ScenarioService(ScenarioRepository scenarioRepository,  UserService userService, LanguageService languageService) {
+
+    public ScenarioService(ScenarioRepository scenarioRepository, UserService userService, LanguageService languageService) {
         this.repo = scenarioRepository;
         this.userService = userService;
         this.languageService = languageService;
@@ -38,5 +39,9 @@ public class ScenarioService {
         Scenario scenario = new Scenario();
         scenario.setTitle("Scenario not found");
         return repo.findById(id).orElse(scenario);
+    }
+
+    public void deleteScenario(Long id) {
+        repo.findById(id).ifPresent(repo::delete);
     }
 }

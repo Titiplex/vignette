@@ -19,7 +19,7 @@ async function main() {
 
     if (data.familyId) {
         const a_fam = document.createElement("a");
-        a_fam.href = `/pages/languages.html?id=${encodeURIComponent(data.familyId)}`;
+        a_fam.href = `/pages/language.html?id=${encodeURIComponent(data.familyId)}`;
         a_fam.textContent = data.familyName;
         family.appendChild(a_fam);
     }

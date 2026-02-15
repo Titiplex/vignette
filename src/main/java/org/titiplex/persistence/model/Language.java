@@ -88,4 +88,7 @@ public class Language {
 
     @OneToMany(mappedBy = "language", fetch = FetchType.EAGER)
     private Set<Scenario> scenarios = new HashSet<>();
+
+    @OneToMany(mappedBy = "language", fetch = FetchType.EAGER)
+    private Set<Thumbnail> thumbnails = new HashSet<>();
 }

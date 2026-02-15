@@ -31,8 +31,5 @@ public final class User extends Author {
     private Set<Role> roles = new HashSet<>();
 
     @OneToMany(mappedBy = "author", fetch = FetchType.EAGER)
-    private Set<Thumbnail> thumbnails = new HashSet<>();
-
-    @OneToMany(mappedBy = "author", fetch = FetchType.EAGER)
     private Set<Scenario> scenarios = new HashSet<>();
 }

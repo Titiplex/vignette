@@ -29,7 +29,7 @@ public class ThumbnailApiController {
         this.scenarioService = scenarioService;
     }
 
-    public record ThumbnailRowDto(Long id, String title) {
+    public record ThumbnailRowDto(Long id, String title, Integer idx) {
     }
 
     public record UploadResponse(Long id) {
@@ -39,7 +39,7 @@ public class ThumbnailApiController {
     @GetMapping("/api/scenarios/{scenarioId}/thumbnails")
     public List<ThumbnailRowDto> list(@PathVariable Long scenarioId) {
         return thumbnailService.listByScenarioId(scenarioId).stream()
-                .map(t -> new ThumbnailRowDto(t.getId(), t.getTitle()))
+                .map(t -> new ThumbnailRowDto(t.getId(), t.getTitle(), t.getIdx()))
                 .toList();
     }
 

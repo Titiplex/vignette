@@ -123,3 +123,9 @@ h1, h2, h3, h4, h5, h6 {
 .sticky-header > ul > li > a:hover {
     background-color: lightgray;
 }
+
+.image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+}

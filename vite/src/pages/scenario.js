@@ -34,7 +34,10 @@ function renderThumbs(list) {
         return;
     }
 
-    for (const t of list) {
+    // security order sort
+    const sorted = [...list].sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0));
+
+    for (const t of sorted) {
         const wrap = document.createElement("div");
         wrap.className = "card";
         wrap.style.marginBottom = "12px";
@@ -45,7 +48,8 @@ function renderThumbs(list) {
         img.style.maxWidth = "100%";
 
         const cap = document.createElement("div");
-        cap.textContent = t.title || `#${t.id}`;
+        const idxLabel = (t.idx ?? "?");
+        cap.textContent = `#${idxLabel} — ${t.title || `thumb ${t.id}`}`;
 
         wrap.appendChild(img);
         wrap.appendChild(cap);

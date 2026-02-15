@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface ThumbnailRepository extends JpaRepository<Thumbnail, Long> {
     List<Thumbnail> findByTitle(String title);
+
+    List<Thumbnail> getThumbnailsByScenarioId(Long scenarioId);
 }

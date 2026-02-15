@@ -55,6 +55,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/languages/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/scenarios/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/scenarios/*/thumbnails").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/thumbnails/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/thumbnails").authenticated()
                         .anyRequest().authenticated()
                 )
                 // session cookie OK

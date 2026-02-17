@@ -1,7 +1,9 @@
 import "../style.css";
 import {apiFetch, setAccessToken} from "../api/rest.js";
+import {loadAudiosForThumb, selectedThumbId} from "./audio.js"
 
 const t = sessionStorage.getItem("accessToken");
+let isOwner = false;
 if (t) setAccessToken(t);
 
 function qp(name, def = null) {
@@ -9,7 +11,7 @@ function qp(name, def = null) {
     return u.searchParams.get(name) ?? def;
 }
 
-function el(id) {
+export function el(id) {
     return document.getElementById(id);
 }
 
@@ -41,6 +43,18 @@ function renderThumbs(list) {
         const wrap = document.createElement("div");
         wrap.className = "card";
         wrap.style.marginBottom = "12px";
+
+        wrap.style.cursor = "pointer";
+        wrap.onclick = async () => {
+            selectedThumbId = t.id;
+            el("audioCard").style.display = "block";
+            el("selectedThumb").textContent = `#${t.idx} (id=${t.id})`;
+
+            await loadAudiosForThumb(t.id);
+
+            // montre outils si owner
+            el("audioOwnerTools").style.display = isOwner ? "block" : "none";
+        };
 
         const img = document.createElement("img");
         img.src = `/api/thumbnails/${t.id}/content`;
@@ -74,7 +88,7 @@ async function main() {
 
     try {
         const me = await loadMe();
-        const isOwner = me.username === authorUsername;
+        isOwner = me.username === authorUsername;
 
         if (isOwner) {
             el("uploadCard").style.display = "block";

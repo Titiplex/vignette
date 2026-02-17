@@ -29,6 +29,9 @@ public class Audio {
     @Column(name = "idx", nullable = false)
     private Integer idx;
 
+    @Column(name="mime", nullable=false, length=64)
+    private String mime; //audio/webm
+
     @Column(name = "author_id", nullable = false)
     private Long authorId;
 
@@ -37,6 +40,9 @@ public class Audio {
 
     @Column(name = "language_id", nullable = false)
     private String languageId;
+
+    @Column(name = "thumbnail_id", nullable = false)
+    private Long thumbnailId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
@@ -57,6 +63,16 @@ public class Audio {
             foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
     )
     private Scenario scenario;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "thumbnail_id",
+            referencedColumnName = "id",
+            insertable = false,
+            updatable = false,
+            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
+    )
+    private Thumbnail thumbnail;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(

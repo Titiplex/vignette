@@ -38,6 +38,22 @@
     <div id="thumbGrid" class="image-grid"></div>
 </div>
 
+<div class="card" id="audioCard" style="display:none;">
+    <h2>Audio</h2>
+
+    <p><strong>Selected thumbnail:</strong> <span id="selectedThumb"></span></p>
+
+    <div id="audioOwnerTools" style="display:none;">
+        <button id="recStart">Start recording</button>
+        <button id="recStop" disabled>Stop</button>
+        <label for="audioTitle"></label><input id="audioTitle" placeholder="title (optional)"/>
+        <button id="uploadAudio" disabled>Upload</button>
+        <p id="audioErr" class="error"></p>
+    </div>
+
+    <div id="audioList"></div>
+</div>
+
 <script type="module" src="/src/pages/scenario.js"></script>
 </body>
 </html>

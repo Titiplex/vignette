@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.util.List;
 
 @RestController
+@RequestMapping("/api")
 public class ThumbnailApiController {
 
     private final ThumbnailService thumbnailService;
@@ -36,7 +37,7 @@ public class ThumbnailApiController {
     }
 
     // public list
-    @GetMapping("/api/scenarios/{scenarioId}/thumbnails")
+    @GetMapping("/scenarios/{scenarioId}/thumbnails")
     public List<ThumbnailRowDto> list(@PathVariable Long scenarioId) {
         return thumbnailService.listByScenarioId(scenarioId).stream()
                 .map(t -> new ThumbnailRowDto(t.getId(), t.getTitle(), t.getIdx()))
@@ -44,7 +45,7 @@ public class ThumbnailApiController {
     }
 
     @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and @scenarioSecurity.isOwner(#scenarioId, authentication.name))")
-    @PostMapping(value = "/api/thumbnails", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/thumbnails", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public UploadResponse upload(@RequestParam Long scenarioId,
                                  @RequestParam(required = false, defaultValue = "") String title,
                                  @RequestPart("image") MultipartFile image,
@@ -60,7 +61,7 @@ public class ThumbnailApiController {
     }
 
     // serve image
-    @GetMapping("/api/thumbnails/{id}/content")
+    @GetMapping("/thumbnails/{id}/content")
     public ResponseEntity<byte[]> content(@PathVariable Long id) {
         Thumbnail t = thumbnailService.getThumbnailById(id);
 

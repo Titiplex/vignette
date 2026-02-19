@@ -4,12 +4,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.titiplex.api.dto.ScenarioDto;
 import org.titiplex.persistence.model.Scenario;
 import org.titiplex.service.LanguageService;
 import org.titiplex.service.ScenarioService;
 import org.titiplex.service.UserService;
 
 import java.time.Instant;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/scenarios")
@@ -29,16 +31,6 @@ public class ScenarioApiController {
     }
 
     public record CreateScenarioResponse(Long id) {
-    }
-
-    public record ScenarioDto(
-            Long id,
-            String title,
-            String description,
-            String languageId,
-            String authorUsername,
-            Instant createdAt
-    ) {
     }
 
     @PreAuthorize("hasRole('USER')")
@@ -70,6 +62,10 @@ public class ScenarioApiController {
     public ScenarioDto getOne(@PathVariable Long id) {
         Scenario s = scenarioService.getScenario(id);
 
+        return this.toDto(s);
+    }
+
+    private ScenarioDto toDto(Scenario s) {
         return new ScenarioDto(
                 s.getId(),
                 s.getTitle(),
@@ -78,6 +74,11 @@ public class ScenarioApiController {
                 s.getAuthor().getUsername(),
                 s.getCreatedAt()
         );
+    }
+
+    @GetMapping
+    public List<ScenarioDto> listAll() {
+        return scenarioService.listScenarios().stream().map(this::toDto).toList();
     }
 
     @PreAuthorize("hasRole('ADMIN') or @scenarioSecurity.isOwner(#id, authentication.name)")

@@ -4,6 +4,8 @@ import org.springframework.stereotype.Service;
 import org.titiplex.persistence.model.Scenario;
 import org.titiplex.persistence.repo.ScenarioRepository;
 
+import java.util.List;
+
 @Service
 public class ScenarioService {
     private final ScenarioRepository repo;
@@ -43,5 +45,9 @@ public class ScenarioService {
 
     public void deleteScenario(Long id) {
         repo.findById(id).ifPresent(repo::delete);
+    }
+
+    public List<Scenario> listScenarios() {
+        return repo.findAllByOrderByCreatedAtDesc();
     }
 }

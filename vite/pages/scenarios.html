@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Languages – Vignettes</title>
+    <title>Scenarios</title>
     <link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
@@ -17,25 +17,17 @@
             <li><a href="/pages/login.html" id="loginLink">Login</a></li>
         </ul>
     </div>
-    <div class="card"><h1>Language Catalog</h1></div>
+    <div class="card">
+        <h1>Open Scenario Gallery</h1>
+        <p class="text">Browse all published scenarios and open one to view its thumbnails and audio recordings.</p>
+    </div>
 </header>
 
 <main>
-    <div class="card table-wrap">
-        <table class="table">
-            <thead>
-            <tr>
-                <th>ID</th><th>Name</th><th>Level</th><th>Family</th><th>Parent</th>
-            </tr>
-            </thead>
-            <tbody id="tbody"></tbody>
-        </table>
-    </div>
-    <div class="index">
-        <div><span id="pageInfo"></span></div>
-        <div id="pager"></div>
-    </div>
+    <div id="scenariosInfo" class="text"></div>
+    <section id="scenariosGrid" class="image-grid"></section>
 </main>
-<script type="module" src="/src/pages/languages.js"></script>
+
+<script type="module" src="/src/pages/scenarios.js"></script>
 </body>
 </html>

@@ -3,7 +3,8 @@ import {apiFetch, setAccessToken} from "../api/rest.js";
 import {loadAudiosForThumb, setSelectedThumbId} from "./audio.js"
 import {updateHeaderAuth} from "../api/header.js";
 
-updateHeaderAuth().then(() => {});
+updateHeaderAuth().then(() => {
+});
 
 const t = sessionStorage.getItem("accessToken");
 let isOwner = false;
@@ -76,6 +77,10 @@ function renderThumbs(list) {
     }
 }
 
+function getLang(id) {
+    return apiFetch(`/api/languages/${id}`);
+}
+
 async function main() {
     const id = qp("id");
     if (!id) throw new Error("Missing scenario id");
@@ -85,10 +90,10 @@ async function main() {
     el("scenarioId").value = String(s.id);
 
     el("title").textContent = s.title ?? "Scenario";
-    el("lang").textContent = s.languageId ?? "-";
 
-    const authorUsername = s.author?.username ?? "-";
-    el("author").textContent = authorUsername;
+    if (s.languageId) getLang(s.languageId).then(lang => el("lang").textContent = lang.name ?? "Unknown language")
+
+    el("author").textContent = s.authorUsername ?? "";
     el("desc").textContent = s.description ?? "";
 
     try {
@@ -99,7 +104,9 @@ async function main() {
             el("uploadCard").style.display = "block";
         }
     } catch (_) {
-        window.location.href = "/pages/login.html";
+        // window.location.href = "/pages/login.html";
+        isOwner = false;
+        el("uploadCard").style.display = "none";
     }
 
     const thumbs = await loadThumbnails(s.id);

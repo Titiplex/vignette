@@ -20,6 +20,7 @@ export default defineConfig({
                 register: resolve(__dirname, "pages/register.html"),
                 create_scenario: resolve(__dirname, "pages/create_scenario.html"),
                 scenario: resolve(__dirname, "pages/scenario.html"),
+                scenarios: resolve(__dirname, "pages/scenarios.html"),
             }
         }
     }

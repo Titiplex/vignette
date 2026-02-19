@@ -3,9 +3,19 @@ import {updateHeaderAuth} from "../api/header.js";
 
 updateHeaderAuth().then(() => {});
 
+async function loadMe() {
+    return apiFetch("/api/auth/me");
+}
+
 // restore token si refresh
 const t = sessionStorage.getItem("accessToken");
 if (t) setAccessToken(t);
+
+try {
+    await loadMe();
+} catch (_) {
+    window.location.href = "/pages/login.html";
+}
 
 const select = document.getElementById("langSelect");
 const filter = document.getElementById("langFilter");

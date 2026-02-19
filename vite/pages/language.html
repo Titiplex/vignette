@@ -2,53 +2,37 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Language Page</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Language Details – Vignettes</title>
     <link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
-
 <header class="main-header">
     <div class="sticky-header">
         <ul>
             <li><a href="/">Home</a></li>
-            <li><a href="/pages/login" id="loginLink">Login</a></li>
+            <li><a href="/pages/languages.html">Languages</a></li>
+            <li id="createScenarioLink"><a href="/pages/create_scenario.html">Create scenario</a></li>
+            <li><a href="/pages/login.html" id="loginLink">Login</a></li>
         </ul>
     </div>
-    <div class="card text-border">
-        <h1>Languages</h1>
+    <div class="card">
+        <h1>Language Details</h1>
         <h2 id="name"></h2>
     </div>
 </header>
 
-<div>
-    <div class="card">
-        <div>
-            <table class="table">
-                <tbody>
-                <tr>
-                    <th>Family</th>
-                    <td id="family"></td>
-                </tr>
-                <tr>
-                    <th>Parent</th>
-                    <td id="parent"></td>
-                </tr>
-                <tr>
-                    <th>Level</th>
-                    <td id="level"></td>
-                </tr>
-                <tr>
-                    <th>Description</th>
-                    <td id="desc"></td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
+<main>
+    <div class="card table-wrap">
+        <table class="table"><tbody>
+        <tr><th>Family</th><td id="family"></td></tr>
+        <tr><th>Parent</th><td id="parent"></td></tr>
+        <tr><th>Level</th><td id="level"></td></tr>
+        <tr><th>Description</th><td id="desc"></td></tr>
+        </tbody></table>
     </div>
-    <div>
-        <p><span id="info"></span></p>
-    </div>
-</div>
+    <p id="info" class="error"></p>
+</main>
 <script type="module" src="/src/pages/language.js"></script>
 </body>
 </html>

@@ -19,6 +19,7 @@ export default defineConfig({
                 login: resolve(__dirname, "pages/login.html"),
                 register: resolve(__dirname, "pages/register.html"),
                 create_scenario: resolve(__dirname, "pages/create_scenario.html"),
+                scenario: resolve(__dirname, "pages/scenario.html"),
             }
         }
     }

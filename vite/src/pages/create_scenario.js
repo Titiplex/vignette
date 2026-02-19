@@ -51,7 +51,7 @@ form.addEventListener("submit", async (e) => {
     } catch (err) {
         error.textContent = err.message;
         if ((err.message || "").includes("401")) {
-            window.location.href = "/front/pages/login.html";
+            window.location.href = "/pages/login.html";
         }
     }
 });

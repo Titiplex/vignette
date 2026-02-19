@@ -2,6 +2,9 @@ import {apiFetch} from "../api/rest.js";
 import {el} from "./scenario.js"
 
 export let selectedThumbId = null;
+export function setSelectedThumbId(id) {
+    selectedThumbId = id;
+}
 let recordedBlob = null;
 let mediaRecorder = null;
 let chunks = [];

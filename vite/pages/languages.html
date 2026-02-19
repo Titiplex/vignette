@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8"/>
-    <title>Languages</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Languages – Vignettes</title>
     <link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
@@ -10,36 +11,30 @@
     <div class="sticky-header">
         <ul>
             <li><a href="/">Home</a></li>
-            <li><a href="/pages/login" id="loginLink">Login</a></li>
+            <li><a href="/pages/languages.html">Languages</a></li>
+            <li id="createScenarioLink"><a href="/pages/create_scenario.html">Create scenario</a></li>
+            <li><a href="/pages/login.html" id="loginLink">Login</a></li>
         </ul>
     </div>
-    <div class="card text-border">
-        <h1>Languages</h1>
-    </div>
+    <div class="card"><h1>Language Catalog</h1></div>
 </header>
 
-<div>
-    <div class="card">
+<main>
+    <div class="card table-wrap">
         <table class="table">
             <thead>
             <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Level</th>
-                <th>Family</th>
-                <th>Parent</th>
+                <th>ID</th><th>Name</th><th>Level</th><th>Family</th><th>Parent</th>
             </tr>
             </thead>
             <tbody id="tbody"></tbody>
         </table>
     </div>
-
     <div class="index">
         <div><span id="pageInfo"></span></div>
         <div id="pager"></div>
     </div>
-</div>
-
+</main>
 <script type="module" src="/src/pages/languages.js"></script>
 </body>
 </html>

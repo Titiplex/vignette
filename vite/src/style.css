@@ -1,36 +1,162 @@
+:root {
+    --bg: #f4f7fb;
+    --surface: #ffffff;
+    --surface-alt: #f8fbff;
+    --accent-warm: #fff3dd;
+    --accent-cool: #e8f2ff;
+    --accent-green: #e6f7ef;
+    --text: #1f2937;
+    --text-soft: #5b6472;
+    --primary: #0f766e;
+    --primary-strong: #0b5f59;
+    --border: #dbe3ee;
+    --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    --radius: 14px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
 html, body {
     margin: 0;
     padding: 0;
+    min-height: 100%;
+    font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    color: var(--text);
+    background:
+        radial-gradient(circle at 12% 8%, #d9f8ee 0%, rgba(217, 248, 238, 0) 36%),
+        radial-gradient(circle at 92% 10%, #e8eeff 0%, rgba(232, 238, 255, 0) 30%),
+        linear-gradient(180deg, #f5f8fd 0%, #eff4fb 100%);
+}
+
+a {
+    color: var(--primary);
+}
+
+a:hover {
+    color: var(--primary-strong);
+}
+
+main {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 24px 16px 40px;
+}
+
+.main-header {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 16px 16px 0;
+}
+
+.sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    backdrop-filter: blur(6px);
+    background: rgba(244, 247, 251, 0.92);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    padding: 10px 14px;
+}
+
+.sticky-header > ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.sticky-header > ul > li > a {
+    display: inline-block;
+    text-decoration: none;
+    color: var(--text);
+    background: linear-gradient(160deg, #ffffff 0%, #fcfdff 100%);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 7px 12px;
+    font-weight: 600;
+}
+
+.sticky-header > ul > li > a:hover {
+    border-color: #bdd0e6;
+    background: linear-gradient(180deg, #f8fbff 0%, #eaf2ff 100%);
 }
 
 .card {
-    background-color: #91d7f2;
-    box-shadow: 2px 2px 5px #888;
-    margin: 5px 5px 8px;
-    padding: 5px;
+    background: linear-gradient(180deg, #ffffff 0%, #f3f7ff 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin: 12px 0;
+    padding: 16px;
+}
+
+.hero-card {
+    padding: 20px;
+    background: linear-gradient(120deg, #dff8ef 0%, #eaf1ff 55%, #fff7e8 100%);
+    border-color: #cde4db;
 }
 
 h1, h2, h3, h4, h5, h6 {
-    text-align: center;
+    margin-top: 0;
+}
+
+.text {
+    color: var(--text-soft);
+    line-height: 1.55;
+}
+
+.grid-2 {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+
+.grid-2 .card:nth-child(4n + 1) {
+    background: linear-gradient(160deg, var(--accent-cool) 0%, #ffffff 70%);
+}
+
+.grid-2 .card:nth-child(4n + 2) {
+    background: linear-gradient(160deg, var(--accent-green) 0%, #ffffff 70%);
+}
+
+.grid-2 .card:nth-child(4n + 3) {
+    background: linear-gradient(160deg, #f7ecff 0%, #ffffff 70%);
+}
+
+.grid-2 .card:nth-child(4n + 4) {
+    background: linear-gradient(160deg, var(--accent-warm) 0%, #ffffff 70%);
+}
+
+.table-wrap {
+    width: 100%;
+    overflow-x: auto;
 }
 
 .table {
-    background-color: #FFFFFFFF;
-    margin: 5px auto;
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+}
+
+.table th,
+.table td {
+    border-bottom: 1px solid var(--border);
     padding: 10px;
-}
-
-.table > th, td {
-    margin: 5px;
-}
-
-.table > th {
     text-align: left;
 }
 
-.card, .table {
-    border: 1px solid #000;
-    border-radius: 6px;
+.table th {
+    font-size: 0.86rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-soft);
 }
 
 .index {
@@ -38,94 +164,86 @@ h1, h2, h3, h4, h5, h6 {
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    padding: 10px;
-}
-
-.index > div {
-    margin: 5px auto;
-}
-
-.text-border {
-    text-shadow: 4px 4px 6px white;
-}
-
-.text {
-    margin: 10px;
-}
-
-.form {
-    margin: 10px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 10px;
-    justify-content: center;
-}
-
-.field {
-    margin: 6px;
-    padding: 6px;
-}
-
-.field > .input-label {
-    background-color: #FFFFFF;
-    border-radius: 6px;
-    margin-right: 5px;
-}
-
-.field > label > input {
-    border-radius: 6px;
-    padding: 10px;
-    border: 1px solid #000;
-    margin-left: 5px;
-}
-
-.main-header {
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-}
-
-.sticky-header {
-    position: sticky;
-    top: 0;
-    left: 0;
-    width: 100%;
-    z-index: 1000;
-    margin-bottom: 10px;
-    background-color: #888888;
+    gap: 8px;
     padding: 8px;
 }
 
-.sticky-header > ul {
-    list-style-type: none;
-    gap: 10px;
-    margin: 0;
-    padding: 0;
+#pager {
     display: flex;
-    flex-direction: row;
+    gap: 6px;
+    flex-wrap: wrap;
 }
 
-.sticky-header > ul > li {
-    /*padding: 8px;*/
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
-.sticky-header > ul > li > a {
-    text-decoration: none;
-    transition: color 0.3s;
-    color: #000000;
-    height: 100%;
-    background-color: #FFFFFF;
-    border-radius: 6px;
-    padding: 3px;
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
-.sticky-header > ul > li > a:hover {
-    background-color: lightgray;
+.field > label {
+    font-weight: 600;
+}
+
+input, select, textarea, button {
+    font: inherit;
+}
+
+input, select, textarea {
+    border-radius: 10px;
+    border: 1px solid #cfd9e6;
+    padding: 10px;
+    background: #fff;
+}
+
+textarea {
+    min-height: 120px;
+}
+
+button {
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--primary);
+    color: #fff;
+}
+
+button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
 }
 
 .image-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 12px;
+}
+
+.thumb-card {
+    cursor: pointer;
+}
+
+.thumb-card img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+}
+
+.caption {
+    margin-top: 8px;
+    color: var(--text-soft);
+}
+
+.error {
+    color: #b42318;
+    font-weight: 600;
 }

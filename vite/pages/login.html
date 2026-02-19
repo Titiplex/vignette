@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8"/>
-    <title>Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Login – Vignettes</title>
     <link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
@@ -10,35 +11,31 @@
     <div class="sticky-header">
         <ul>
             <li><a href="/">Home</a></li>
-            <li><a href="/pages/login">Login</a></li>
+            <li><a href="/pages/languages.html">Languages</a></li>
+            <li id="createScenarioLink"><a href="/pages/create_scenario.html">Create scenario</a></li>
+            <li><a href="/pages/login.html" id="loginLink">Login</a></li>
         </ul>
     </div>
-    <div class="card text-border">
-        <h1>Login</h1>
-    </div>
+    <div class="card"><h1>Login</h1></div>
 </header>
 
-<div>
+<main>
     <div class="card">
         <form id="loginForm" class="form">
             <div class="field">
-                <label>Username</label>
-                <label><input name="username" required/></label>
+                <label for="username">Username</label>
+                <input id="username" name="username" required/>
             </div>
             <div class="field">
-                <label>Password</label>
-                <label><input type="password" name="password" required/></label>
+                <label for="password">Password</label>
+                <input id="password" type="password" name="password" required/>
             </div>
-            <div>
-                <button type="submit">Login</button>
-            </div>
+            <div><button type="submit">Login</button></div>
             <p id="error" class="error"></p>
-            <div>
-                <p>Don't have an account? <a href="/pages/register">Register here</a></p>
-            </div>
+            <p>Don't have an account? <a href="/pages/register.html">Register here</a></p>
         </form>
     </div>
-</div>
+</main>
 
 <script type="module" src="/src/pages/login.js"></script>
 </body>

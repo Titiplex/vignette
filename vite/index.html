@@ -1,35 +1,51 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Home</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vignettes – Language Documentation</title>
     <link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
-
 <header class="main-header">
     <div class="sticky-header">
         <ul>
             <li><a href="/">Home</a></li>
-            <li><a href="/pages/login" id="loginLink">Login</a></li>
+            <li><a href="/pages/languages.html">Languages</a></li>
+            <li id="createScenarioLink"><a href="/pages/create_scenario.html">Create scenario</a></li>
+            <li><a href="/pages/login.html" id="loginLink">Login</a></li>
         </ul>
     </div>
-    <div class="card text-border">
-        <h1>Welcome to Vignettes !</h1>
+    <div class="card hero-card">
+        <h1>Vignettes for Endangered Language Preservation</h1>
+        <p class="text">Build visual scenarios, collect oral recordings, and support fairer multilingual data by documenting linguistic diversity with community-friendly tools.</p>
     </div>
 </header>
 
-<div>
-    <div class="card">
-        <div class="text">
-            <p>Welcome to Vignettes</p>
-            <p>
-                <a href="/pages/languages">See listed Languages</a> (<a href="https://glottolog.org">Glottolog</a>,
-                January
-                2026)
-            </p>
-        </div>
-    </div>
-</div>
+<main>
+    <section class="grid-2">
+        <article class="card">
+            <h2>1. Explore language data</h2>
+            <p class="text">Browse the language catalog and navigate language families to anchor your scenario work in rich linguistic context.</p>
+            <a href="/pages/languages.html">Open the language catalog</a>
+        </article>
+
+        <article class="card">
+            <h2>2. Create scenario vignettes</h2>
+            <p class="text">Create image-based scenario sequences for elicitation and narration tasks adapted to under-resourced and oral-first communities.</p>
+            <a href="/pages/create_scenario.html">Create a scenario</a>
+        </article>
+
+        <article class="card">
+            <h2>3. Record oral responses</h2>
+            <p class="text">For each image, record and upload audio to preserve pronunciation, intonation and local expression patterns.</p>
+        </article>
+
+        <article class="card">
+            <h2>4. Reduce translation bias</h2>
+            <p class="text">By grounding data collection in local narratives rather than direct translation, Vignettes helps reduce translation-driven bias.</p>
+        </article>
+    </section>
+</main>
 <script type="module" src="./src/pages/home.js"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 import "../style.css";
 import {apiFetch, setAccessToken} from "../api/rest.js";
-import {loadAudiosForThumb, selectedThumbId} from "./audio.js"
+import {loadAudiosForThumb, setSelectedThumbId} from "./audio.js"
 import {updateHeaderAuth} from "../api/header.js";
 
 updateHeaderAuth().then(() => {});
@@ -45,11 +45,12 @@ function renderThumbs(list) {
     for (const t of sorted) {
         const wrap = document.createElement("div");
         wrap.className = "card";
+        wrap.classList.add("thumb-card");
         wrap.style.marginBottom = "12px";
 
         wrap.style.cursor = "pointer";
         wrap.onclick = async () => {
-            selectedThumbId = t.id;
+            setSelectedThumbId(t.id);
             el("audioCard").style.display = "block";
             el("selectedThumb").textContent = `#${t.idx} (id=${t.id})`;
 
@@ -65,6 +66,7 @@ function renderThumbs(list) {
         img.style.maxWidth = "100%";
 
         const cap = document.createElement("div");
+        cap.className = "caption";
         const idxLabel = (t.idx ?? "?");
         cap.textContent = `#${idxLabel} — ${t.title || `thumb ${t.id}`}`;
 

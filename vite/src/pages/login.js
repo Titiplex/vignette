@@ -22,7 +22,7 @@ form.addEventListener("submit", async (e) => {
 
         sessionStorage.setItem("accessToken", res.accessToken);
 
-        window.location.href = "/home.html";
+        window.location.href = "/";
     } catch (err) {
         error.textContent = err.message;
     }

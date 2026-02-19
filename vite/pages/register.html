@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <title>Register</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Register – Vignettes</title>
     <link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
@@ -10,25 +11,25 @@
     <div class="sticky-header">
         <ul>
             <li><a href="/">Home</a></li>
-            <li><a href="/pages/login" id="loginLink">Login</a></li>
+            <li><a href="/pages/languages.html">Languages</a></li>
+            <li id="createScenarioLink"><a href="/pages/create_scenario.html">Create scenario</a></li>
+            <li><a href="/pages/login.html" id="loginLink">Login</a></li>
         </ul>
     </div>
-    <div class="card text-border">
-        <h1>Register</h1>
-    </div>
+    <div class="card"><h1>Create your account</h1></div>
 </header>
 
-<div>
+<main>
     <div class="card">
         <form id="registerForm" class="form">
-            <div class="field"><label>Username</label><label><input name="username" required /></label></div>
-            <div class="field"><label>Email</label><label><input name="email" type="email" required /></label></div>
-            <div class="field"><label>Password</label><label><input name="password" type="password" required /></label></div>
+            <div class="field"><label for="username">Username</label><input id="username" name="username" required /></div>
+            <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" required /></div>
+            <div class="field"><label for="password">Password</label><input id="password" name="password" type="password" required /></div>
             <div><button type="submit">Create account</button></div>
             <p id="error" class="error"></p>
         </form>
     </div>
-</div>
+</main>
 
 <script type="module" src="/src/pages/register.js"></script>
 </body>

@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <title>Create Scenario</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Create Scenario – Vignettes</title>
     <link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
@@ -10,42 +11,43 @@
     <div class="sticky-header">
         <ul>
             <li><a href="/">Home</a></li>
-            <li><a href="/pages/login" id="loginLink">Login</a></li>
+            <li><a href="/pages/languages.html">Languages</a></li>
+            <li id="createScenarioLink"><a href="/pages/create_scenario.html">Create scenario</a></li>
+            <li><a href="/pages/login.html" id="loginLink">Login</a></li>
         </ul>
     </div>
-    <div class="card text-border">
+    <div class="card">
         <h1>Create a Scenario</h1>
+        <p class="text">Set up a vignette sequence to collect oral responses in context.</p>
     </div>
 </header>
 
-<div>
+<main>
     <div class="card">
         <form id="scenarioForm" class="form">
             <div class="field">
-                <label>Title</label>
-                <label><input type="text" name="title" required /></label>
+                <label for="title">Title</label>
+                <input id="title" type="text" name="title" required />
             </div>
 
             <div class="field">
-                <label>Description</label>
-                <label><textarea name="description"></textarea></label>
+                <label for="description">Description</label>
+                <textarea id="description" name="description"></textarea>
             </div>
 
             <div class="field">
-                <label>Language</label>
-                <label>
-                    <input type="text" id="langFilter" placeholder="Search language." />
-                    <select name="languageId" id="langSelect" required>
-                        <option value="" disabled selected>-- choose --</option>
-                    </select>
-                </label>
+                <label for="langFilter">Language</label>
+                <input type="text" id="langFilter" placeholder="Search language" />
+                <select name="languageId" id="langSelect" required>
+                    <option value="" disabled selected>-- choose --</option>
+                </select>
             </div>
 
-            <div><button type="submit">Create</button></div>
+            <div><button type="submit">Create scenario</button></div>
             <p id="error" class="error"></p>
         </form>
     </div>
-</div>
+</main>
 
 <script type="module" src="/src/pages/create_scenario.js"></script>
 </body>

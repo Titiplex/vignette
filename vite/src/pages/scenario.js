@@ -1,14 +1,17 @@
 import "../style.css";
 import {apiFetch, setAccessToken} from "../api/rest.js";
 import {loadAudiosForThumb, selectedThumbId} from "./audio.js"
+import {updateHeaderAuth} from "../api/header.js";
+
+updateHeaderAuth().then(() => {});
 
 const t = sessionStorage.getItem("accessToken");
 let isOwner = false;
 if (t) setAccessToken(t);
 
-function qp(name, def = null) {
+function qp(name) {
     const u = new URL(window.location.href);
-    return u.searchParams.get(name) ?? def;
+    return u.searchParams.get(name) ?? "";
 }
 
 export function el(id) {

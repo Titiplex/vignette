@@ -18,7 +18,7 @@ public class Author {
     @Column(name = "id", nullable = false, updatable = false)
     private Long id;
 
-    @Column(name = "name", nullable = false)
+    @Column(name = "name")
     private String name;
 
     @Column(name = "surname")

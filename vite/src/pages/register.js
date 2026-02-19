@@ -1,4 +1,7 @@
 import { apiFetch } from "../api/rest.js";
+import {updateHeaderAuth} from "../api/header.js";
+
+updateHeaderAuth().then(() => {});
 
 const form = document.getElementById("registerForm");
 const error = document.getElementById("error");

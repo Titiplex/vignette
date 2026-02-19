@@ -1,4 +1,7 @@
 import {apiFetch, setAccessToken} from "../api/rest.js";
+import {updateHeaderAuth} from "../api/header.js";
+
+updateHeaderAuth().then(() => {});
 
 // restore token si refresh
 const t = sessionStorage.getItem("accessToken");

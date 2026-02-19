@@ -45,7 +45,7 @@ public class AuthApiController {
         var auth = authManager.authenticate(
                 new UsernamePasswordAuthenticationToken(req.username(), req.password())
         );
-        request.changeSessionId();
+        if (request.getSession() != null) request.changeSessionId();
 
         // 1) session cookie (JSESSIONID)
         SecurityContext context = SecurityContextHolder.createEmptyContext();

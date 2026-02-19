@@ -1,4 +1,7 @@
 import { apiFetch, setAccessToken } from "../api/rest.js";
+import {updateHeaderAuth} from "../api/header.js";
+
+updateHeaderAuth().then(() => {});
 
 const form = document.getElementById("loginForm");
 const error = document.getElementById("error");
@@ -26,4 +29,7 @@ form.addEventListener("submit", async (e) => {
 });
 
 const t = sessionStorage.getItem("accessToken");
-if (t) setAccessToken(t);
+if (t) {
+    setAccessToken(t);
+    window.location.href = "/";
+}

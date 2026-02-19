@@ -1,5 +1,8 @@
 import "../style.css";
 import {apiFetch} from "../api/rest.js";
+import {updateHeaderAuth} from "../api/header.js";
+
+updateHeaderAuth().then(() => {});
 
 function qp(id) {
     const u = new URL(window.location.href);

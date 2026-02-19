@@ -90,5 +90,5 @@ public class Language {
     private Set<Scenario> scenarios = new HashSet<>();
 
     @OneToMany(mappedBy = "language", fetch = FetchType.EAGER)
-    private Set<Thumbnail> thumbnails = new HashSet<>();
+    private Set<Audio> audios = new HashSet<>();
 }

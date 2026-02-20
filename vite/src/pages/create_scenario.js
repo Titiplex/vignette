@@ -19,16 +19,20 @@ try {
 
 const select = document.getElementById("langSelect");
 const filter = document.getElementById("langFilter");
+const prevBtn = document.getElementById("langPrev");
+const nextBtn = document.getElementById("langNext");
+const pageInfo = document.getElementById("langPageInfo");
 const form = document.getElementById("scenarioForm");
 const error = document.getElementById("error");
 
-let allOptions = [];
+const PAGE_SIZE = 50;
+let currentPage = 0;
+let currentQuery = "";
+let totalPages = 0;
 
-function renderOptions(q = "") {
-    const qq = q.toLowerCase();
+function renderOptions(options = []) {
     select.innerHTML = `<option value="" disabled selected>-- choose --</option>`;
-    for (const l of allOptions) {
-        if (!l.name.toLowerCase().includes(qq)) continue;
+    for (const l of options) {
         const opt = document.createElement("option");
         opt.value = l.id;
         opt.textContent = l.name;
@@ -36,13 +40,39 @@ function renderOptions(q = "") {
     }
 }
 
-async function loadLanguages() {
-    // endpoint léger -> [{id,name}]
-    allOptions = await apiFetch("/api/languages/options");
-    renderOptions("");
+async function loadLanguages(page = 0, q = "") {
+    const params = new URLSearchParams({
+        page: String(page),
+        size: String(PAGE_SIZE),
+    });
+
+    if (q.trim()) {
+        params.set("q", q.trim());
+    }
+
+    const data = await apiFetch(`/api/languages/options?${params.toString()}`);
+    currentPage = data.number ?? page;
+    totalPages = data.totalPages ?? 0;
+    renderOptions(data.content ?? []);
+    pageInfo.textContent = totalPages > 0 ? `Page ${currentPage + 1}/${totalPages}` : "No result";
+    prevBtn.disabled = currentPage <= 0;
+    nextBtn.disabled = totalPages === 0 || currentPage >= totalPages - 1;
 }
 
-filter.addEventListener("input", () => renderOptions(filter.value));
+filter.addEventListener("input", () => {
+    currentQuery = filter.value;
+    loadLanguages(0, currentQuery).catch(e => error.textContent = e.message);
+});
+
+prevBtn.addEventListener("click", () => {
+    if (currentPage <= 0) return;
+    loadLanguages(currentPage - 1, currentQuery).catch(e => error.textContent = e.message);
+});
+
+nextBtn.addEventListener("click", () => {
+    if (totalPages === 0 || currentPage >= totalPages - 1) return;
+    loadLanguages(currentPage + 1, currentQuery).catch(e => error.textContent = e.message);
+});
 
 form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -66,4 +96,4 @@ form.addEventListener("submit", async (e) => {
     }
 });
 
-loadLanguages().catch(e => error.textContent = e.message);
+loadLanguages(0, "").catch(e => error.textContent = e.message);

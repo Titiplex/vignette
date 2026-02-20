@@ -38,10 +38,10 @@ public class LanguageApiController {
         return languageService.getOneDto(id);
     }
 
-    // Todo
     @GetMapping("/options")
-    public List<LanguageOptionDto> options(@RequestParam(defaultValue="") String q,
-                                           @RequestParam(defaultValue="50") int limit) {
-        return languageService.searchOptions(q, limit); // à implémenter côté service/repo
+    public Page<LanguageOptionDto> options(@RequestParam(defaultValue="") String q,
+                                           @RequestParam(defaultValue = "0") int page,
+                                           @RequestParam(defaultValue = "50") int size) {
+        return languageService.searchOptions(q, page, size);
     }
 }

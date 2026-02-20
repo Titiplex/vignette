@@ -9,7 +9,6 @@ import org.springframework.data.repository.query.Param;
 import org.titiplex.api.dto.LanguageOptionDto;
 import org.titiplex.persistence.model.Language;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface LanguageRepository extends JpaRepository<Language, String> {
@@ -20,12 +19,8 @@ public interface LanguageRepository extends JpaRepository<Language, String> {
     Optional<Language> findWithFamilyAndParentById(String id);
 
     @Query("select new org.titiplex.api.dto.LanguageOptionDto(l.id, l.name) " +
-            "from Language l order by l.name")
-    List<LanguageOptionDto> listOptions();
-
-    @Query("select new org.titiplex.api.dto.LanguageOptionDto(l.id, l.name) " +
             "from Language l " +
             "where (:q is null or lower(l.name) like lower(concat('%', :q, '%'))) " +
             "order by l.name")
-    List<LanguageOptionDto> listOptions(@Param("q") String q);
+    Page<LanguageOptionDto> listOptions(@Param("q") String q, Pageable pageable);
 }

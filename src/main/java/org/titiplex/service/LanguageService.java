@@ -71,15 +71,14 @@ public class LanguageService {
         return new ArrayList<>(repo.saveAll(languages));
     }
 
-    public List<LanguageOptionDto> listOptions() {
-        return repo.listOptions();
-    }
-
     public boolean existsById(String id) {
         return repo.existsById(id);
     }
 
-    public List<LanguageOptionDto> searchOptions(String q, int limit) {
-        return repo.listOptions(q).subList(0, limit);
+    public Page<LanguageOptionDto> searchOptions(String q, int page, int size) {
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 200);
+        Pageable pageable = PageRequest.of(safePage, safeSize);
+        return repo.listOptions(q, pageable);
     }
 }

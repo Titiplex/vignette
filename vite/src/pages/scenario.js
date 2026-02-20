@@ -98,7 +98,7 @@ async function main() {
 
     try {
         const me = await loadMe();
-        isOwner = me.username === authorUsername;
+        isOwner = me.username === s.authorUsername;
 
         if (isOwner) {
             el("uploadCard").style.display = "block";

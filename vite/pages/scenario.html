@@ -65,10 +65,15 @@
                 <input id="audioTitle" placeholder="Optional title"/>
             </div>
             <button id="uploadAudio" type="button" disabled>Upload recording</button>
+
+            <div class="field" style="margin-top:10px;">
+                <label for="audioFile">Upload existing audio</label>
+                <input id="audioFile" type="file" accept="audio/*"/>
+            </div>
+            <button id="uploadExistingAudio" type="button">Upload audio file</button>
+
             <p id="audioErr" class="error"></p>
         </div>
-
-        <div id="audioList"></div>
     </div>
 </main>
 

@@ -2,9 +2,11 @@ import {apiFetch} from "../api/rest.js";
 import {el} from "./scenario.js"
 
 export let selectedThumbId = null;
+
 export function setSelectedThumbId(id) {
     selectedThumbId = id;
 }
+
 let recordedBlob = null;
 let mediaRecorder = null;
 let chunks = [];
@@ -15,11 +17,14 @@ function sortByIdx(list) {
 
 export async function loadAudiosForThumb(thumbId) {
     const list = await apiFetch(`/api/thumbnails/${thumbId}/audios`);
-    renderAudioList(sortByIdx(list));
+    const sorted = sortByIdx(list)
+    renderAudioList(sorted);
+    return sorted;
 }
 
 function renderAudioList(list) {
     const box = el("audioList");
+    if (!box) return;
     box.innerHTML = "";
 
     if (!list.length) {
@@ -114,6 +119,27 @@ async function uploadRecording() {
     el("uploadAudio").disabled = true;
 
     await loadAudiosForThumb(selectedThumbId);
+    window.dispatchEvent(new CustomEvent("audio-uploaded"));
+}
+
+export async function uploadAudioFile() {
+    if (!selectedThumbId) throw new Error("No thumbnail selected");
+
+    const audioFile = el("audioFile").files?.[0];
+    if (!audioFile) throw new Error("Please choose an audio file");
+
+    const fd = new FormData();
+    fd.append("title", el("audioTitle").value || "");
+    fd.append("audio", audioFile, audioFile.name);
+
+    await apiFetch(`/api/thumbnails/${selectedThumbId}/audios`, {
+        method: "POST",
+        body: fd
+    });
+
+    el("audioFile").value = "";
+    await loadAudiosForThumb(selectedThumbId);
+    window.dispatchEvent(new CustomEvent("audio-uploaded"));
 }
 
 el("recStart").addEventListener("click", () => startRecording().catch(e => el("audioErr").textContent = e.message));

@@ -1,6 +1,6 @@
 import "../style.css";
 import {apiFetch, setAccessToken} from "../api/rest.js";
-import {loadAudiosForThumb, setSelectedThumbId} from "./audio.js"
+import {loadAudiosForThumb, setSelectedThumbId, uploadAudioFile} from "./audio.js"
 import {updateHeaderAuth} from "../api/header.js";
 
 updateHeaderAuth().then(() => {
@@ -31,7 +31,24 @@ async function loadThumbnails(scenarioId) {
     return apiFetch(`/api/scenarios/${encodeURIComponent(scenarioId)}/thumbnails`);
 }
 
-function renderThumbs(list) {
+function createAudioItem(audio) {
+    const row = document.createElement("div");
+    row.className = "thumb-audio-item";
+
+    const title = document.createElement("div");
+    title.className = "thumb-audio-title";
+    title.textContent = `#${audio.idx} — ${audio.title || "Untitled audio"}`;
+
+    const player = document.createElement("audio");
+    player.controls = true;
+    player.src = `/api/audios/${audio.id}/content`;
+
+    row.appendChild(title);
+    row.appendChild(player);
+    return row;
+}
+
+async function renderThumbs(list) {
     const grid = el("thumbGrid");
     grid.innerHTML = "";
 
@@ -40,24 +57,18 @@ function renderThumbs(list) {
         return;
     }
 
-    // security order sort
     const sorted = [...list].sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0));
 
     for (const t of sorted) {
         const wrap = document.createElement("div");
-        wrap.className = "card";
-        wrap.classList.add("thumb-card");
+        wrap.className = "card thumb-card";
         wrap.style.marginBottom = "12px";
 
-        wrap.style.cursor = "pointer";
         wrap.onclick = async () => {
             setSelectedThumbId(t.id);
             el("audioCard").style.display = "block";
             el("selectedThumb").textContent = `#${t.idx} (id=${t.id})`;
-
             await loadAudiosForThumb(t.id);
-
-            // montre outils si owner
             el("audioOwnerTools").style.display = isOwner ? "block" : "none";
         };
 
@@ -71,9 +82,28 @@ function renderThumbs(list) {
         const idxLabel = (t.idx ?? "?");
         cap.textContent = `#${idxLabel} — ${t.title || `thumb ${t.id}`}`;
 
+        const audioList = document.createElement("div");
+        audioList.className = "thumb-audio-list";
+        audioList.textContent = "Loading audios...";
+
         wrap.appendChild(img);
         wrap.appendChild(cap);
+        wrap.appendChild(audioList);
         grid.appendChild(wrap);
+
+        try {
+            const audios = await loadAudiosForThumb(t.id);
+            audioList.innerHTML = "";
+            if (!audios.length) {
+                audioList.textContent = "No audio yet.";
+            } else {
+                for (const a of audios) {
+                    audioList.appendChild(createAudioItem(a));
+                }
+            }
+        } catch (e) {
+            audioList.textContent = `Unable to load audio: ${e.message}`;
+        }
     }
 }
 
@@ -104,15 +134,13 @@ async function main() {
             el("uploadCard").style.display = "block";
         }
     } catch (_) {
-        // window.location.href = "/pages/login.html";
         isOwner = false;
         el("uploadCard").style.display = "none";
     }
 
     const thumbs = await loadThumbnails(s.id);
-    renderThumbs(thumbs);
+    await renderThumbs(thumbs);
 
-    // handler upload
     const form = el("uploadForm");
     const uploadError = el("uploadError");
 
@@ -127,15 +155,29 @@ async function main() {
 
         try {
             await apiFetch("/api/thumbnails", {method: "POST", body: fd});
-            // refresh list
             const updated = await loadThumbnails(s.id);
-            renderThumbs(updated);
+            await renderThumbs(updated);
             form.reset();
         } catch (err) {
             uploadError.textContent = err.message;
             if ((err.message || "").includes("401") || (err.message || "").includes("403")) {
                 window.location.href = "/pages/login.html";
             }
+        }
+    });
+
+
+    window.addEventListener("audio-uploaded", async () => {
+        const updated = await loadThumbnails(s.id);
+        await renderThumbs(updated);
+    });
+
+    el("uploadExistingAudio").addEventListener("click", async () => {
+        el("audioErr").textContent = "";
+        try {
+            await uploadAudioFile();
+        } catch (err) {
+            el("audioErr").textContent = err.message;
         }
     });
 }

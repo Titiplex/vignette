@@ -1,4 +1,5 @@
-import { apiFetch } from "./rest.js";
+import {logout} from "./auth.js";
+import {apiFetch} from "./rest.js";
 
 function show(el, visible) {
     if (!el) return;
@@ -19,8 +20,13 @@ export async function updateHeaderAuth() {
         if (loginLink) {
             loginLink.textContent = `Logout (${me.username})`;
             loginLink.href = "#";
-            loginLink.onclick = (e) => {
+            loginLink.onclick = async (e) => {
                 e.preventDefault();
+                try {
+                    await logout();
+                } catch (_) {
+                    // ensure client-side state is reset even if API logout fails
+                }
                 sessionStorage.removeItem("accessToken");
                 window.location.href = "/pages/login.html";
             };

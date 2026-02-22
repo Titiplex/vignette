@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>Language Details – Vignettes</title>
     <link rel="stylesheet" href="/src/style.css">
 </head>
@@ -25,14 +25,42 @@
 
 <main>
     <div class="card table-wrap">
-        <table class="table"><tbody>
-        <tr><th>Family</th><td id="family"></td></tr>
-        <tr><th>Parent</th><td id="parent"></td></tr>
-        <tr><th>Level</th><td id="level"></td></tr>
-        <tr><th>Description</th><td id="desc"></td></tr>
-        </tbody></table>
+        <table class="table">
+            <tbody>
+            <tr>
+                <th>Family</th>
+                <td id="family"></td>
+            </tr>
+            <tr>
+                <th>Parent</th>
+                <td id="parent"></td>
+            </tr>
+            <tr>
+                <th>Level</th>
+                <td id="level"></td>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td id="desc"></td>
+            </tr>
+            </tbody>
+        </table>
     </div>
     <p id="info" class="error"></p>
+    <div class="card table-wrap">
+        <h2>Related Scenarios</h2>
+        <p id="nb_scenarios"></p>
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Author</th>
+                <th>Creation Date</th>
+            </tr>
+            </thead>
+            <tbody id="scenarios"></tbody>
+        </table>
+    </div>
 </main>
 <script type="module" src="/src/pages/language.js"></script>
 </body>

@@ -5,8 +5,10 @@ import org.springframework.web.bind.annotation.*;
 import org.titiplex.api.dto.LanguageDto;
 import org.titiplex.api.dto.LanguageOptionDto;
 import org.titiplex.api.dto.LanguageRowDto;
+import org.titiplex.api.dto.ScenarioDto;
 import org.titiplex.persistence.model.Language;
 import org.titiplex.service.LanguageService;
+import org.titiplex.service.ScenarioService;
 
 import java.util.List;
 
@@ -43,5 +45,11 @@ public class LanguageApiController {
                                            @RequestParam(defaultValue = "0") int page,
                                            @RequestParam(defaultValue = "50") int size) {
         return languageService.searchOptions(q, page, size);
+    }
+
+    @GetMapping("/{id}/scenarios")
+    public List<ScenarioDto> getOneScenarios(@PathVariable String id) {
+        return languageService.getLanguage(id).getScenarios()
+                .stream().map(ScenarioService::toDto).toList();
     }
 }

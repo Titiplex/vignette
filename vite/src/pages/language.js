@@ -12,7 +12,6 @@ function qp(id) {
 async function main() {
     const id = String(qp("id"));
     const data = await apiFetch(`/api/languages/${id}`);
-    console.log(data);
 
     const name = document.getElementById("name");
     const family = document.getElementById("family");
@@ -39,6 +38,32 @@ async function main() {
     desc.textContent = data.description ?? "";
 
     name.textContent = data.name ?? "-";
+
+    const data_s = await apiFetch(`/api/languages/${id}/scenarios`);
+    const scenarios = data_s ?? [];
+    const info = document.getElementById("nb_scenarios");
+    info.textContent = `${scenarios.length} scenario(s) using this language`;
+
+    for (const s of scenarios) {
+        const tr = document.createElement("tr");
+        const td_name = document.createElement("td");
+        const td_author = document.createElement("td");
+        const td_date = document.createElement("td");
+
+        const a = document.createElement("a");
+        a.href = `/pages/scenario.html?id=${encodeURIComponent(s.id)}`;
+        a.textContent = s.title ?? "Untitled scenario";
+
+        td_name.appendChild(a);
+        td_author.textContent = s.authorUsername ?? "Unknown author";
+        td_date.textContent = s.createdAt ?? "Unknown date";
+
+        tr.appendChild(td_name);
+        tr.appendChild(td_author);
+        tr.appendChild(td_date);
+
+        document.getElementById("scenarios").appendChild(tr);
+    }
 }
 
 main().catch(e => {

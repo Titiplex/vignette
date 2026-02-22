@@ -1,6 +1,7 @@
 package org.titiplex.service;
 
 import org.springframework.stereotype.Service;
+import org.titiplex.api.dto.ScenarioDto;
 import org.titiplex.persistence.model.Scenario;
 import org.titiplex.persistence.repo.ScenarioRepository;
 
@@ -49,5 +50,16 @@ public class ScenarioService {
 
     public List<Scenario> listScenarios() {
         return repo.findAllByOrderByCreatedAtDesc();
+    }
+
+    public static ScenarioDto toDto(Scenario s) {
+        return new ScenarioDto(
+                s.getId(),
+                s.getTitle(),
+                s.getDescription(),
+                s.getLanguage_id(),
+                s.getAuthor().getUsername(),
+                s.getCreatedAt()
+        );
     }
 }

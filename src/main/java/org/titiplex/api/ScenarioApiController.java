@@ -10,7 +10,6 @@ import org.titiplex.service.LanguageService;
 import org.titiplex.service.ScenarioService;
 import org.titiplex.service.UserService;
 
-import java.time.Instant;
 import java.util.List;
 
 @RestController
@@ -62,23 +61,12 @@ public class ScenarioApiController {
     public ScenarioDto getOne(@PathVariable Long id) {
         Scenario s = scenarioService.getScenario(id);
 
-        return this.toDto(s);
-    }
-
-    private ScenarioDto toDto(Scenario s) {
-        return new ScenarioDto(
-                s.getId(),
-                s.getTitle(),
-                s.getDescription(),
-                s.getLanguage_id(),
-                s.getAuthor().getUsername(),
-                s.getCreatedAt()
-        );
+        return ScenarioService.toDto(s);
     }
 
     @GetMapping
     public List<ScenarioDto> listAll() {
-        return scenarioService.listScenarios().stream().map(this::toDto).toList();
+        return scenarioService.listScenarios().stream().map(ScenarioService::toDto).toList();
     }
 
     @PreAuthorize("hasRole('ADMIN') or @scenarioSecurity.isOwner(#id, authentication.name)")

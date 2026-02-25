@@ -7,18 +7,37 @@ function show(el, visible) {
 }
 
 export async function updateHeaderAuth() {
+
     const loginLink = document.getElementById("loginLink");
     const createScenarioLink = document.getElementById("createScenarioLink");
+    const profileLink = document.getElementById("profileLink");
 
-    if (!loginLink && !createScenarioLink) return;
+    function to_login() {
+        show(createScenarioLink, false);
+        show(profileLink, false);
+
+        if (loginLink) {
+            loginLink.textContent = "Login";
+            loginLink.href = "/pages/login.html";
+            loginLink.onclick = null;
+        }
+    }
+
+    if (!loginLink && !createScenarioLink && !profileLink) return;
 
     try {
         const me = await apiFetch("/api/auth/me");
 
+        if (!me) {
+            to_login();
+            return;
+        }
+
         show(createScenarioLink, true);
+        show(profileLink, true);
 
         if (loginLink) {
-            loginLink.textContent = `Logout (${me.username})`;
+            loginLink.textContent = `Logout`;
             loginLink.href = "#";
             loginLink.onclick = async (e) => {
                 e.preventDefault();
@@ -32,12 +51,6 @@ export async function updateHeaderAuth() {
             };
         }
     } catch (_) {
-        show(createScenarioLink, false);
-
-        if (loginLink) {
-            loginLink.textContent = "Login";
-            loginLink.href = "/pages/login.html";
-            loginLink.onclick = null;
-        }
+        to_login();
     }
 }

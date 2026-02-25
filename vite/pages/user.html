@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>User profile – Vignettes</title>
+    <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+<header class="main-header">
+    <div class="sticky-header">
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/pages/languages.html">Languages</a></li>
+            <li><a href="/pages/scenarios.html">Scenarios</a></li>
+            <li id="createScenarioLink"><a href="/pages/create_scenario.html">Create scenario</a></li>
+            <li id="profileLink"><a href="/pages/user.html">My profile</a></li>
+            <li><a href="/pages/login.html" id="loginLink">Login</a></li>
+        </ul>
+    </div>
+    <div class="card">
+        <h1 id="profileTitle">User profile</h1>
+        <p class="text" id="profileSubtitle">Manage your public presence and academic affiliations.</p>
+    </div>
+</header>
+
+<main>
+    <section id="privateProfileSection" class="card" style="display:none;">
+        <h2>My profile</h2>
+        <form id="profileForm" class="form">
+            <div class="field"><label for="displayName">Display name</label><input id="displayName" name="displayName"/>
+            </div>
+            <div class="field"><label for="institution">Institution</label><input id="institution" name="institution"
+                                                                                  placeholder="University / academy"/>
+            </div>
+            <div class="field"><label for="researchInterests">Research interests</label><textarea id="researchInterests"
+                                                                                                  name="researchInterests"
+                                                                                                  placeholder="Sociolinguistics, phonology, oral corpora..."></textarea>
+            </div>
+            <div class="field"><label for="bio">Biography</label><textarea id="bio" name="bio"></textarea></div>
+            <div class="field"><label for="academyAffiliations">Academy / university affiliations (one per line)</label><textarea
+                    id="academyAffiliations" name="academyAffiliations"></textarea></div>
+            <div class="field">
+                <label><input type="checkbox" id="profilePublic" name="profilePublic"/> Make my profile public</label>
+            </div>
+            <div>
+                <button type="submit">Save profile</button>
+            </div>
+            <p id="saveMessage" class="text"></p>
+        </form>
+        <p class="text" id="roleLine"></p>
+        <p class="text" id="publicLinkLine"></p>
+    </section>
+
+    <section id="publicProfileSection" class="card" style="display:none;">
+        <h2 id="publicName"></h2>
+        <p class="text" id="publicInstitution"></p>
+        <p class="text" id="publicInterests"></p>
+        <p id="publicBio"></p>
+        <h3>Roles</h3>
+        <ul id="publicRoles"></ul>
+        <h3>Affiliations</h3>
+        <ul id="publicAffiliations"></ul>
+    </section>
+</main>
+
+<script type="module" src="/src/pages/user.js"></script>
+</body>
+</html>

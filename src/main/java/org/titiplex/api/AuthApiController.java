@@ -85,6 +85,7 @@ public class AuthApiController {
 
     @GetMapping("/me")
     public MeResponse me(Authentication auth) {
+        if (auth == null) return null;
         User u = users.getUserByUsername(auth.getName());
         if (u == null) throw new IllegalStateException("user not found");
         var roles = auth.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();

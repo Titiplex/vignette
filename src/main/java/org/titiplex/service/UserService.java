@@ -7,6 +7,9 @@ import org.titiplex.persistence.model.Role;
 import org.titiplex.persistence.model.User;
 import org.titiplex.persistence.repo.UserRepository;
 
+import java.util.Set;
+import java.util.stream.Collectors;
+
 @Service
 @Transactional
 public class UserService {
@@ -26,9 +29,10 @@ public class UserService {
 
         Role userRole = roles.getUserRole();
 
-                User u = new User();
+        User u = new User();
         u.setUsername(username);
         u.setEmail(email);
+        u.setDisplayName(username);
         u.setPasswordHash(encoder.encode(rawPassword));
         u.getRoles().add(userRole);
 
@@ -42,9 +46,35 @@ public class UserService {
     }
 
     public User getUserByUsername(String username) {
-        User u = new User();
-        u.setUsername("User not found");
-        return users.findByUsername(username).orElse(u);
+        return users.findByUsername(username).orElse(null);
+    }
+
+    public User getExistingUserById(Long id) {
+        return users.findById(id).orElse(null);
+    }
+
+    public User updateProfile(User user,
+                              String displayName,
+                              String bio,
+                              String institution,
+                              String researchInterests,
+                              Boolean profilePublic,
+                              Set<String> academyAffiliations) {
+        user.setDisplayName(displayName == null ? null : displayName.trim());
+        user.setBio(bio == null ? null : bio.trim());
+        user.setInstitution(institution == null ? null : institution.trim());
+        user.setResearchInterests(researchInterests == null ? null : researchInterests.trim());
+        if (profilePublic != null) user.setProfilePublic(profilePublic);
+
+        if (academyAffiliations != null) {
+            var normalized = academyAffiliations.stream()
+                    .map(String::trim)
+                    .filter(s -> !s.isBlank())
+                    .collect(Collectors.toSet());
+            user.setAcademyAffiliations(normalized);
+        }
+
+        return users.save(user);
     }
 
     public boolean existsByUsername(String username) {

@@ -269,3 +269,87 @@ button:disabled {
     color: #b42318;
     font-weight: 600;
 }
+
+.thumb-media-wrap {
+    position: relative;
+}
+
+.thumb-marker-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.audio-marker {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
+    background: rgba(15, 118, 110, 0.92);
+    color: #fff;
+    border: 2px solid #fff;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    padding: 5px 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.audio-marker-active {
+    background: #f97316;
+    animation: marker-pulse 1s ease-in-out infinite;
+}
+
+@keyframes marker-pulse {
+    0% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.12); }
+    100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+.audio-marker-editor {
+    border: 1px dashed var(--border);
+    padding: 10px;
+    border-radius: 10px;
+    background: #ffffffcc;
+}
+
+.audio-marker-preview-wrap {
+    position: relative;
+    display: inline-block;
+    line-height: 0;
+}
+
+.secondary-btn {
+    margin: 6px 0;
+    background: #64748b;
+}
+
+#audioMarkerImage {
+    width: 100%;
+    max-width: 380px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    cursor: crosshair;
+}
+
+.audio-marker-preview-dot {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #f97316;
+    border: 2px solid #fff;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+.audio-marker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px;
+    margin: 8px 0;
+}
+
+.audio-marker-summary {
+    color: var(--text-soft);
+    font-size: 0.85rem;
+    margin: 6px 0;
+}

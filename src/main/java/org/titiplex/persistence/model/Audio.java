@@ -44,6 +44,15 @@ public class Audio {
     @Column(name = "thumbnail_id", nullable = false)
     private Long thumbnailId;
 
+    @Column(name = "marker_x")
+    private Double markerX;
+
+    @Column(name = "marker_y")
+    private Double markerY;
+
+    @Column(name = "marker_label", length = 120)
+    private String markerLabel;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
             name = "author_id",

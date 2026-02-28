@@ -68,6 +68,25 @@
             <button id="uploadAudio" type="button" disabled>Upload recording</button>
 
             <div class="field" style="margin-top:10px;">
+                <label>Attach marker to this image</label>
+                <div class="audio-marker-editor">
+                    <div class="audio-marker-preview-wrap">
+                        <img id="audioMarkerImage" alt="Thumbnail preview for marker"/>
+                        <div id="audioMarkerPreviewDot" class="audio-marker-preview-dot" style="display:none;" aria-hidden="true"></div>
+                    </div>
+                    <p id="audioMarkerHint" class="text">Click on the image to place a marker.</p>
+                    <p id="audioMarkerEditState" class="text">Marker mode: new upload</p>
+                    <div class="audio-marker-grid">
+                        <input id="audioMarkerX" type="number" step="0.01" min="0" max="100" placeholder="X %"/>
+                        <input id="audioMarkerY" type="number" step="0.01" min="0" max="100" placeholder="Y %"/>
+                        <input id="audioMarkerLabel" placeholder="Label (ex: Personnage A)"/>
+                    </div>
+                    <button id="audioClearMarker" type="button">Clear marker</button>
+                    <button id="saveMarkerForExistingAudio" type="button">Save marker on selected audio</button>
+                </div>
+            </div>
+
+            <div class="field" style="margin-top:10px;">
                 <label for="audioFile">Upload existing audio</label>
                 <input id="audioFile" type="file" accept="audio/*"/>
             </div>
@@ -75,6 +94,8 @@
 
             <p id="audioErr" class="error"></p>
         </div>
+
+        <div id="audioList"></div>
     </div>
 </main>
 

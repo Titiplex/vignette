@@ -17,6 +17,9 @@ import java.util.List;
 @RequestMapping("/api")
 public class AudioApiController {
 
+    public record UpdateMarkerRequest(Double markerX, Double markerY, String markerLabel) {
+    }
+
     private final AudioService audioService;
     private final UserService userService;
 
@@ -45,13 +48,22 @@ public class AudioApiController {
             @PathVariable Long thumbId,
             @RequestParam(defaultValue = "") String title,
             @RequestParam(required = false) Integer idx,
+            @RequestParam(required = false) Double markerX,
+            @RequestParam(required = false) Double markerY,
+            @RequestParam(defaultValue = "") String markerLabel,
             @RequestPart("audio") MultipartFile audio,
             Authentication auth
     ) throws Exception {
 
         Long authorId = userService.getUserByUsername(auth.getName()).getId();
-        Long id = audioService.createAudio(thumbId, title, idx, authorId, audio);
+        Long id = audioService.createAudio(thumbId, title, idx, authorId, audio, markerX, markerY, markerLabel);
         return new CreateAudioResponse(id);
+    }
+
+    @PreAuthorize("hasRole('USER') and @scenarioSecurity.isOwnerByAudioId(#audioId, authentication.name, @audioService)")
+    @PatchMapping("/audios/{audioId}/marker")
+    public void updateMarker(@PathVariable Long audioId, @RequestBody UpdateMarkerRequest req) {
+        audioService.updateMarker(audioId, req.markerX(), req.markerY(), req.markerLabel());
     }
 
     @PreAuthorize("hasRole('USER') and @scenarioSecurity.isOwnerByAudioId(#audioId, authentication.name, @audioService)")

@@ -25,7 +25,7 @@ public class AudioService {
 
     public List<AudioRowDto> listForThumbnail(Long thumbnailId) {
         return audios.findByThumbnailIdOrderByIdxAsc(thumbnailId).stream()
-                .map(a -> new AudioRowDto(a.getId(), a.getTitle(), a.getIdx(), a.getMime()))
+                .map(a -> new AudioRowDto(a.getId(), a.getTitle(), a.getIdx(), a.getMime(), a.getMarkerX(), a.getMarkerY(), a.getMarkerLabel()))
                 .toList();
     }
 
@@ -38,7 +38,10 @@ public class AudioService {
                             String title,
                             Integer idx,
                             Long authorId,
-                            MultipartFile audioFile) throws Exception {
+                            MultipartFile audioFile,
+                            Double markerX,
+                            Double markerY,
+                            String markerLabel) throws Exception {
 
         if (audioFile == null || audioFile.isEmpty()) {
             throw new IllegalArgumentException("audio is empty");
@@ -55,6 +58,19 @@ public class AudioService {
             mime = "audio/webm";
         }
 
+
+        if (markerX != null && (markerX < 0.0 || markerX > 100.0)) {
+            throw new IllegalArgumentException("markerX must be between 0 and 100");
+        }
+
+        if (markerY != null && (markerY < 0.0 || markerY > 100.0)) {
+            throw new IllegalArgumentException("markerY must be between 0 and 100");
+        }
+
+        if ((markerX == null) != (markerY == null)) {
+            throw new IllegalArgumentException("markerX and markerY must be both set or both empty");
+        }
+
         Thumbnail t = thumbnailService.getThumbnailById(thumbnailId);
 
         int effectiveIdx = (idx != null) ? idx : (audios.maxIdx(thumbnailId) + 1);
@@ -69,6 +85,9 @@ public class AudioService {
         a.setAudioSha256(sha256Hex(bytes));
         a.setTitle((title == null || title.isBlank()) ? ("Audio " + effectiveIdx) : title.trim());
         a.setIdx(effectiveIdx);
+        a.setMarkerX(markerX);
+        a.setMarkerY(markerY);
+        a.setMarkerLabel((markerLabel == null || markerLabel.isBlank()) ? null : markerLabel.trim());
 
         Scenario s = t.getScenario();
 
@@ -78,6 +97,28 @@ public class AudioService {
 
         audios.save(a);
         return a.getId();
+    }
+
+
+    @Transactional
+    public void updateMarker(Long audioId, Double markerX, Double markerY, String markerLabel) {
+        if (markerX != null && (markerX < 0.0 || markerX > 100.0)) {
+            throw new IllegalArgumentException("markerX must be between 0 and 100");
+        }
+
+        if (markerY != null && (markerY < 0.0 || markerY > 100.0)) {
+            throw new IllegalArgumentException("markerY must be between 0 and 100");
+        }
+
+        if ((markerX == null) != (markerY == null)) {
+            throw new IllegalArgumentException("markerX and markerY must be both set or both empty");
+        }
+
+        Audio a = getAudioOrThrow(audioId);
+        a.setMarkerX(markerX);
+        a.setMarkerY(markerY);
+        a.setMarkerLabel((markerLabel == null || markerLabel.isBlank()) ? null : markerLabel.trim());
+        audios.save(a);
     }
 
     @Transactional

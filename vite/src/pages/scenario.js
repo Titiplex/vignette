@@ -31,7 +31,36 @@ async function loadThumbnails(scenarioId) {
     return apiFetch(`/api/scenarios/${encodeURIComponent(scenarioId)}/thumbnails`);
 }
 
-function createAudioItem(audio) {
+let activeMarker = null;
+
+function setMarkerHighlighted(marker, isActive) {
+    if (!marker) return;
+    marker.classList.toggle("audio-marker-active", isActive);
+}
+
+function bindAudioMarker(audioEl, marker) {
+    if (!marker) return;
+
+    audioEl.addEventListener("play", () => {
+        if (activeMarker && activeMarker !== marker) {
+            setMarkerHighlighted(activeMarker, false);
+        }
+        activeMarker = marker;
+        setMarkerHighlighted(marker, true);
+    });
+
+    const clearHighlight = () => {
+        setMarkerHighlighted(marker, false);
+        if (activeMarker === marker) {
+            activeMarker = null;
+        }
+    };
+
+    audioEl.addEventListener("pause", clearHighlight);
+    audioEl.addEventListener("ended", clearHighlight);
+}
+
+function createAudioItem(audio, markerContainer) {
     const row = document.createElement("div");
     row.className = "thumb-audio-item";
 
@@ -45,6 +74,26 @@ function createAudioItem(audio) {
 
     row.appendChild(title);
     row.appendChild(player);
+
+    if (audio.markerX != null && audio.markerY != null) {
+        const marker = document.createElement("button");
+        marker.type = "button";
+        marker.className = "audio-marker";
+        marker.style.left = `${audio.markerX}%`;
+        marker.style.top = `${audio.markerY}%`;
+        marker.title = audio.markerLabel || audio.title || "Audio marker";
+        marker.textContent = audio.markerLabel || `🎧 ${audio.idx}`;
+
+        marker.addEventListener("click", () => {
+            player.currentTime = 0;
+            player.play().catch(() => {
+            });
+        });
+
+        markerContainer.appendChild(marker);
+        bindAudioMarker(player, marker);
+    }
+
     return row;
 }
 
@@ -66,16 +115,26 @@ async function renderThumbs(list) {
 
         wrap.onclick = async () => {
             setSelectedThumbId(t.id);
+            window.dispatchEvent(new CustomEvent("thumbnail-selected"));
             el("audioCard").style.display = "block";
             el("selectedThumb").textContent = `#${t.idx} (id=${t.id})`;
             await loadAudiosForThumb(t.id);
             el("audioOwnerTools").style.display = isOwner ? "block" : "none";
         };
 
+        const mediaWrap = document.createElement("div");
+        mediaWrap.className = "thumb-media-wrap";
+
         const img = document.createElement("img");
         img.src = `/api/thumbnails/${t.id}/content`;
         img.alt = t.title || "";
         img.style.maxWidth = "100%";
+
+        const markerLayer = document.createElement("div");
+        markerLayer.className = "thumb-marker-layer";
+
+        mediaWrap.appendChild(img);
+        mediaWrap.appendChild(markerLayer);
 
         const cap = document.createElement("div");
         cap.className = "caption";
@@ -86,7 +145,7 @@ async function renderThumbs(list) {
         audioList.className = "thumb-audio-list";
         audioList.textContent = "Loading audios...";
 
-        wrap.appendChild(img);
+        wrap.appendChild(mediaWrap);
         wrap.appendChild(cap);
         wrap.appendChild(audioList);
         grid.appendChild(wrap);
@@ -94,11 +153,12 @@ async function renderThumbs(list) {
         try {
             const audios = await loadAudiosForThumb(t.id);
             audioList.innerHTML = "";
+            markerLayer.innerHTML = "";
             if (!audios.length) {
                 audioList.textContent = "No audio yet.";
             } else {
                 for (const a of audios) {
-                    audioList.appendChild(createAudioItem(a));
+                    audioList.appendChild(createAudioItem(a, markerLayer));
                 }
             }
         } catch (e) {

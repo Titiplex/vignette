@@ -3,7 +3,7 @@ name: Publish API docs
 on:
   workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
 
 permissions:
   contents: read
@@ -32,8 +32,7 @@ jobs:
       - name: Build and start API
         run: |
           mvn -B -DskipTests package
-          mvn -B spring-boot:run > spring.log 2>&1 &
-          echo $! > spring.pid
+          mvn -B -DskipTests spring-boot:start
 
       - name: Wait for API and export OpenAPI
         run: |
@@ -44,15 +43,11 @@ jobs:
             sleep 2
           done
           echo "API not ready" >&2
-          tail -n 200 spring.log >&2 || true
           exit 1
 
       - name: Stop API
         if: always()
-        run: |
-          if [ -f spring.pid ]; then
-            kill "$(cat spring.pid)" || true
-          fi
+        run: mvn -B -DskipTests spring-boot:stop
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

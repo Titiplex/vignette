@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Language Details – Vignettes</title>
+    <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+<header class="main-header">
+    <div class="sticky-header">
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/pages/languages.html">Languages</a></li>
+            <li><a href="/pages/scenarios.html">Scenarios</a></li>
+            <li id="createScenarioLink"><a href="/pages/create_scenario.html">Create scenario</a></li>
+            <li id="profileLink"><a href="/pages/user.html">My profile</a></li>
+            <li><a href="/pages/login.html" id="loginLink">Login</a></li>
+        </ul>
+    </div>
+    <div class="card">
+        <h1>Language Details</h1>
+        <h2 id="name"></h2>
+    </div>
+</header>
+
+<main>
+    <div class="card table-wrap">
+        <table class="table">
+            <tbody>
+            <tr>
+                <th>Family</th>
+                <td id="family"></td>
+            </tr>
+            <tr>
+                <th>Parent</th>
+                <td id="parent"></td>
+            </tr>
+            <tr>
+                <th>Level</th>
+                <td id="level"></td>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td id="desc"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <p id="info" class="error"></p>
+    <div class="card table-wrap">
+        <h2>Related Scenarios</h2>
+        <p id="nb_scenarios"></p>
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Author</th>
+                <th>Creation Date</th>
+            </tr>
+            </thead>
+            <tbody id="scenarios"></tbody>
+        </table>
+    </div>
+</main>
+<script type="module" src="/src/pages/language.js"></script>
+</body>
+</html>

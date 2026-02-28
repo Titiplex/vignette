@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Create Scenario – Vignettes</title>
+    <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+<header class="main-header">
+    <div class="sticky-header">
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/pages/languages.html">Languages</a></li>
+            <li><a href="/pages/scenarios.html">Scenarios</a></li>
+            <li id="createScenarioLink"><a href="/pages/create_scenario.html">Create scenario</a></li>
+            <li id="profileLink"><a href="/pages/user.html">My profile</a></li>
+            <li><a href="/pages/login.html" id="loginLink">Login</a></li>
+        </ul>
+    </div>
+    <div class="card">
+        <h1>Create a Scenario</h1>
+        <p class="text">Set up a vignette sequence to collect oral responses in context.</p>
+    </div>
+</header>
+
+<main>
+    <div class="card">
+        <form id="scenarioForm" class="form">
+            <div class="field">
+                <label for="title">Title</label>
+                <input id="title" type="text" name="title" required/>
+            </div>
+
+            <div class="field">
+                <label for="description">Description</label>
+                <textarea id="description" name="description"></textarea>
+            </div>
+
+            <div class="field">
+                <label for="langFilter">Language</label>
+                <input type="text" id="langFilter" placeholder="Search language"/>
+                <select name="languageId" id="langSelect" required>
+                    <option value="" disabled selected>-- choose --</option>
+                </select>
+                <div class="pager">
+                    <button id="langPrev" type="button">Previous</button>
+                    <span id="langPageInfo">Page 1/1</span>
+                    <button id="langNext" type="button">Next</button>
+                </div>
+            </div>
+
+            <div>
+                <button type="submit">Create scenario</button>
+            </div>
+            <p id="error" class="error"></p>
+        </form>
+    </div>
+</main>
+
+<script type="module" src="/src/pages/create_scenario.js"></script>
+</body>
+</html>

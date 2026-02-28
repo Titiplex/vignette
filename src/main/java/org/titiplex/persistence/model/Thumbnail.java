@@ -18,6 +18,12 @@ public class Thumbnail {
     @Column(name = "title", nullable = false, unique = true)
     private String title;
 
+    @Column(name = "idx", nullable = false)
+    private Integer idx;
+
+    @Column(name = "content_type")
+    private String contentType;
+
     @Column(name = "author_id", nullable = false)
     private Long authorId;
 

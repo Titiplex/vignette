@@ -1,45 +1,84 @@
 package org.titiplex.config;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 
 @Configuration
-@EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
     @Bean
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    static class CsrfIfNoAuthHeader implements RequestMatcher {
+        @Override
+        public boolean matches(HttpServletRequest request) {
+            String auth = request.getHeader("Authorization");
+            if (auth != null && auth.startsWith("Bearer ")) return false;
+
+            String method = request.getMethod();
+            boolean stateChanging = !(method.equals("GET") || method.equals("HEAD") || method.equals("OPTIONS"));
+            return stateChanging && request.getRequestURI().startsWith("/api/");
+        }
+    }
+
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    JwtAuthenticationConverter jwtAuthConverter() {
+        var conv = new JwtGrantedAuthoritiesConverter();
+        conv.setAuthoritiesClaimName("roles");
+        conv.setAuthorityPrefix("");
+
+        var jwtConv = new JwtAuthenticationConverter();
+        jwtConv.setJwtGrantedAuthoritiesConverter(conv);
+        return jwtConv;
+    }
+
+    @Bean
+    SecurityFilterChain filterChain(HttpSecurity http, JwtAuthenticationConverter jwtConv) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/register", "/css/**", "/js/**", "/h2-console/**").permitAll()
-                        .requestMatchers("/languages/**", "/language/**").permitAll()
+                        .requestMatchers("/front/**", "/css/**").permitAll()
+                        .requestMatchers("/api/docs/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/languages/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/scenarios/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/users/*/profile").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/users/me/profile").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/scenarios/*/thumbnails").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/thumbnails/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/thumbnails").authenticated()
                         .anyRequest().authenticated()
                 )
-                .formLogin(form -> form
-                        .loginPage("/login")          // page thymeleaf custom
-                        .loginProcessingUrl("/login") // POST du formulaire
-                        .defaultSuccessUrl("/", true)
-                        .failureUrl("/login?error")
-                        .permitAll()
+                // session cookie OK
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                // CSRF cookie -> header X-XSRF-TOKEN
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .requireCsrfProtectionMatcher(new CsrfIfNoAuthHeader())
+                        .ignoringRequestMatchers("/api/auth/**")
                 )
-                .logout(logout -> logout
-                        .logoutUrl("/logout")
-                        .logoutSuccessUrl("/")
-                );
-
-        // H2 console for dev
-        http.csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**"));
-        http.headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin));
+                // JWT bearer OK
+//                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtConv))
+                )
+                // login form non necessary
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable);
 
         return http.build();
     }

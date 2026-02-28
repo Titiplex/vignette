@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Instant;
 import java.util.Set;
 
 @Entity
@@ -21,6 +22,9 @@ public class Scenario {
 
     @Column
     private String description;
+
+    @Column
+    private Instant createdAt;
 
     @Column(name = "author_id")
     private Long author_id;

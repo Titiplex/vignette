@@ -11,6 +11,8 @@ import org.titiplex.persistence.model.User;
 import org.titiplex.persistence.repo.ThumbnailRepository;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 @Service
 public class ThumbnailService {
@@ -31,11 +33,21 @@ public class ThumbnailService {
         Thumbnail thumbnail = new Thumbnail();
         thumbnail.setTitle(title);
         thumbnail.setImageBytes(image.getBytes());
-        thumbnail.setImageSha256(encoder.encode(image.toString()));
+        thumbnail.setImageSha256(encoder.encode(image.toString().substring(0, 72)));
         thumbnail.setScenarioId(scenario.getId());
         thumbnail.setScenario(scenario);
         thumbnail.setAuthorId(user.getId());
         thumbnail.setAuthor(user);
+        thumbnail.setIdx(scenario.getThumbnails().size());
+        thumbnail.setContentType(image.getContentType());
         return repo.save(thumbnail);
+    }
+
+    public List<Thumbnail> listByScenarioId(Long scenarioId) {
+        return repo.getThumbnailsByScenarioId(scenarioId);
+    }
+
+    public Thumbnail getThumbnailById(Long id) {
+        return repo.findById(id).orElseThrow();
     }
 }

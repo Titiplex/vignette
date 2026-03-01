@@ -41,6 +41,7 @@ jobs:
 
       - name: Wait for API and export OpenAPI
         run: |
+          mkdir -p docs
           for i in {1..60}; do
             if curl -fsS http://127.0.0.1:8081/api/docs/openapi -o docs/openapi.json; then
               exit 0

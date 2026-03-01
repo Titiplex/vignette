@@ -3,7 +3,7 @@ name: Publish API docs
 on:
   workflow_dispatch:
   push:
-    branches: ["master"]
+    branches: [ "master" ]
 
 permissions:
   contents: read
@@ -26,30 +26,56 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '23'
+          java-version: "23"
           cache: maven
 
       - name: Build jar
         run: mvn -B -DskipTests package
 
+      # Assumes you set <finalName>${project.artifactId}</finalName> in pom.xml
+      # so the boot jar is target/projet-info.jar (stable, not random).
       - name: Start API (java -jar)
         run: |
-          JAR="$(ls -1 target/*.jar | grep -v 'original' | head -n 1)"
+          JAR="target/projet-info.jar"
           echo "Starting $JAR"
-          nohup java -jar "$JAR" --server.port=8081 > app.log 2>&1 &
+          nohup java -jar "$JAR" \
+            --server.port=8081 \
+            --server.address=0.0.0.0 \
+            > app.log 2>&1 &
           echo $! > app.pid
+
+          # Give JVM a moment
+          sleep 3
+
+          echo "=== java process ==="
+          ps -p "$(cat app.pid)" -o pid,cmd || true
+
+          echo "=== last logs (early) ==="
+          tail -n 120 app.log || true
+
+      - name: Diagnostics (listen ports + ipv4/ipv6)
+        run: |
+          echo "=== listening ports ==="
+          ss -ltnp || true
+
+          echo "=== try curl IPv4 + IPv6 ==="
+          curl -v --max-time 2 http://127.0.0.1:8081/ || true
+          curl -g -v --max-time 2 http://[::1]:8081/ || true
 
       - name: Wait for API and export OpenAPI
         run: |
           mkdir -p docs
-          for i in {1..60}; do
-            if curl -fsS http://127.0.0.1:8081/api/docs/openapi -o docs/openapi.json; then
-              exit 0
-            fi
+          for i in {1..90}; do
+            if curl -fsS http://127.0.0.1:8081/api/docs/openapi -o docs/openapi.json; then exit 0; fi
+            if curl -fsS http://127.0.0.1:8081/v3/api-docs -o docs/openapi.json; then exit 0; fi
+            if curl -fsS http://[::1]:8081/v3/api-docs -o docs/openapi.json; then exit 0; fi
             sleep 2
           done
-          echo "API not ready. Logs:" >&2
-          tail -n 200 app.log >&2 || true
+
+          echo "API not ready. Listening ports:" >&2
+          ss -ltnp >&2 || true
+          echo "Last logs:" >&2
+          tail -n 300 app.log >&2 || true
           exit 1
 
       - name: Stop API
@@ -58,6 +84,13 @@ jobs:
           if [ -f app.pid ]; then
             kill "$(cat app.pid)" || true
           fi
+
+      - name: Upload app logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-log
+          path: app.log
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

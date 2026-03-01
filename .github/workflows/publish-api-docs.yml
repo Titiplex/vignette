@@ -29,10 +29,15 @@ jobs:
           java-version: '23'
           cache: maven
 
-      - name: Build and start API
+      - name: Build jar
+        run: mvn -B -DskipTests package
+
+      - name: Start API (java -jar)
         run: |
-          mvn -B -DskipTests package
-          mvn -B -DskipTests spring-boot:start
+          JAR="$(ls -1 target/*.jar | grep -v 'original' | head -n 1)"
+          echo "Starting $JAR"
+          nohup java -jar "$JAR" --server.port=8081 > app.log 2>&1 &
+          echo $! > app.pid
 
       - name: Wait for API and export OpenAPI
         run: |
@@ -42,12 +47,16 @@ jobs:
             fi
             sleep 2
           done
-          echo "API not ready" >&2
+          echo "API not ready. Logs:" >&2
+          tail -n 200 app.log >&2 || true
           exit 1
 
       - name: Stop API
         if: always()
-        run: mvn -B -DskipTests spring-boot:stop
+        run: |
+          if [ -f app.pid ]; then
+            kill "$(cat app.pid)" || true
+          fi
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

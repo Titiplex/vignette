@@ -36,6 +36,12 @@ public class ThumbnailApiController {
     public record UploadResponse(Long id) {
     }
 
+    /**
+     * Retrieves a list of thumbnails associated with a specific scenario ID.
+     *
+     * @param scenarioId the ID ({@link Long}) of the scenario for which thumbnails are to be retrieved
+     * @return a {@link List} of {@link ThumbnailRowDto} objects representing the thumbnails of the specified scenario
+     */
     // public list
     @GetMapping("/scenarios/{scenarioId}/thumbnails")
     public List<ThumbnailRowDto> list(@PathVariable Long scenarioId) {
@@ -44,6 +50,18 @@ public class ThumbnailApiController {
                 .toList();
     }
 
+    /**
+     * Uploads a thumbnail image for a specified scenario. The method requires proper authorization.
+     * Users with 'ADMIN' role or users with 'USER' role who are owners of the specified scenario can upload thumbnails.
+     *
+     * @param scenarioId the ID ({@link Long}) of the scenario to which the thumbnail is associated
+     * @param title      an optional title for the uploaded thumbnail; defaults to an empty string if not provided
+     * @param image      the image file ({@link MultipartFile}) to be uploaded as a thumbnail; must not be null or empty
+     * @param auth       the authentication object representing the currently authenticated user
+     * @return an {@link UploadResponse} containing the ID of the newly uploaded thumbnail
+     * @throws IOException              if an I/O error occurs during image processing or saving
+     * @throws IllegalArgumentException if the provided image file is null or empty
+     */
     @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and @scenarioSecurity.isOwner(#scenarioId, authentication.name))")
     @PostMapping(value = "/thumbnails", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public UploadResponse upload(@RequestParam Long scenarioId,
@@ -60,6 +78,14 @@ public class ThumbnailApiController {
         return new UploadResponse(saved.getId());
     }
 
+    /**
+     * Retrieves the binary content of a thumbnail image by its ID.
+     *
+     * @param id the ID ({@link Long}) of the thumbnail whose binary content is to be retrieved
+     * @return a {@link ResponseEntity} containing the binary content ( byte array ) of the thumbnail image
+     * with the appropriate content type header, or the default content type
+     * of "application/octet-stream" if none is specified
+     */
     // serve image
     @GetMapping("/thumbnails/{id}/content")
     public ResponseEntity<byte[]> content(@PathVariable Long id) {

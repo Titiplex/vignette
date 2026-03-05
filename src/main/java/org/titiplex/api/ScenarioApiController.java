@@ -32,6 +32,15 @@ public class ScenarioApiController {
     public record CreateScenarioResponse(Long id) {
     }
 
+    /**
+     * Creates a new scenario based on the provided details.
+     *
+     * @param req  the request object {@link CreateScenarioRequest} containing the title, description, and language ID of the scenario
+     * @param auth the authentication object representing the currently authenticated user
+     * @return a response object {@link CreateScenarioResponse} containing the ID of the newly created scenario
+     * @throws IllegalArgumentException if the title or language ID is null, blank, or invalid,
+     *                                  or if a scenario with the same title, language, and author already exists
+     */
     @PreAuthorize("hasRole('USER')")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -57,6 +66,12 @@ public class ScenarioApiController {
         return new CreateScenarioResponse(id);
     }
 
+    /**
+     * Retrieves a specific scenario based on the provided ID.
+     *
+     * @param id ({@link Long}) the unique identifier of the scenario to retrieve
+     * @return a {@link ScenarioDto} representing the scenario matching the provided ID
+     */
     @GetMapping("/{id}")
     public ScenarioDto getOne(@PathVariable Long id) {
         Scenario s = scenarioService.getScenario(id);
@@ -64,11 +79,23 @@ public class ScenarioApiController {
         return ScenarioService.toDto(s);
     }
 
+    /**
+     * Retrieves a list of all scenarios and converts them into DTOs.
+     *
+     * @return a list of {@link ScenarioDto} objects representing all scenarios,
+     * ordered by creation date in descending order
+     */
     @GetMapping
     public List<ScenarioDto> listAll() {
         return scenarioService.listScenarios().stream().map(ScenarioService::toDto).toList();
     }
 
+    /**
+     * Deletes a scenario based on the provided ID. The operation is authorized
+     * for users with the 'ADMIN' role or for the owner of the specified scenario.
+     *
+     * @param id ({@link Long}) the identification of the scenario to delete
+     */
     @PreAuthorize("hasRole('ADMIN') or @scenarioSecurity.isOwner(#id, authentication.name)")
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

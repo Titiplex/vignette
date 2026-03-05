@@ -39,6 +39,14 @@ public class AuthApiController {
     public record LoginResponse(String accessToken, long expiresInSeconds) {
     }
 
+    /**
+     * Authenticates a user based on credentials provided in the request body.
+     * If authentication is successful, generates a JWT token for the user along with session handling.
+     *
+     * @param req     the {@link LoginRequest} containing the username and password
+     * @param request the HTTP servlet request, used for managing session and security context
+     * @return a {@link LoginResponse} containing the generated JWT token and its expiration time
+     */
     @PostMapping("/login")
     public LoginResponse login(@RequestBody LoginRequest req, HttpServletRequest request) {
 
@@ -73,6 +81,11 @@ public class AuthApiController {
         return new LoginResponse(token, expires);
     }
 
+    /**
+     * Logs out the currently authenticated user by invalidating their session and clearing the security context.
+     *
+     * @param request the HTTP servlet request, used to retrieve and invalidate the session
+     */
     @PostMapping("/logout")
     public void logout(HttpServletRequest request) {
         var session = request.getSession(false);
@@ -83,6 +96,14 @@ public class AuthApiController {
     public record MeResponse(Long id, String username, List<String> roles) {
     }
 
+    /**
+     * Retrieves information about the currently authenticated user.
+     * If the authentication is null, returns null.
+     * If the user cannot be found, throws an IllegalStateException.
+     *
+     * @param auth the authentication object representing the currently authenticated user
+     * @return a {@link MeResponse} containing the user's ID, username, and roles
+     */
     @GetMapping("/me")
     public MeResponse me(Authentication auth) {
         if (auth == null) return null;
@@ -98,6 +119,15 @@ public class AuthApiController {
     public record RegisterResponse(Long id, String username) {
     }
 
+    /**
+     * Registers a new user with the provided details.
+     * Ensures that valid data is provided and checks if the username or email is already in use.
+     * If the registration is successful, creates a new user and returns the response containing the user's ID and username.
+     *
+     * @param req the {@link RegisterRequest} containing the username, email, and password
+     * @return a {@link RegisterResponse} containing the ID and username of the newly registered user
+     * @throws IllegalArgumentException if any input validation fails (e.g., missing or invalid fields, or duplicate username/email)
+     */
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     public RegisterResponse register(@RequestBody RegisterRequest req) {

@@ -1,5 +1,12 @@
 package org.titiplex.api;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -13,14 +20,15 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.web.bind.annotation.*;
+import org.titiplex.api.dto.*;
 import org.titiplex.persistence.model.User;
 import org.titiplex.service.UserService;
 
 import java.time.Instant;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "Authentication Endpoint", description = "Endpoints for user authentication and registration.")
 public class AuthApiController {
 
     private final AuthenticationManager authManager;
@@ -33,12 +41,6 @@ public class AuthApiController {
         this.users = users;
     }
 
-    public record LoginRequest(String username, String password) {
-    }
-
-    public record LoginResponse(String accessToken, long expiresInSeconds) {
-    }
-
     /**
      * Authenticates a user based on credentials provided in the request body.
      * If authentication is successful, generates a JWT token for the user along with session handling.
@@ -47,8 +49,40 @@ public class AuthApiController {
      * @param request the HTTP servlet request, used for managing session and security context
      * @return a {@link LoginResponse} containing the generated JWT token and its expiration time
      */
+    @Operation(
+            summary = "Authenticate a user.",
+            description = "Authenticates a user and generate a JWT token for the session."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "User authenticated successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = LoginResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Invalid credentials : username or password incorrect"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Missing or malformed request body"
+            )
+    })
     @PostMapping("/login")
-    public LoginResponse login(@RequestBody LoginRequest req, HttpServletRequest request) {
+    public LoginResponse login(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Username and password to authenticate",
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = LoginRequest.class)
+                    )
+            )
+            @RequestBody LoginRequest req,
+            @Parameter(hidden = true)
+            HttpServletRequest request) {
 
         var auth = authManager.authenticate(
                 new UsernamePasswordAuthenticationToken(req.username(), req.password())
@@ -86,14 +120,26 @@ public class AuthApiController {
      *
      * @param request the HTTP servlet request, used to retrieve and invalidate the session
      */
+    @Operation(
+            summary = "Logout the current user.",
+            description = "Logs out the currently authenticated user by invalidating their session and clearing the security context."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "User logged out successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "User logged out successfully"
+            )
+    })
     @PostMapping("/logout")
-    public void logout(HttpServletRequest request) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void logout(@Parameter(hidden = true) HttpServletRequest request) {
         var session = request.getSession(false);
         if (session != null) session.invalidate();
         SecurityContextHolder.clearContext();
-    }
-
-    public record MeResponse(Long id, String username, List<String> roles) {
     }
 
     /**
@@ -104,19 +150,37 @@ public class AuthApiController {
      * @param auth the authentication object representing the currently authenticated user
      * @return a {@link MeResponse} containing the user's ID, username, and roles
      */
+    @Operation(
+            summary = "Get authenticated user self information.",
+            description = "Retrieves information about the currently authenticated user." +
+                    "If the authentication is null, returns null." +
+                    "If the user cannot be found, throws an IllegalStateException."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Information fetched successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = MeResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "User not authenticated"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Authenticated user not found in database"
+            )
+    })
     @GetMapping("/me")
-    public MeResponse me(Authentication auth) {
+    public MeResponse me(@Parameter(hidden = true) Authentication auth) {
         if (auth == null) return null;
         User u = users.getUserByUsername(auth.getName());
         if (u == null) throw new IllegalStateException("user not found");
         var roles = auth.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
         return new MeResponse(u.getId(), u.getUsername(), roles);
-    }
-
-    public record RegisterRequest(String username, String email, String password) {
-    }
-
-    public record RegisterResponse(Long id, String username) {
     }
 
     /**
@@ -128,9 +192,42 @@ public class AuthApiController {
      * @return a {@link RegisterResponse} containing the ID and username of the newly registered user
      * @throws IllegalArgumentException if any input validation fails (e.g., missing or invalid fields, or duplicate username/email)
      */
+    @Operation(
+            summary = "Registers a new user.",
+            description = "Registers a new user with the provided details." +
+                    "Ensures that valid data is provided and checks if the username or email is already in use." +
+                    "If the registration is successful, creates a new user and returns the response containing the user's ID and username."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Registered successfully.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = RegisterResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid input : missing required fields, password too short, or malformed data"
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Conflict : username or email already exists"
+            )
+    })
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    public RegisterResponse register(@RequestBody RegisterRequest req) {
+    public RegisterResponse register(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "User registration details",
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = RegisterRequest.class)
+                    )
+            )
+            @RequestBody RegisterRequest req
+    ) {
         if (req.username() == null || req.username().isBlank()) throw new IllegalArgumentException("username required");
         if (req.email() == null || req.email().isBlank()) throw new IllegalArgumentException("email required");
         if (req.password() == null || req.password().length() < 8)

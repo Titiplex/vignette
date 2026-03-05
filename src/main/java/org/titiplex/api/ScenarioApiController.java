@@ -1,9 +1,21 @@
 package org.titiplex.api;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.titiplex.api.dto.CreateScenarioRequest;
+import org.titiplex.api.dto.CreateScenarioResponse;
 import org.titiplex.api.dto.ScenarioDto;
 import org.titiplex.persistence.model.Scenario;
 import org.titiplex.service.LanguageService;
@@ -14,6 +26,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/scenarios")
+@Tag(
+        name = "Scenario Endpoint",
+        description = "Endpoints for creating, retrieving, listing, and deleting scenarios."
+)
 public class ScenarioApiController {
 
     private final ScenarioService scenarioService;
@@ -26,12 +42,6 @@ public class ScenarioApiController {
         this.languageService = languageService;
     }
 
-    public record CreateScenarioRequest(String title, String description, String languageId) {
-    }
-
-    public record CreateScenarioResponse(Long id) {
-    }
-
     /**
      * Creates a new scenario based on the provided details.
      *
@@ -41,10 +51,62 @@ public class ScenarioApiController {
      * @throws IllegalArgumentException if the title or language ID is null, blank, or invalid,
      *                                  or if a scenario with the same title, language, and author already exists
      */
+    @Operation(
+            summary = "Create a new scenario",
+            description = "Creates a new scenario with the provided title, description, and language. " +
+                    "Requires authentication and USER role. " +
+                    "A user cannot create duplicate scenarios with the same title and language.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Scenario created successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = CreateScenarioResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Created Scenario Response",
+                                    value = "{\"id\": 42}"
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid input - missing required fields, unknown language ID, or duplicate scenario"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "User not authenticated"
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Access denied - USER role required"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Language not found with the specified ID"
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Conflict - scenario with same title, language, and author already exists"
+            )
+    })
     @PreAuthorize("hasRole('USER')")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CreateScenarioResponse create(@RequestBody CreateScenarioRequest req, Authentication auth) {
+    public CreateScenarioResponse create(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Scenario creation details including title, description, and language ID",
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = CreateScenarioRequest.class)
+                    )
+            )
+            @RequestBody CreateScenarioRequest req,
+
+            @Parameter(hidden = true)
+            Authentication auth) {
         if (req.title() == null || req.title().isBlank()) {
             throw new IllegalArgumentException("Title is required");
         }
@@ -72,8 +134,32 @@ public class ScenarioApiController {
      * @param id ({@link Long}) the unique identifier of the scenario to retrieve
      * @return a {@link ScenarioDto} representing the scenario matching the provided ID
      */
+    @Operation(
+            summary = "Get a scenario by ID",
+            description = "Retrieves detailed information about a specific scenario including its thumbnails and metadata."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Scenario retrieved successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ScenarioDto.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Scenario not found with the specified ID"
+            )
+    })
     @GetMapping("/{id}")
-    public ScenarioDto getOne(@PathVariable Long id) {
+    public ScenarioDto getOne(
+            @Parameter(
+                    description = "ID of the scenario to retrieve",
+                    required = true
+            )
+            @PathVariable Long id
+    ) {
         Scenario s = scenarioService.getScenario(id);
 
         return ScenarioService.toDto(s);
@@ -85,6 +171,20 @@ public class ScenarioApiController {
      * @return a list of {@link ScenarioDto} objects representing all scenarios,
      * ordered by creation date in descending order
      */
+    @Operation(
+            summary = "List all scenarios",
+            description = "Retrieves a list of all scenarios in the system, ordered by creation date (most recent first)."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Scenarios retrieved successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            array = @ArraySchema(schema = @Schema(implementation = ScenarioDto.class))
+                    )
+            )
+    })
     @GetMapping
     public List<ScenarioDto> listAll() {
         return scenarioService.listScenarios().stream().map(ScenarioService::toDto).toList();
@@ -96,10 +196,40 @@ public class ScenarioApiController {
      *
      * @param id ({@link Long}) the identification of the scenario to delete
      */
+    @Operation(
+            summary = "Delete a scenario",
+            description = "Deletes a scenario and all its associated data (thumbnails, audios, etc.). " +
+                    "Only the scenario owner or users with ADMIN role can delete scenarios.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "Scenario deleted successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "User not authenticated"
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - user is not the owner or admin"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Scenario not found with the specified ID"
+            )
+    })
     @PreAuthorize("hasRole('ADMIN') or @scenarioSecurity.isOwner(#id, authentication.name)")
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
+    public void delete(
+            @Parameter(
+                    description = "ID of the scenario to delete",
+                    required = true
+            )
+            @PathVariable Long id
+    ) {
         scenarioService.deleteScenario(id);
     }
 }

@@ -1,5 +1,14 @@
 package org.titiplex.api;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.titiplex.api.dto.PublicUserProfileResponse;
@@ -14,6 +23,10 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
+@Tag(
+        name = "User Profile Endpoint",
+        description = "Endpoints for managing user profiles, including viewing and updating private profiles, and accessing public profiles."
+)
 public class UserApiController {
 
     private final UserService users;
@@ -29,8 +42,52 @@ public class UserApiController {
      * @return the private user profile information encapsulated in a {@link UserProfileResponse}
      * @throws IllegalStateException if the authenticated user cannot be found in the system
      */
+    @Operation(
+            summary = "Get my profile",
+            description = "Retrieves the complete private profile of the currently authenticated user, " +
+                    "including email and all profile settings. Requires authentication.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Profile retrieved successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = UserProfileResponse.class),
+                            examples = @ExampleObject(
+                                    name = "User Profile Example",
+                                    value = """
+                                            {
+                                              "id": 1,
+                                              "username": "john_doe",
+                                              "email": "john@example.com",
+                                              "displayName": "John Doe",
+                                              "bio": "Linguist and researcher",
+                                              "institution": "University Example",
+                                              "researchInterests": "Phonetics, Syntax",
+                                              "profilePublic": true,
+                                              "roles": ["ROLE_USER"],
+                                              "academyAffiliations": "Academy of Sciences"
+                                            }
+                                            """
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "User not authenticated"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Authenticated user not found in database"
+            )
+    })
     @GetMapping("/me/profile")
-    public UserProfileResponse myProfile(Principal principal) {
+    public UserProfileResponse myProfile(
+            @Parameter(hidden = true)
+            Principal principal
+    ) {
         User user = users.getUserByUsername(principal.getName());
         if (user == null) throw new IllegalStateException("user not found");
         return toPrivateProfile(user);
@@ -44,8 +101,61 @@ public class UserApiController {
      * @param principal the security context {@link Principal} providing details about the currently authenticated user
      * @return the updated private user profile information encapsulated in a {@link UserProfileResponse}
      */
+    @Operation(
+            summary = "Update my profile",
+            description = "Updates the profile information of the currently authenticated user. " +
+                    "Allows modification of display name, bio, institution, research interests, " +
+                    "profile visibility, and academy affiliations. Requires authentication.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Profile updated successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = UserProfileResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid input - malformed request data"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "User not authenticated"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Authenticated user not found in database"
+            )
+    })
     @PutMapping("/me/profile")
-    public UserProfileResponse updateMyProfile(@RequestBody UpdateUserProfileRequest request, Principal principal) {
+    public UserProfileResponse updateMyProfile(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Profile update details including display name, bio, institution, research interests, visibility, and affiliations",
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = UpdateUserProfileRequest.class),
+                            examples = @ExampleObject(
+                                    name = "Profile Update Example",
+                                    value = """
+                                            {
+                                              "displayName": "Dr. John Doe",
+                                              "bio": "Senior linguist specializing in phonetics",
+                                              "institution": "MIT Linguistics Department",
+                                              "researchInterests": "Phonetics, Phonology, Syntax",
+                                              "profilePublic": true,
+                                              "academyAffiliations": "International Phonetic Association"
+                                            }
+                                            """
+                            )
+                    )
+            )
+            @RequestBody UpdateUserProfileRequest request,
+
+            @Parameter(hidden = true)
+            Principal principal) {
         User user = users.getUserByUsername(principal.getName());
         if (user == null) throw new IllegalStateException("user not found");
 
@@ -73,8 +183,46 @@ public class UserApiController {
      * @return the public profile information encapsulated in a {@link PublicUserProfileResponse} object
      * @throws UserProfileNotFoundException if the user does not exist or their profile is not public
      */
+    @Operation(
+            summary = "Get public user profile",
+            description = "Retrieves the public profile of a user by their ID. " +
+                    "Only returns data if the user exists and has set their profile to public. " +
+                    "Public profiles exclude sensitive information like email addresses."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Public profile retrieved successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = PublicUserProfileResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Public Profile Example",
+                                    value = """
+                                            {
+                                              "id": 5,
+                                              "username": "jane_smith",
+                                              "displayName": "Dr. Jane Smith",
+                                              "bio": "Syntax researcher",
+                                              "institution": "Harvard University",
+                                              "researchInterests": "Syntax, Semantics",
+                                              "roles": ["ROLE_USER"],
+                                              "academyAffiliations": "Linguistic Society of America"
+                                            }
+                                            """
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User not found or profile is not public"
+            )
+    })
     @GetMapping("/{id}/profile")
-    public PublicUserProfileResponse publicProfile(@PathVariable Long id) {
+    public PublicUserProfileResponse publicProfile(
+            @Parameter(description = "ID of the user whose public profile needs to be retrieved", required = true)
+            @PathVariable Long id
+    ) {
         User user = users.getExistingUserById(id);
         if (user == null || !user.isProfilePublic()) {
             throw new UserProfileNotFoundException();

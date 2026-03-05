@@ -1,5 +1,16 @@
 package org.titiplex.api;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Min;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,6 +26,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api")
+@Tag(
+        name = "Audio Endpoint",
+        description = "Group of endpoints for fetching and managing audio files and associated metadata."
+)
 public class AudioApiController {
 
     public record UpdateMarkerRequest(Double markerX, Double markerY, String markerLabel) {
@@ -34,8 +49,30 @@ public class AudioApiController {
      * @param thumbId ({@link Long}) the ID of the thumbnail for which audio records are to be retrieved
      * @return a {@link List} of {@link AudioRowDto} objects representing the audio records associated with the specified thumbnail
      */
+    @Operation(
+            summary = "Retrieves audio files associated with a Thumbnail.",
+            description = "Returns a list containing all audio files associated with a Thumbnail, joined by ID."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully retrieved audio list",
+                    content = @Content(
+                            mediaType = "application/json",
+                            array = @ArraySchema(schema = @Schema(implementation = AudioRowDto.class)),
+                            examples = @ExampleObject(
+                                    name = "Example Audio List",
+                                    value = "[{\"id\": 1, \"title\": \"Audio 1\", \"idx\": 1, \"mime\": \"png\"},\n {\"id\": 2, \"title\": \"Audio 2\", \"idx\": 2, \"mime\": \"png\"}]\n"
+                            )
+                    )
+            ),
+            @ApiResponse(responseCode = "404", description = "Thumbnail not found")
+    })
     @GetMapping("/thumbnails/{thumbId}/audios")
-    public List<AudioRowDto> list(@PathVariable Long thumbId) {
+    public List<AudioRowDto> list(
+            @Parameter(description = "ID of the thumbnail to retrieve the audio files for", required = true)
+            @PathVariable Long thumbId
+    ) {
         return audioService.listForThumbnail(thumbId);
     }
 
@@ -47,8 +84,26 @@ public class AudioApiController {
      * @return a {@link ResponseEntity} containing the byte array representation of the audio content,
      * the MIME type of the file, and caching headers
      */
+    @Operation(
+            summary = "Retrieves the content of an audio file.",
+            description = "Returns the audio file content as a byte array, with appropriate MIME type and caching headers."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Audio content retrieved successfully",
+                    content = @Content(
+                            mediaType = "audio/*",
+                            schema = @Schema(type = "string", format = "binary")
+                    )
+            ),
+            @ApiResponse(responseCode = "404", description = "Audio not found")
+    })
     @GetMapping("/audios/{id}/content")
-    public ResponseEntity<byte[]> content(@PathVariable Long id) {
+    public ResponseEntity<byte[]> content(
+            @Parameter(description = "ID of the audio file to retrieve", required = true)
+            @PathVariable Long id
+    ) {
         var a = audioService.getAudioOrThrow(id);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(a.getMime()))
@@ -71,16 +126,50 @@ public class AudioApiController {
      * @return a {@link CreateAudioResponse} object containing the ID of the newly created audio record
      * @throws Exception if any error occurs during the upload process
      */
+    @Operation(
+            summary = "Uploads an audio file.",
+            description = "Uploads a new audio file and associates it with a specific thumbnail. " +
+                    "Optionally sets metadata such as title, index, and marker information." +
+                    "Needs the user to be connected and needs the user to be owner/manager for the concerned thumbnail.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Audio uploaded successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = CreateAudioResponse.class)
+                    )
+            ),
+            @ApiResponse(responseCode = "400", description = "Invalid input"),
+            @ApiResponse(responseCode = "403", description = "Access denied")
+    })
     @PreAuthorize("hasRole('USER') and @scenarioSecurity.isOwnerByThumbnailId(#thumbId, authentication.name)")
     @PostMapping(value = "/thumbnails/{thumbId}/audios", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public CreateAudioResponse upload(
+            @Parameter(description = "ID of the thumbnail to associate the audio file with", required = true)
             @PathVariable Long thumbId,
+
+            @Parameter(description = "Title of the audio file")
             @RequestParam(defaultValue = "") String title,
-            @RequestParam(required = false) Integer idx,
+
+            @Parameter(description = "Index of the audio file (order of the audio among all audios associated with a thumbnail.", example = "1")
+            @RequestParam(required = false) @Min(1) Integer idx,
+
+            @Parameter(description = "X-coordinate of the marker.")
             @RequestParam(required = false) Double markerX,
+
+            @Parameter(description = "Y-coordinate of the marker.")
             @RequestParam(required = false) Double markerY,
+
+            @Parameter(description = "Label of the marker.")
             @RequestParam(defaultValue = "") String markerLabel,
+
+            @Parameter(description = "Audio file to upload.", required = true)
             @RequestPart("audio") MultipartFile audio,
+
+            @Parameter(hidden = true)
             Authentication auth
     ) throws Exception {
 
@@ -98,9 +187,26 @@ public class AudioApiController {
      *                - {@code markerY}: the y-coordinate of the marker (must be between 0 and 100, or null if not set)
      *                - {@code markerLabel}: the label for the marker (can be null or blank if not set)
      */
+    @Operation(
+            summary = "Update an audio marker.",
+            description = "Updates the marker for an audio, could it be modifying it or creating it for the first time." +
+                    "One must be connected and be the owner of the concerned audio.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Marker updated successfully"),
+            @ApiResponse(responseCode = "403", description = "Access denied"),
+            @ApiResponse(responseCode = "404", description = "Audio not found")
+    })
     @PreAuthorize("hasRole('USER') and @scenarioSecurity.isOwnerByAudioId(#audioId, authentication.name, @audioService)")
     @PatchMapping("/audios/{audioId}/marker")
-    public void updateMarker(@PathVariable Long audioId, @RequestBody UpdateMarkerRequest req) {
+    public void updateMarker(
+            @Parameter(description = "ID of the audio file whose marker is to be updated", required = true)
+            @PathVariable Long audioId,
+
+
+            @RequestBody UpdateMarkerRequest req
+    ) {
         audioService.updateMarker(audioId, req.markerX(), req.markerY(), req.markerLabel());
     }
 
@@ -110,9 +216,22 @@ public class AudioApiController {
      *
      * @param audioId ({@link Long}) the ID of the audio file to be deleted
      */
+    @Operation(
+            summary = "Deletes an audio file.",
+            description = "Deletes the audio file associated to the given ID. One must have the appropriate permissions (owner/manager of the audio or admin).",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Audio successfully deleted"),
+            @ApiResponse(responseCode = "404", description = "Audio not found"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - not the owner")
+    })
     @PreAuthorize("hasRole('USER') and @scenarioSecurity.isOwnerByAudioId(#audioId, authentication.name, @audioService)")
     @DeleteMapping("/audios/{audioId}")
-    public void delete(@PathVariable Long audioId) {
+    public void delete(
+            @Parameter(description = "ID of the audio file to delete", required = true)
+            @PathVariable Long audioId
+    ) {
         audioService.deleteAudio(audioId);
     }
 }

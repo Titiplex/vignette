@@ -22,6 +22,8 @@ export default defineConfig({
                 scenario: resolve(__dirname, "pages/scenario.html"),
                 scenarios: resolve(__dirname, "pages/scenarios.html"),
                 user: resolve(__dirname, "pages/user.html"),
+                community_discussions: resolve(__dirname, "pages/community_discussions.html"),
+                community_admin: resolve(__dirname, "pages/community_admin.html"),
             }
         }
     }

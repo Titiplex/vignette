@@ -72,6 +72,13 @@ function renderAudioList(list) {
         editBtn.className = "secondary-btn";
         editBtn.addEventListener("click", () => selectAudioForMarkerEdit(a));
 
+        const discussBtn = document.createElement("a");
+        discussBtn.href = `/pages/community_discussions.html?targetType=AUDIO&targetId=${encodeURIComponent(a.id)}`;
+        discussBtn.textContent = "Discuss this audio";
+        discussBtn.className = "secondary-btn";
+        discussBtn.style.display = "inline-block";
+        discussBtn.style.marginLeft = "8px";
+
         const audio = document.createElement("audio");
         audio.controls = true;
         audio.src = `/api/audios/${a.id}/content`;
@@ -79,6 +86,7 @@ function renderAudioList(list) {
         row.appendChild(title);
         row.appendChild(markerInfo);
         row.appendChild(editBtn);
+        row.appendChild(discussBtn);
         row.appendChild(audio);
         box.appendChild(row);
     }

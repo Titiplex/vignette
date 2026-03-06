@@ -39,6 +39,11 @@ async function main() {
 
     name.textContent = data.name ?? "-";
 
+    const discussionLink = document.getElementById("languageDiscussionLink");
+    if (discussionLink) {
+        discussionLink.href = `/pages/community_discussions.html?targetType=LANGUAGE&targetId=${encodeURIComponent(id)}`;
+    }
+
     const data_s = await apiFetch(`/api/languages/${id}/scenarios`);
     const scenarios = data_s ?? [];
     const info = document.getElementById("nb_scenarios");

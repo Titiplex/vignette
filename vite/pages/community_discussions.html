@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Community Discussions – Vignettes</title>
+    <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+<header class="main-header">
+    <div class="sticky-header">
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/pages/languages.html">Languages</a></li>
+            <li><a href="/pages/scenarios.html">Scenarios</a></li>
+            <li><a href="/pages/community_admin.html">Community admin</a></li>
+            <li id="createScenarioLink"><a href="/pages/create_scenario.html">Create scenario</a></li>
+            <li id="profileLink"><a href="/pages/user.html">My profile</a></li>
+            <li><a href="/pages/login.html" id="loginLink">Login</a></li>
+        </ul>
+    </div>
+    <div class="card">
+        <h1>Discussion Workspace</h1>
+        <p id="discussionTarget"></p>
+    </div>
+</header>
+
+<main>
+    <div class="card">
+        <h2>Add a contribution</h2>
+        <div class="field">
+            <label for="contributionType">Contribution type</label>
+            <select id="contributionType">
+                <option value="GENERAL">General</option>
+                <option value="TRANSCRIPTION">Transcription</option>
+                <option value="TRANSLATION">Translation</option>
+                <option value="GLOSS">Gloss</option>
+                <option value="INTERPRETATION">Interpretation</option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="discussionContent">Message</label>
+            <textarea id="discussionContent" rows="4" placeholder="Write your contribution"></textarea>
+        </div>
+        <button id="postDiscussion" type="button">Post</button>
+        <p id="discussionErr" class="error"></p>
+    </div>
+
+    <div class="card">
+        <h2>Messages</h2>
+        <div id="discussionList"></div>
+    </div>
+
+    <div class="card">
+        <h2>Ask for linguist accreditation</h2>
+        <p>Global requests are reviewed by platform admins. Scenario requests are reviewed by scenario owners or admins.</p>
+        <div class="field">
+            <label for="requestScope">Scope</label>
+            <select id="requestScope">
+                <option value="GLOBAL">Global linguist</option>
+                <option value="SCENARIO">Scenario-specific linguist</option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="requestScenarioId">Scenario ID (for local scope)</label>
+            <input id="requestScenarioId" type="number" min="1" placeholder="Scenario id"/>
+        </div>
+        <div class="field">
+            <label for="requestMotivation">Motivation</label>
+            <textarea id="requestMotivation" rows="4" placeholder="Why should we accredit you?"></textarea>
+        </div>
+        <button id="submitAccreditationRequest" type="button">Submit accreditation request</button>
+        <p id="requestErr" class="error"></p>
+    </div>
+</main>
+<script type="module" src="/src/pages/community_discussions.js"></script>
+</body>
+</html>

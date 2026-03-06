@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Community Admin – Vignettes</title>
+    <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+<header class="main-header">
+    <div class="sticky-header">
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/pages/languages.html">Languages</a></li>
+            <li><a href="/pages/scenarios.html">Scenarios</a></li>
+            <li><a href="/pages/community_discussions.html?targetType=LANGUAGE&targetId=abkh1242">Discussions</a></li>
+            <li id="createScenarioLink"><a href="/pages/create_scenario.html">Create scenario</a></li>
+            <li id="profileLink"><a href="/pages/user.html">My profile</a></li>
+            <li><a href="/pages/login.html" id="loginLink">Login</a></li>
+        </ul>
+    </div>
+    <div class="card">
+        <h1>Community Admin</h1>
+        <p>Use global scope for platform-level accreditation and scenario scope for project-level governance.</p>
+    </div>
+</header>
+<main>
+    <div class="card">
+        <h2>Scope selector</h2>
+        <div class="field">
+            <label for="adminScope">Scope</label>
+            <select id="adminScope">
+                <option value="GLOBAL">Global</option>
+                <option value="SCENARIO">Scenario</option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="adminScenarioId">Scenario ID</label>
+            <input id="adminScenarioId" type="number" min="1"/>
+        </div>
+        <button id="reloadAdminData" type="button">Load</button>
+        <p id="adminErr" class="error"></p>
+    </div>
+
+    <div class="card">
+        <h2>Pending requests</h2>
+        <div id="requestsList"></div>
+    </div>
+
+    <div class="card">
+        <h2>Granted accreditations</h2>
+        <div id="accreditationsList"></div>
+    </div>
+
+    <div class="card">
+        <h2>Manual grant</h2>
+        <div class="field">
+            <label for="grantUserId">User ID</label>
+            <input id="grantUserId" type="number" min="1" required/>
+        </div>
+        <div class="field">
+            <label for="grantNote">Note</label>
+            <textarea id="grantNote" rows="3"></textarea>
+        </div>
+        <button id="grantAccreditationBtn" type="button">Grant</button>
+    </div>
+</main>
+<script type="module" src="/src/pages/community_admin.js"></script>
+</body>
+</html>

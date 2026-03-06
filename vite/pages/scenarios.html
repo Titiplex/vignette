@@ -25,6 +25,22 @@
 </header>
 
 <main>
+    <section class="card">
+        <h2>Reusable templates</h2>
+        <p class="text">Reuse scenarios published by other users or publish your own scenarios as templates.</p>
+
+        <div class="template-toolbar">
+            <label class="field" for="templateLanguageFilter">
+                <span>Filter by language id</span>
+                <input id="templateLanguageFilter" type="text" placeholder="ex: fr"/>
+            </label>
+            <button id="templateRefreshBtn" type="button" class="secondary-btn">Refresh templates</button>
+        </div>
+
+        <div id="templatesInfo" class="text"></div>
+        <section id="templatesGrid" class="image-grid"></section>
+    </section>
+
     <div id="scenariosInfo" class="text"></div>
     <section id="scenariosGrid" class="image-grid"></section>
 </main>

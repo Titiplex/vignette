@@ -353,3 +353,21 @@ button:disabled {
     font-size: 0.85rem;
     margin: 6px 0;
 }
+
+.template-toolbar {
+    display: flex;
+    gap: 12px;
+    align-items: end;
+    flex-wrap: wrap;
+}
+
+.template-actions {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.template-actions input {
+    width: 100%;
+}

@@ -2,17 +2,32 @@ import "../style.css";
 import {apiFetch} from "../api/rest.js";
 import {updateHeaderAuth} from "../api/header.js";
 
-updateHeaderAuth().then(() => {});
+updateHeaderAuth().then(() => {
+});
 
 function qp(name, def) {
     const u = new URL(window.location.href);
     return u.searchParams.get(name) ?? def;
 }
 
-function setPage(p) {
+function updateParams(params) {
     const u = new URL(window.location.href);
-    u.searchParams.set("page", String(p));
+    Object.entries(params).forEach(([key, value]) => {
+        if (value === null || value === undefined || value === "") {
+            u.searchParams.delete(key);
+        } else {
+            u.searchParams.set(key, String(value));
+        }
+    });
     window.location.href = u.toString();
+}
+
+function setPage(p) {
+    updateParams({page: p});
+}
+
+function setSearch(q) {
+    updateParams({q, page: 0});
 }
 
 function pageWindow(current, total, windowSize = 2) {
@@ -23,10 +38,25 @@ function pageWindow(current, total, windowSize = 2) {
 
 async function main() {
     const page = Number(qp("page", "0"));
+    const q = qp("q", "").trim();
     const size = 50;
 
-    const data = await apiFetch(`/api/languages?page=${page}&size=${size}`);
-    // Spring Page JSON: { content, number, totalPages, ... }
+    const query = new URLSearchParams({
+        page: String(page),
+        size: String(size),
+    });
+    if (q) query.set("q", q);
+
+    const data = await apiFetch(`/api/languages?${query.toString()}`);
+
+    const searchInput = document.getElementById("languageSearch");
+    if (searchInput) {
+        searchInput.value = q;
+        searchInput.addEventListener("change", () => setSearch(searchInput.value.trim()));
+        searchInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") setSearch(searchInput.value.trim());
+        });
+    }
 
     const tbody = document.getElementById("tbody");
     tbody.innerHTML = "";

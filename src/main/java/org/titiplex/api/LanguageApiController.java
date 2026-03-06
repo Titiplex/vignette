@@ -30,9 +30,10 @@ public class LanguageApiController {
      * @return a {@link Page} list of {@link LanguageRowDto} containing information about languages
      */
     @GetMapping
-    public Page<LanguageRowDto> list(@RequestParam(defaultValue = "0") int page,
+    public Page<LanguageRowDto> list(@RequestParam(defaultValue = "") String q,
+                                     @RequestParam(defaultValue = "0") int page,
                                      @RequestParam(defaultValue = "50") int size) {
-        Page<Language> p = languageService.listLanguages(page, size);
+        Page<Language> p = languageService.listLanguages(q, page, size);
         return p.map(l -> new LanguageRowDto(
                 l.getId(),
                 l.getName(),

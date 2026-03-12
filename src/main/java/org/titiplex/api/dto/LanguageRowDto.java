@@ -1,4 +1,17 @@
 package org.titiplex.api.dto;
 
-public record LanguageRowDto(String id, String name, String level, String family, String parent) {
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(name = "LanguageRowDto", description = "DTO for a single language row or description.")
+public record LanguageRowDto(
+        @Schema(description = "Language ID", example = "1234ung")
+        String id,
+        @Schema(description = "Language name", example = "English")
+        String name,
+        @Schema(description = "Language level", examples = {"Dialect", "Language", "Family"})
+        String level,
+        @Schema(description = "Name of the family to which the language belongs.")
+        String family,
+        @Schema(description = "Name of the parent language/group/family.")
+        String parent) {
 }

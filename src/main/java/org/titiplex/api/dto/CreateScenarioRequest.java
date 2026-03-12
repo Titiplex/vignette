@@ -1,4 +1,13 @@
 package org.titiplex.api.dto;
 
-public record CreateScenarioRequest(String title, String description, String languageId) {
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(name = "CreateScenarioRequest", description = "Request body for creating a new scenario.")
+public record CreateScenarioRequest(
+        @Schema(description = "Title of the new scenario.", example = "My new scenario")
+        String title,
+        @Schema(description = "Description of the new scenario.", example = "This is a new scenario.")
+        String description,
+        @Schema(description = "ID of the language to use for the scenario.", example = "1234ung")
+        String languageId) {
 }

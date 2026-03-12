@@ -1,7 +1,10 @@
 package org.titiplex.service;
 
 import jakarta.transaction.Transactional;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.titiplex.api.dto.LanguageDto;
 import org.titiplex.api.dto.LanguageOptionDto;
@@ -20,15 +23,16 @@ public class LanguageService {
         this.repo = repo;
     }
 
-    public Page<Language> listLanguages(int page, int size) {
+    public Page<Language> listLanguages(String query, int page, int size) {
         int safePage = Math.max(page, 0);
         int safeSize = Math.min(Math.max(size, 1), 200);
         Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by("name").ascending());
-        return repo.findAll(pageable);
+        String normalizedQuery = (query == null || query.isBlank()) ? null : query.trim();
+        return repo.search(normalizedQuery, pageable);
     }
 
     public Page<LanguageDto> listLanguagesDto(int page, int size) {
-        return listLanguages(page, size).map(this::toDto);
+        return listLanguages(null, page, size).map(this::toDto);
     }
 
     public Language getLanguage(String id) {

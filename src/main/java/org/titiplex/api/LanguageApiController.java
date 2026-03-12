@@ -76,6 +76,10 @@ public class LanguageApiController {
             @RequestParam(defaultValue = "50") @Min(1) int size
     ) {
         Page<Language> p = languageService.listLanguages(page, size);
+    public Page<LanguageRowDto> list(@RequestParam(defaultValue = "") String q,
+                                     @RequestParam(defaultValue = "0") int page,
+                                     @RequestParam(defaultValue = "50") int size) {
+        Page<Language> p = languageService.listLanguages(q, page, size);
         return p.map(l -> new LanguageRowDto(
                 l.getId(),
                 l.getName(),

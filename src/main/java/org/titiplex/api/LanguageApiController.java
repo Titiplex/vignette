@@ -35,6 +35,7 @@ public class LanguageApiController {
     /**
      * Retrieves a paginated list of languages with their details.
      *
+     * @param q    the search query to filter languages, default is an empty string if not provided
      * @param page the page number of the data to retrieve, default is 0 if not provided
      * @param size the number of items per page, default is 50 if not provided
      * @return a {@link Page} list of {@link LanguageRowDto} containing information about languages
@@ -60,6 +61,12 @@ public class LanguageApiController {
     @GetMapping
     public Page<LanguageRowDto> list(
             @Parameter(
+                    description = "Search query to filter languages",
+                    schema = @Schema(type = "string", defaultValue = "\"\"")
+            )
+            @RequestParam(defaultValue = "") String q,
+
+            @Parameter(
                     description = "Page number to retrieve.",
                     required = true,
                     example = "15",
@@ -75,10 +82,6 @@ public class LanguageApiController {
             )
             @RequestParam(defaultValue = "50") @Min(1) int size
     ) {
-        Page<Language> p = languageService.listLanguages(page, size);
-    public Page<LanguageRowDto> list(@RequestParam(defaultValue = "") String q,
-                                     @RequestParam(defaultValue = "0") int page,
-                                     @RequestParam(defaultValue = "50") int size) {
         Page<Language> p = languageService.listLanguages(q, page, size);
         return p.map(l -> new LanguageRowDto(
                 l.getId(),

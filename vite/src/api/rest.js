@@ -1,7 +1,16 @@
-let accessToken = null;
+let accessToken = sessionStorage.getItem("accessToken") || null;
 
-export function setAccessToken(t) {
-    accessToken = t;
+export function setAccessToken(token) {
+    accessToken = token;
+    if (token) {
+        sessionStorage.setItem("accessToken", token);
+    } else {
+        sessionStorage.removeItem("accessToken");
+    }
+}
+
+export function getAccessToken() {
+    return accessToken;
 }
 
 function getCookie(name) {

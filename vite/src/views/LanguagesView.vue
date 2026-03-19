@@ -1,7 +1,7 @@
 <script setup>
 import {onMounted, ref, watch} from "vue";
 import {RouterLink, useRoute, useRouter} from "vue-router";
-import {apiFetch} from "../api/rest";
+import {fetchLanguages} from "../api/languages";
 import PaginationControls from "../components/PaginationControls.vue";
 
 const route = useRoute();
@@ -17,6 +17,7 @@ const totalPages = ref(0);
 async function load() {
   loading.value = true;
   error.value = "";
+
   try {
     page.value = Number(route.query.page ?? 0);
     search.value = route.query.q ?? "";
@@ -30,7 +31,7 @@ async function load() {
       params.set("q", search.value.trim());
     }
 
-    const data = await apiFetch(`/api/languages?${params.toString()}`);
+    const data = await fetchLanguages(params);
     languages.value = data.content ?? [];
     totalPages.value = data.totalPages ?? 0;
   } catch (e) {
@@ -44,7 +45,7 @@ function submitSearch() {
   router.push({
     path: "/languages",
     query: {
-      q: search.value || undefined,
+      q: search.value.trim() || undefined,
       page: 0,
     },
   });
@@ -66,54 +67,72 @@ onMounted(load);
 
 <template>
   <main class="page">
-    <h1>Language Catalog</h1>
-    <p><small>Data from Glottolog, 2026</small></p>
+    <section class="section">
+      <div class="section-heading">
+        <div>
+          <h1>Language catalog</h1>
+          <p class="muted">Browse the language inventory used by the platform.</p>
+        </div>
+      </div>
 
-    <div class="toolbar">
-      <input
-          v-model="search"
-          type="text"
-          placeholder="Search languages"
-          @keyup.enter="submitSearch"
-      />
-      <button @click="submitSearch">Search</button>
-    </div>
+      <div class="card search-panel">
+        <div class="toolbar">
+          <input
+              v-model="search"
+              type="text"
+              placeholder="Search languages"
+              @keyup.enter="submitSearch"
+          />
+          <button class="btn btn--primary" @click="submitSearch">Search</button>
+        </div>
+      </div>
 
-    <p v-if="loading">Loading...</p>
-    <p v-else-if="error">{{ error }}</p>
-    <p v-else>
-      {{ totalPages > 0 ? `Page ${page + 1} / ${totalPages}` : "No pages" }}
-    </p>
+      <p v-if="loading" class="muted">Loading languages...</p>
+      <p v-else-if="error" class="error">{{ error }}</p>
+      <template v-else>
+        <div class="results-meta">
+          <span>{{ languages.length }} result(s) on this page</span>
+          <span>{{ totalPages > 0 ? `Page ${page + 1} of ${totalPages}` : "No pages" }}</span>
+        </div>
 
-    <table v-if="!loading && !error" class="table">
-      <thead>
-      <tr>
-        <th>ID</th>
-        <th>Name</th>
-        <th>Level</th>
-        <th>Family</th>
-        <th>Parent</th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr v-for="l in languages" :key="l.id">
-        <td>{{ l.id }}</td>
-        <td>
-          <RouterLink :to="`/languages/${l.id}`">
-            {{ l.name ?? "" }}
-          </RouterLink>
-        </td>
-        <td>{{ l.level ?? "" }}</td>
-        <td>{{ l.family ?? "-" }}</td>
-        <td>{{ l.parent ?? "-" }}</td>
-      </tr>
-      </tbody>
-    </table>
+        <div v-if="languages.length" class="table-wrap card">
+          <table class="table">
+            <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Level</th>
+              <th>Family</th>
+              <th>Parent</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-for="l in languages" :key="l.id">
+              <td>{{ l.id }}</td>
+              <td>
+                <RouterLink :to="`/languages/${l.id}`">
+                  {{ l.name ?? "" }}
+                </RouterLink>
+              </td>
+              <td>{{ l.level ?? "-" }}</td>
+              <td>{{ l.family ?? "-" }}</td>
+              <td>{{ l.parent ?? "-" }}</td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
 
-    <PaginationControls
-        :page="page"
-        :total-pages="totalPages"
-        @go="goToPage"
-    />
+        <div v-else class="card empty-state">
+          <h3>No languages found</h3>
+          <p class="muted">Try another query or clear the search field.</p>
+        </div>
+
+        <PaginationControls
+            :page="page"
+            :total-pages="totalPages"
+            @go="goToPage"
+        />
+      </template>
+    </section>
   </main>
 </template>

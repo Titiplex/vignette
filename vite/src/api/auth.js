@@ -3,10 +3,9 @@ import {apiFetch, setAccessToken} from "./rest.js";
 export async function login(username, password) {
     const data = await apiFetch("/api/auth/login", {
         method: "POST",
-        // body: JSON.stringify({username, password})
-        body: {username, password}
+        body: {username, password},
     });
-    // data = { accessToken: "..." }
+
     setAccessToken(data.accessToken);
     return data;
 }

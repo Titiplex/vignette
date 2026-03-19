@@ -1,44 +1,64 @@
 <template>
   <main class="page">
-    <h1>Vignettes for Endangered Language Preservation</h1>
+    <section class="hero">
+      <div class="hero__content">
+        <span class="eyebrow">Research platform</span>
+        <h1>Build multimedia elicitation scenarios for endangered languages</h1>
+        <p class="hero__text">
+          Vignette helps researchers and communities create image-based scenarios,
+          collect oral responses, and document language use in richer, less translation-driven contexts.
+        </p>
 
-    <p>
-      Build visual scenarios, collect oral recordings, and support fairer multilingual
-      data by documenting linguistic diversity with community-friendly tools.
-    </p>
-
-    <section>
-      <h2>1. Explore language data</h2>
-      <p>
-        Browse the language catalog and navigate language families to anchor your
-        scenario work in rich linguistic context.
-      </p>
-      <RouterLink to="/languages">Open the language catalog</RouterLink>
+        <div class="hero__actions">
+          <RouterLink to="/scenarios" class="btn btn--primary">
+            Browse scenarios
+          </RouterLink>
+          <RouterLink to="/languages" class="btn btn--ghost">
+            Explore languages
+          </RouterLink>
+        </div>
+      </div>
     </section>
 
-    <section>
-      <h2>2. Create scenario vignettes</h2>
-      <p>
-        Create image-based scenario sequences for elicitation and narration tasks
-        adapted to under-resourced and oral-first communities.
-      </p>
-      <RouterLink to="/create-scenario">Create a scenario</RouterLink>
-    </section>
+    <section class="section">
+      <div class="section-heading">
+        <div>
+          <h2>How it works</h2>
+          <p class="muted">
+            A workflow built for documentation, elicitation, and community-friendly collection.
+          </p>
+        </div>
+      </div>
 
-    <section>
-      <h2>3. Record oral responses</h2>
-      <p>
-        For each image, record and upload audio to preserve pronunciation, intonation
-        and local expression patterns.
-      </p>
-    </section>
+      <div class="card-grid">
+        <article class="card">
+          <h3>Explore language data</h3>
+          <p class="text">
+            Browse language entries and related scenario usage to ground your work in an existing catalog.
+          </p>
+        </article>
 
-    <section>
-      <h2>4. Reduce translation bias</h2>
-      <p>
-        By grounding data collection in local narratives rather than direct translation,
-        Vignettes helps reduce translation-driven bias.
-      </p>
+        <article class="card">
+          <h3>Create scenario sequences</h3>
+          <p class="text">
+            Build vignette-based prompts using images that support narrative and situated elicitation.
+          </p>
+        </article>
+
+        <article class="card">
+          <h3>Record oral responses</h3>
+          <p class="text">
+            Attach audio directly to visual prompts to preserve pronunciation, discourse, and local interpretation.
+          </p>
+        </article>
+
+        <article class="card">
+          <h3>Reduce translation bias</h3>
+          <p class="text">
+            Work from scenes and local meaning rather than relying only on direct translation pipelines.
+          </p>
+        </article>
+      </div>
     </section>
   </main>
 </template>

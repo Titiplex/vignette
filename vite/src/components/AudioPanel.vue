@@ -1,6 +1,6 @@
 <script setup>
 import {ref, watch} from "vue";
-import {apiFetch} from "../api/rest";
+import {uploadThumbnailAudio} from "../api/scenarios";
 
 const props = defineProps({
   selectedThumb: {type: Object, default: null},
@@ -12,9 +12,11 @@ const emit = defineEmits(["uploaded"]);
 const audioTitle = ref("");
 const audioFile = ref(null);
 const audioErr = ref("");
+const audioSuccess = ref("");
 const markerX = ref("");
 const markerY = ref("");
 const markerLabel = ref("");
+const isRecording = ref(false);
 
 let mediaRecorder = null;
 let chunks = [];
@@ -26,30 +28,50 @@ function clearMarker() {
   markerLabel.value = "";
 }
 
+function resetFormMessages() {
+  audioErr.value = "";
+  audioSuccess.value = "";
+}
+
 function onFileChange(event) {
   audioFile.value = event.target.files?.[0] ?? null;
 }
 
 async function ensureRecorder() {
   const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+
   mediaRecorder = new MediaRecorder(stream);
+
   mediaRecorder.ondataavailable = (e) => {
-    if (e.data && e.data.size > 0) chunks.push(e.data);
+    if (e.data && e.data.size > 0) {
+      chunks.push(e.data);
+    }
   };
+
   mediaRecorder.onstop = () => {
-    recordedBlob = new Blob(chunks, {type: mediaRecorder.mimeType || "audio/webm"});
+    recordedBlob = new Blob(chunks, {
+      type: mediaRecorder.mimeType || "audio/webm",
+    });
     chunks = [];
+    isRecording.value = false;
   };
 }
 
 async function startRecording() {
-  audioErr.value = "";
+  resetFormMessages();
   recordedBlob = null;
-  if (!mediaRecorder) {
-    await ensureRecorder();
+
+  try {
+    if (!mediaRecorder) {
+      await ensureRecorder();
+    }
+
+    chunks = [];
+    mediaRecorder.start();
+    isRecording.value = true;
+  } catch (e) {
+    audioErr.value = e.message || "Unable to start recording.";
   }
-  chunks = [];
-  mediaRecorder.start();
 }
 
 function stopRecording() {
@@ -62,47 +84,56 @@ function appendMarker(fd) {
   if (markerX.value !== "" && markerY.value !== "") {
     fd.append("markerX", String(Number(markerX.value)));
     fd.append("markerY", String(Number(markerY.value)));
-    fd.append("markerLabel", markerLabel.value);
+    fd.append("markerLabel", markerLabel.value || "");
   }
 }
 
 async function uploadRecording() {
-  if (!props.selectedThumb) throw new Error("No thumbnail selected");
-  if (!recordedBlob) throw new Error("No recording available");
+  resetFormMessages();
 
-  const fd = new FormData();
-  fd.append("title", audioTitle.value || "");
-  fd.append("audio", recordedBlob, "recording.webm");
-  appendMarker(fd);
+  try {
+    if (!props.selectedThumb) throw new Error("No thumbnail selected.");
+    if (!recordedBlob) throw new Error("No recording available.");
 
-  await apiFetch(`/api/thumbnails/${props.selectedThumb.id}/audios`, {
-    method: "POST",
-    body: fd,
-  });
+    const fd = new FormData();
+    fd.append("title", audioTitle.value || "");
+    fd.append("audio", recordedBlob, "recording.webm");
+    appendMarker(fd);
 
-  audioTitle.value = "";
-  clearMarker();
-  emit("uploaded");
+    await uploadThumbnailAudio(props.selectedThumb.id, fd);
+
+    audioTitle.value = "";
+    clearMarker();
+    recordedBlob = null;
+    audioSuccess.value = "Recording uploaded successfully.";
+    emit("uploaded");
+  } catch (e) {
+    audioErr.value = e.message;
+  }
 }
 
 async function uploadExistingAudio() {
-  if (!props.selectedThumb) throw new Error("No thumbnail selected");
-  if (!audioFile.value) throw new Error("Please choose an audio file");
+  resetFormMessages();
 
-  const fd = new FormData();
-  fd.append("title", audioTitle.value || "");
-  fd.append("audio", audioFile.value, audioFile.value.name);
-  appendMarker(fd);
+  try {
+    if (!props.selectedThumb) throw new Error("No thumbnail selected.");
+    if (!audioFile.value) throw new Error("Please choose an audio file.");
 
-  await apiFetch(`/api/thumbnails/${props.selectedThumb.id}/audios`, {
-    method: "POST",
-    body: fd,
-  });
+    const fd = new FormData();
+    fd.append("title", audioTitle.value || "");
+    fd.append("audio", audioFile.value, audioFile.value.name);
+    appendMarker(fd);
 
-  audioTitle.value = "";
-  audioFile.value = null;
-  clearMarker();
-  emit("uploaded");
+    await uploadThumbnailAudio(props.selectedThumb.id, fd);
+
+    audioTitle.value = "";
+    audioFile.value = null;
+    clearMarker();
+    audioSuccess.value = "Audio file uploaded successfully.";
+    emit("uploaded");
+  } catch (e) {
+    audioErr.value = e.message;
+  }
 }
 
 function onImageClick(event) {
@@ -113,48 +144,129 @@ function onImageClick(event) {
   markerY.value = Math.max(0, Math.min(100, y)).toFixed(2);
 }
 
-watch(() => props.selectedThumb, () => {
-  audioErr.value = "";
-  clearMarker();
-});
+watch(
+    () => props.selectedThumb,
+    () => {
+      resetFormMessages();
+      clearMarker();
+      audioTitle.value = "";
+      audioFile.value = null;
+      recordedBlob = null;
+      isRecording.value = false;
+    }
+);
 </script>
 
 <template>
-  <section v-if="selectedThumb" class="card">
-    <h2>Audio recordings</h2>
-    <p>Selected thumbnail: #{{ selectedThumb.idx }} (id={{ selectedThumb.id }})</p>
+  <section v-if="selectedThumb" class="card audio-panel">
+    <div class="section-heading">
+      <div>
+        <h2>Audio workspace</h2>
+        <p class="muted">
+          Selected thumbnail #{{ selectedThumb.idx ?? selectedThumb.id }}
+        </p>
+      </div>
+    </div>
 
     <template v-if="isOwner">
-      <div class="marker-picker">
-        <img
-            :src="`/api/thumbnails/${selectedThumb.id}/content`"
-            alt="Marker picker"
-            class="marker-image"
-            @click="onImageClick"
-        />
-      </div>
+      <div class="audio-panel__grid">
+        <section class="audio-panel__section">
+          <h3>1. Marker placement</h3>
+          <p class="muted">
+            Click on the image to place the audio marker.
+          </p>
 
-      <p>
-        Marker position:
-        {{ markerX || "-" }}%, {{ markerY || "-" }}%
+          <div class="marker-picker">
+            <img
+                :src="`/api/thumbnails/${selectedThumb.id}/content`"
+                alt="Marker picker"
+                class="marker-image"
+                @click="onImageClick"
+            />
+          </div>
+
+          <p class="muted">
+            Marker:
+            <strong>{{ markerX || "-" }}%</strong>,
+            <strong>{{ markerY || "-" }}%</strong>
+          </p>
+
+          <label>
+            Marker label
+            <input v-model="markerLabel" placeholder="Optional marker label"/>
+          </label>
+
+          <button type="button" class="btn btn--ghost" @click="clearMarker">
+            Clear marker
+          </button>
+        </section>
+
+        <section class="audio-panel__section">
+          <h3>2. Audio upload</h3>
+
+          <label>
+            Audio title
+            <input v-model="audioTitle" placeholder="Optional title"/>
+          </label>
+
+          <div class="audio-panel__actions">
+            <button
+                type="button"
+                class="btn btn--primary"
+                :disabled="isRecording"
+                @click="startRecording"
+            >
+              Start recording
+            </button>
+
+            <button
+                type="button"
+                class="btn btn--ghost"
+                :disabled="!isRecording"
+                @click="stopRecording"
+            >
+              Stop
+            </button>
+
+            <button
+                type="button"
+                class="btn btn--primary"
+                @click="uploadRecording"
+            >
+              Upload recording
+            </button>
+          </div>
+
+          <p class="muted">
+            Status:
+            <strong>{{ isRecording ? "Recording..." : "Idle" }}</strong>
+          </p>
+
+          <div class="audio-panel__divider"></div>
+
+          <label>
+            Upload existing audio
+            <input type="file" accept="audio/*" @change="onFileChange"/>
+          </label>
+
+          <button
+              type="button"
+              class="btn btn--primary"
+              @click="uploadExistingAudio"
+          >
+            Upload audio file
+          </button>
+
+          <p v-if="audioSuccess" class="success">{{ audioSuccess }}</p>
+          <p v-if="audioErr" class="error">{{ audioErr }}</p>
+        </section>
+      </div>
+    </template>
+
+    <template v-else>
+      <p class="muted">
+        You can view this scenario, but only the owner can upload audio and place markers.
       </p>
-
-      <input v-model="markerLabel" placeholder="Marker label"/>
-
-      <div class="toolbar">
-        <button type="button" @click="startRecording">Start recording</button>
-        <button type="button" @click="stopRecording">Stop</button>
-        <button type="button" @click="uploadRecording">Upload recording</button>
-      </div>
-
-      <div class="toolbar">
-        <input v-model="audioTitle" placeholder="Audio title"/>
-        <input type="file" accept="audio/*" @change="onFileChange"/>
-        <button type="button" @click="uploadExistingAudio">Upload audio file</button>
-      </div>
-
-      <button type="button" @click="clearMarker">Clear marker</button>
-      <p v-if="audioErr" class="error">{{ audioErr }}</p>
     </template>
   </section>
 </template>

@@ -9,26 +9,33 @@ const emit = defineEmits(["select"]);
 </script>
 
 <template>
-  <div class="card thumb-card" :class="{ selected }" @click="emit('select', thumb)">
+  <article
+      class="card thumb-card"
+      :class="{ selected }"
+      @click="emit('select', thumb)"
+  >
     <img
         :src="`/api/thumbnails/${thumb.id}/content`"
-        :alt="thumb.title || ''"
+        :alt="thumb.title || `Thumbnail ${thumb.id}`"
         class="thumb-preview"
     />
 
-    <div class="caption">
-      #{{ thumb.idx ?? "?" }} — {{ thumb.title || `thumb ${thumb.id}` }}
-    </div>
+    <div class="thumb-card__body">
+      <h3 class="thumb-card__title">
+        {{ thumb.title || `Thumbnail #${thumb.idx ?? thumb.id}` }}
+      </h3>
 
-    <div class="thumb-audio-list">
-      <p v-if="!audios.length">No audio yet.</p>
+      <p class="thumb-card__meta">
+        <strong>Index:</strong> {{ thumb.idx ?? "-" }}
+      </p>
 
-      <div v-for="a in audios" :key="a.id" class="thumb-audio-item">
-        <div class="thumb-audio-title">
-          #{{ a.idx }} — {{ a.title || "Untitled audio" }}
-        </div>
-        <audio controls :src="`/api/audios/${a.id}/content`"/>
-      </div>
+      <p class="thumb-card__meta">
+        <strong>Audio clips:</strong> {{ audios.length }}
+      </p>
+
+      <p class="thumb-card__hint">
+        Click to manage audio and marker placement.
+      </p>
     </div>
-  </div>
+  </article>
 </template>

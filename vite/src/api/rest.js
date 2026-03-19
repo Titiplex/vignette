@@ -25,22 +25,24 @@ export async function apiFetch(path, options = {}) {
     headers.set("Accept", "application/json");
 
     let body = options.body;
+    const method = (options.method || "GET").toUpperCase();
 
-    // JSON stringify
     const isFormData = body instanceof FormData;
     const isBlob = body instanceof Blob;
     const isString = typeof body === "string";
 
     if (body != null && !isFormData && !isBlob && !isString) {
-        if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+        if (!headers.has("Content-Type")) {
+            headers.set("Content-Type", "application/json");
+        }
         body = JSON.stringify(body);
     }
 
-    if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
+    if (accessToken) {
+        headers.set("Authorization", `Bearer ${accessToken}`);
+    }
 
-    // CSRF cookie/session
     const xsrf = getCookie("XSRF-TOKEN");
-    const method = (options.method || "GET").toUpperCase();
     const stateChanging = !["GET", "HEAD", "OPTIONS"].includes(method);
     if (stateChanging && xsrf && !headers.has("X-XSRF-TOKEN")) {
         headers.set("X-XSRF-TOKEN", decodeURIComponent(xsrf));
@@ -48,14 +50,27 @@ export async function apiFetch(path, options = {}) {
 
     const res = await fetch(path, {
         ...options,
+        method,
         headers,
         body,
         credentials: "include",
     });
 
     if (!res.ok) {
-        const txt = await res.text().catch(() => "");
-        throw new Error(txt || `HTTP ${res.status}`);
+        let message = `HTTP ${res.status}`;
+        try {
+            const ct = res.headers.get("content-type") || "";
+            if (ct.includes("application/json")) {
+                const data = await res.json();
+                message = data.message || data.error || JSON.stringify(data);
+            } else {
+                const text = await res.text();
+                if (text) message = text;
+            }
+        } catch {
+            // ignore parse issues
+        }
+        throw new Error(message);
     }
 
     if (res.status === 204) return null;

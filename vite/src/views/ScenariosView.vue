@@ -1,6 +1,6 @@
 <script setup>
 import {computed, onMounted, ref} from "vue";
-import {apiFetch} from "../api/rest";
+import {fetchScenarios, fetchScenarioThumbnails} from "../api/scenarios";
 import ScenarioCard from "../components/ScenarioCard.vue";
 
 const scenarios = ref([]);
@@ -15,30 +15,39 @@ const filtered = computed(() => {
 
   return scenarios.value.filter((s) => {
     const title = (s.title ?? "").toLowerCase();
-    const language = (s.languageId ?? "").toLowerCase();
+    const language = String(s.languageId ?? "").toLowerCase();
     const author = (s.authorUsername ?? "").toLowerCase();
-    return title.includes(q) || language.includes(q) || author.includes(q);
+    const description = (s.description ?? "").toLowerCase();
+
+    return (
+        title.includes(q) ||
+        language.includes(q) ||
+        author.includes(q) ||
+        description.includes(q)
+    );
   });
 });
 
 async function load() {
   loading.value = true;
   error.value = "";
+
   try {
-    const data = await apiFetch("/api/scenarios");
+    const data = await fetchScenarios();
     scenarios.value = Array.isArray(data) ? data : [];
 
     const map = {};
     await Promise.all(
         scenarios.value.map(async (s) => {
           try {
-            const thumbs = await apiFetch(`/api/scenarios/${s.id}/thumbnails`);
+            const thumbs = await fetchScenarioThumbnails(s.id);
             map[s.id] = thumbs?.[0]?.id ?? null;
           } catch {
             map[s.id] = null;
           }
         })
     );
+
     previewMap.value = map;
   } catch (e) {
     error.value = e.message;
@@ -52,22 +61,41 @@ onMounted(load);
 
 <template>
   <main class="page">
-    <h1>Open Scenario Gallery</h1>
-    <p>Browse all published scenarios and open one to view its thumbnails and audio recordings.</p>
+    <section class="section">
+      <div class="section-heading">
+        <div>
+          <h1>Scenario gallery</h1>
+          <p class="muted">
+            Browse published scenarios and open them to view thumbnails and audio recordings.
+          </p>
+        </div>
+      </div>
 
-    <input v-model="search" placeholder="Search scenarios"/>
+      <div class="card search-panel">
+        <input v-model="search" placeholder="Search scenarios"/>
+      </div>
 
-    <p v-if="loading">Loading...</p>
-    <p v-else-if="error">{{ error }}</p>
-    <p v-else>{{ filtered.length }} scenario(s) available</p>
+      <p v-if="loading" class="muted">Loading scenarios...</p>
+      <p v-else-if="error" class="error">{{ error }}</p>
+      <template v-else>
+        <div class="results-meta">
+          <span>{{ filtered.length }} scenario(s)</span>
+        </div>
 
-    <section class="card-grid">
-      <ScenarioCard
-          v-for="s in filtered"
-          :key="s.id"
-          :scenario="s"
-          :preview-id="previewMap[s.id]"
-      />
+        <section v-if="filtered.length" class="card-grid">
+          <ScenarioCard
+              v-for="s in filtered"
+              :key="s.id"
+              :scenario="s"
+              :preview-id="previewMap[s.id]"
+          />
+        </section>
+
+        <div v-else class="card empty-state">
+          <h3>No scenarios found</h3>
+          <p class="muted">Try another search query.</p>
+        </div>
+      </template>
     </section>
   </main>
 </template>

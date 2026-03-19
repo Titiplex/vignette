@@ -1,8 +1,9 @@
 <script setup>
-import AppHeader from "./components/AppHeader.vue";
+import AppShell from "./layouts/AppShell.vue";
 </script>
 
 <template>
-  <AppHeader/>
-  <router-view/>
+  <AppShell>
+    <router-view/>
+  </AppShell>
 </template>

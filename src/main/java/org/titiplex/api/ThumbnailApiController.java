@@ -17,8 +17,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.titiplex.api.dto.ApiError;
 import org.titiplex.api.dto.ThumbnailRowDto;
 import org.titiplex.api.dto.UploadResponse;
+import org.titiplex.api.security.ApiAccess;
+import org.titiplex.api.security.ApiAccessLevel;
+import org.titiplex.api.security.PublicOperation;
 import org.titiplex.persistence.model.Scenario;
 import org.titiplex.persistence.model.Thumbnail;
 import org.titiplex.persistence.model.User;
@@ -30,9 +34,10 @@ import java.io.IOException;
 import java.util.List;
 
 @RestController
+@RestControllerAdvice
 @RequestMapping("/api")
 @Tag(
-        name = "Thumbnail Endpoint",
+        name = "Thumbnail",
         description = "Endpoints for managing thumbnail images associated with scenarios, including listing, uploading, and retrieving thumbnail content."
 )
 public class ThumbnailApiController {
@@ -55,8 +60,9 @@ public class ThumbnailApiController {
      */
     @Operation(
             summary = "List thumbnails for a scenario",
-            description = "Retrieves all thumbnails associated with a specific scenario, ordered by their index."
+            description = "Returns all thumbnails associated with a specific scenario, ordered by their index."
     )
+    @PublicOperation
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -72,13 +78,14 @@ public class ThumbnailApiController {
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Scenario not found with the specified ID"
+                    description = "Scenario not found with the specified ID",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             )
     })
     @GetMapping("/scenarios/{scenarioId}/thumbnails")
     public List<ThumbnailRowDto> list(
             @Parameter(
-                    description = "ID of the scenario to retrieve thumbnails for",
+                    description = "ID of the scenario to retrieve thumbnails for.",
                     required = true
             )
             @PathVariable Long scenarioId
@@ -102,10 +109,12 @@ public class ThumbnailApiController {
      */
     @Operation(
             summary = "Upload a thumbnail image",
-            description = "Uploads a new thumbnail image for a scenario. " +
-                    "Requires authentication and either ADMIN role or ownership of the scenario. " +
-                    "The image will be processed and associated with the specified scenario.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            description = """
+                    Uploads a thumbnail image for a scenario.
+                    
+                    Request content type:
+                     - multipart/form-data
+                    """
     )
     @ApiResponses({
             @ApiResponse(
@@ -122,38 +131,50 @@ public class ThumbnailApiController {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Invalid input - missing or empty image file"
+                    description = "Invalid input : missing or empty image file",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "User not authenticated"
+                    description = "User not authenticated",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             ),
             @ApiResponse(
                     responseCode = "403",
-                    description = "Forbidden - user is not the scenario owner or admin"
+                    description = "Forbidden : user is not the scenario owner or admin",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Scenario not found with the specified ID"
+                    description = "Scenario not found with the specified ID",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             ),
             @ApiResponse(
                     responseCode = "415",
-                    description = "Unsupported media type - invalid image format"
+                    description = "Unsupported media type : invalid image format",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             ),
             @ApiResponse(
                     responseCode = "500",
-                    description = "Internal server error - I/O error during image processing"
+                    description = "Internal server error : I/O error during image processing",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             )
     })
+    @ApiAccess(
+            level = ApiAccessLevel.OWNER_OR_ADMIN,
+            rule = "Requires authentication. Authorization: scenario owner or ADMIN only.",
+            ownerResource = "scenario"
+    )
+    @SecurityRequirement(name = "bearerAuth")
     @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and @scenarioSecurity.isOwner(#scenarioId, authentication.name))")
-    @PostMapping(value = "/thumbnails", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/scenarios/{scenarioId}/thumbnails", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     public UploadResponse upload(
             @Parameter(
                     description = "ID of the scenario to associate the thumbnail with",
                     required = true
             )
-            @RequestParam Long scenarioId,
+            @PathVariable Long scenarioId,
 
             @Parameter(
                     description = "Optional title for the thumbnail",
@@ -191,9 +212,9 @@ public class ThumbnailApiController {
      */
     @Operation(
             summary = "Get thumbnail image content",
-            description = "Retrieves the binary content of a thumbnail image with appropriate content type headers and caching. " +
-                    "Returns the raw image data as bytes."
+            description = "Returns the raw thumbnail content with the appropriate MIME type and cache headers."
     )
+    @PublicOperation
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",

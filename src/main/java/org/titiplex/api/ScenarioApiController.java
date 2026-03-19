@@ -14,9 +14,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.titiplex.api.dto.ApiError;
 import org.titiplex.api.dto.CreateScenarioRequest;
 import org.titiplex.api.dto.CreateScenarioResponse;
 import org.titiplex.api.dto.ScenarioDto;
+import org.titiplex.api.security.ApiAccess;
+import org.titiplex.api.security.ApiAccessLevel;
+import org.titiplex.api.security.PublicOperation;
+import org.titiplex.api.security.UserOperation;
 import org.titiplex.persistence.model.Scenario;
 import org.titiplex.service.LanguageService;
 import org.titiplex.service.ScenarioService;
@@ -25,9 +30,10 @@ import org.titiplex.service.UserService;
 import java.util.List;
 
 @RestController
+@RestControllerAdvice
 @RequestMapping("/api/scenarios")
 @Tag(
-        name = "Scenario Endpoint",
+        name = "Scenario",
         description = "Endpoints for creating, retrieving, listing, and deleting scenarios."
 )
 public class ScenarioApiController {
@@ -53,11 +59,9 @@ public class ScenarioApiController {
      */
     @Operation(
             summary = "Create a new scenario",
-            description = "Creates a new scenario with the provided title, description, and language. " +
-                    "Requires authentication and USER role. " +
-                    "A user cannot create duplicate scenarios with the same title and language.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            description = "Creates a new scenario for the authenticated user."
     )
+    @UserOperation
     @ApiResponses({
             @ApiResponse(
                     responseCode = "201",
@@ -73,26 +77,30 @@ public class ScenarioApiController {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Invalid input - missing required fields, unknown language ID, or duplicate scenario"
+                    description = "Invalid input : missing required fields, unknown language ID, or duplicate scenario",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "User not authenticated"
+                    description = "User not authenticated",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             ),
             @ApiResponse(
                     responseCode = "403",
-                    description = "Access denied - USER role required"
+                    description = "Access denied : USER role required",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Language not found with the specified ID"
+                    description = "Language not found with the specified ID",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             ),
             @ApiResponse(
                     responseCode = "409",
-                    description = "Conflict - scenario with same title, language, and author already exists"
+                    description = "Conflict : scenario with same title, language, and author already exists",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             )
     })
-    @PreAuthorize("hasRole('USER')")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CreateScenarioResponse create(
@@ -138,6 +146,7 @@ public class ScenarioApiController {
             summary = "Get a scenario by ID",
             description = "Retrieves detailed information about a specific scenario including its thumbnails and metadata."
     )
+    @PublicOperation
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -149,7 +158,8 @@ public class ScenarioApiController {
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Scenario not found with the specified ID"
+                    description = "Scenario not found with the specified ID",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             )
     })
     @GetMapping("/{id}")
@@ -175,6 +185,7 @@ public class ScenarioApiController {
             summary = "List all scenarios",
             description = "Retrieves a list of all scenarios in the system, ordered by creation date (most recent first)."
     )
+    @PublicOperation
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -198,9 +209,7 @@ public class ScenarioApiController {
      */
     @Operation(
             summary = "Delete a scenario",
-            description = "Deletes a scenario and all its associated data (thumbnails, audios, etc.). " +
-                    "Only the scenario owner or users with ADMIN role can delete scenarios.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            description = "Deletes a scenario and all its associated data (thumbnails, audios, etc.)."
     )
     @ApiResponses({
             @ApiResponse(
@@ -209,17 +218,26 @@ public class ScenarioApiController {
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "User not authenticated"
+                    description = "User not authenticated",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             ),
             @ApiResponse(
                     responseCode = "403",
-                    description = "Forbidden - user is not the owner or admin"
+                    description = "Forbidden : user is not the owner or admin",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Scenario not found with the specified ID"
+                    description = "Scenario not found with the specified ID",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             )
     })
+    @ApiAccess(
+            level = ApiAccessLevel.OWNER_OR_ADMIN,
+            rule = "Requires authentication. Authorization: scenario owner or ADMIN only.",
+            ownerResource = "scenario"
+    )
+    @SecurityRequirement(name = "bearerAuth")
     @PreAuthorize("hasRole('ADMIN') or @scenarioSecurity.isOwner(#id, authentication.name)")
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

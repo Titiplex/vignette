@@ -11,10 +11,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Min;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
-import org.titiplex.api.dto.LanguageDto;
-import org.titiplex.api.dto.LanguageOptionDto;
-import org.titiplex.api.dto.LanguageRowDto;
-import org.titiplex.api.dto.ScenarioDto;
+import org.titiplex.api.dto.*;
+import org.titiplex.api.security.PublicOperation;
 import org.titiplex.persistence.model.Language;
 import org.titiplex.service.LanguageService;
 import org.titiplex.service.ScenarioService;
@@ -22,8 +20,9 @@ import org.titiplex.service.ScenarioService;
 import java.util.List;
 
 @RestController
+@RestControllerAdvice
 @RequestMapping("/api/languages")
-@Tag(name = "Language objects Endpoint", description = "Endpoints for managing available language.")
+@Tag(name = "Language", description = "Endpoints for listing and retrieving language data.")
 public class LanguageApiController {
 
     private final LanguageService languageService;
@@ -44,6 +43,7 @@ public class LanguageApiController {
             summary = "Lists available languages.",
             description = "Returns a paginated list of languages, including their details."
     )
+    @PublicOperation
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -55,7 +55,8 @@ public class LanguageApiController {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Invalid page number or size"
+                    description = "Invalid page number or size",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             )
     })
     @GetMapping
@@ -99,9 +100,10 @@ public class LanguageApiController {
      * @return a {@link LanguageDto} object containing detailed information about the specified language
      */
     @Operation(
-            summary = "Retrieves a language by ID.",
+            summary = "Get a language by ID.",
             description = "Returns a language object with its details based on the provided ID."
     )
+    @PublicOperation
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -113,7 +115,8 @@ public class LanguageApiController {
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Language not found with the specified ID"
+                    description = "Language not found with the specified ID",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             )
     })
     @GetMapping("/{id}")
@@ -133,14 +136,17 @@ public class LanguageApiController {
      * @return a paginated list of {@link  LanguageOptionDto} containing the language options
      */
     @Operation(
-            summary = "Search for language options.",
-            description = "Returns a paginated list of language options based on a search query." +
-                    "Useful when needing minimal information to see, especially when querying such as in search motors."
+            summary = "Search for a language",
+            description = """
+                    Returns a paginated list of language options based on a search query.
+                    Useful when needing minimal information to see, especially when querying such as in search motors.
+                    """
     )
+    @PublicOperation
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "Options retrieved successfully.",
+                    description = "Language options retrieved successfully.",
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = Page.class, contains = LanguageOptionDto.class)
@@ -148,7 +154,8 @@ public class LanguageApiController {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Invalid pagination parameters"
+                    description = "Invalid pagination parameters",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             )
     })
     @GetMapping("/options")
@@ -185,6 +192,7 @@ public class LanguageApiController {
             summary = "Retrieves scenarios associated with a language.",
             description = "Returns a list of scenarios associated with a specific language."
     )
+    @PublicOperation
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -196,7 +204,8 @@ public class LanguageApiController {
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Language not found with the specified ID"
+                    description = "Language not found with the specified ID",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             )
     })
     @GetMapping("/{id}/scenarios")

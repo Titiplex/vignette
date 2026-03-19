@@ -17,18 +17,23 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.titiplex.api.dto.ApiError;
 import org.titiplex.api.dto.AudioRowDto;
 import org.titiplex.api.dto.CreateAudioResponse;
+import org.titiplex.api.security.ApiAccess;
+import org.titiplex.api.security.ApiAccessLevel;
+import org.titiplex.api.security.PublicOperation;
 import org.titiplex.service.AudioService;
 import org.titiplex.service.UserService;
 
 import java.util.List;
 
 @RestController
+@RestControllerAdvice
 @RequestMapping("/api")
 @Tag(
-        name = "Audio Endpoint",
-        description = "Group of endpoints for fetching and managing audio files and associated metadata."
+        name = "Audio",
+        description = "Endpoint for fetching and managing audio files and associated metadata."
 )
 public class AudioApiController {
 
@@ -50,8 +55,8 @@ public class AudioApiController {
      * @return a {@link List} of {@link AudioRowDto} objects representing the audio records associated with the specified thumbnail
      */
     @Operation(
-            summary = "Retrieves audio files associated with a Thumbnail.",
-            description = "Returns a list containing all audio files associated with a Thumbnail, joined by ID."
+            summary = "List audio files for a thumbnail",
+            description = "Returns all audio files associated with a thumbnail."
     )
     @ApiResponses({
             @ApiResponse(
@@ -66,7 +71,11 @@ public class AudioApiController {
                             )
                     )
             ),
-            @ApiResponse(responseCode = "404", description = "Thumbnail not found")
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Thumbnail not found",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            )
     })
     @GetMapping("/thumbnails/{thumbId}/audios")
     public List<AudioRowDto> list(
@@ -88,6 +97,7 @@ public class AudioApiController {
             summary = "Retrieves the content of an audio file.",
             description = "Returns the audio file content as a byte array, with appropriate MIME type and caching headers."
     )
+    @PublicOperation
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -97,7 +107,11 @@ public class AudioApiController {
                             schema = @Schema(type = "string", format = "binary")
                     )
             ),
-            @ApiResponse(responseCode = "404", description = "Audio not found")
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Audio not found",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            )
     })
     @GetMapping("/audios/{id}/content")
     public ResponseEntity<byte[]> content(
@@ -128,10 +142,12 @@ public class AudioApiController {
      */
     @Operation(
             summary = "Uploads an audio file.",
-            description = "Uploads a new audio file and associates it with a specific thumbnail. " +
-                    "Optionally sets metadata such as title, index, and marker information." +
-                    "Needs the user to be connected and needs the user to be owner/manager for the concerned thumbnail.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            description = """
+                    Uploads an audio file and associates it with a thumbnail.
+                    
+                    Request content type:
+                     - multipart/form-data
+                    """
     )
     @ApiResponses({
             @ApiResponse(
@@ -145,6 +161,12 @@ public class AudioApiController {
             @ApiResponse(responseCode = "400", description = "Invalid input"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
+    @ApiAccess(
+            level = ApiAccessLevel.OWNER_OR_ADMIN,
+            rule = "Requires authentication. Authorization: related resource owner or ADMIN only.",
+            ownerResource = "thumbnail"
+    )
+    @SecurityRequirement(name = "bearerAuth")
     @PreAuthorize("hasRole('USER') and @scenarioSecurity.isOwnerByThumbnailId(#thumbId, authentication.name)")
     @PostMapping(value = "/thumbnails/{thumbId}/audios", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public CreateAudioResponse upload(
@@ -189,8 +211,10 @@ public class AudioApiController {
      */
     @Operation(
             summary = "Update an audio marker.",
-            description = "Updates the marker for an audio, could it be modifying it or creating it for the first time." +
-                    "One must be connected and be the owner of the concerned audio.",
+            description = """
+                    Updates the marker for an audio, could it be modifying it or creating it for the first time.
+                    One must be connected and be the owner of the concerned audio.
+                    """,
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({

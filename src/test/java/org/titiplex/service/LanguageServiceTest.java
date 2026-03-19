@@ -34,7 +34,7 @@ class LanguageServiceTest {
         Page<Language> page = new PageImpl<>(List.of(new Language()));
         when(languageRepository.findAll(any(Pageable.class))).thenReturn(page);
 
-        Page<Language> result = languageService.listLanguages(-4, 500);
+        Page<Language> result = languageService.listLanguages("", -4, 500);
 
         assertEquals(1, result.getTotalElements());
     }

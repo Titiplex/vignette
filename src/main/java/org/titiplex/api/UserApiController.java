@@ -11,9 +11,12 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.titiplex.api.dto.ApiError;
 import org.titiplex.api.dto.PublicUserProfileResponse;
 import org.titiplex.api.dto.UpdateUserProfileRequest;
 import org.titiplex.api.dto.UserProfileResponse;
+import org.titiplex.api.security.AuthenticatedOperation;
+import org.titiplex.api.security.PublicOperation;
 import org.titiplex.persistence.model.Role;
 import org.titiplex.persistence.model.User;
 import org.titiplex.service.UserService;
@@ -22,9 +25,10 @@ import java.security.Principal;
 import java.util.stream.Collectors;
 
 @RestController
+@RestControllerAdvice
 @RequestMapping("/api/users")
 @Tag(
-        name = "User Profile Endpoint",
+        name = "Users",
         description = "Endpoints for managing user profiles, including viewing and updating private profiles, and accessing public profiles."
 )
 public class UserApiController {
@@ -44,8 +48,7 @@ public class UserApiController {
      */
     @Operation(
             summary = "Get my profile",
-            description = "Retrieves the complete private profile of the currently authenticated user, " +
-                    "including email and all profile settings. Requires authentication.",
+            description = "Returns the complete private profile of the current authenticated user.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({
@@ -76,11 +79,13 @@ public class UserApiController {
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "User not authenticated"
+                    description = "User not authenticated",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Authenticated user not found in database"
+                    description = "Authenticated user not found in database",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             )
     })
     @GetMapping("/me/profile")
@@ -103,9 +108,7 @@ public class UserApiController {
      */
     @Operation(
             summary = "Update my profile",
-            description = "Updates the profile information of the currently authenticated user. " +
-                    "Allows modification of display name, bio, institution, research interests, " +
-                    "profile visibility, and academy affiliations. Requires authentication.",
+            description = "Updates the private profile of the current authenticated user.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({
@@ -119,15 +122,18 @@ public class UserApiController {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Invalid input - malformed request data"
+                    description = "Invalid input : malformed request data",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "User not authenticated"
+                    description = "User not authenticated",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Authenticated user not found in database"
+                    description = "Authenticated user not found in database",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             )
     })
     @PutMapping("/me/profile")
@@ -185,10 +191,9 @@ public class UserApiController {
      */
     @Operation(
             summary = "Get public user profile",
-            description = "Retrieves the public profile of a user by their ID. " +
-                    "Only returns data if the user exists and has set their profile to public. " +
-                    "Public profiles exclude sensitive information like email addresses."
+            description = "Returns the public profile of a user."
     )
+    @AuthenticatedOperation
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -215,7 +220,8 @@ public class UserApiController {
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "User not found or profile is not public"
+                    description = "User not found or profile is not public",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             )
     })
     @GetMapping("/{id}/profile")

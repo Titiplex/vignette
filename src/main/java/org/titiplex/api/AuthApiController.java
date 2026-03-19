@@ -3,6 +3,7 @@ package org.titiplex.api;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -21,14 +22,17 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.web.bind.annotation.*;
 import org.titiplex.api.dto.*;
+import org.titiplex.api.security.AuthenticatedOperation;
+import org.titiplex.api.security.PublicOperation;
 import org.titiplex.persistence.model.User;
 import org.titiplex.service.UserService;
 
 import java.time.Instant;
 
 @RestController
+@RestControllerAdvice
 @RequestMapping("/api/auth")
-@Tag(name = "Authentication Endpoint", description = "Endpoints for user authentication and registration.")
+@Tag(name = "Auth", description = "Endpoints for user authentication, identity and registration.")
 public class AuthApiController {
 
     private final AuthenticationManager authManager;
@@ -51,24 +55,41 @@ public class AuthApiController {
      */
     @Operation(
             summary = "Authenticate a user.",
-            description = "Authenticates a user and generate a JWT token for the session."
+            description = """
+                    Authenticates a user with username and password.
+                    
+                    Returns a JWT token for authenticated API access.
+                    This login flow also establishes a server-side authenticated session.
+                    """
     )
+    @PublicOperation
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
                     description = "User authenticated successfully",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = LoginResponse.class)
+                            schema = @Schema(implementation = LoginResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Login response",
+                                    value = """
+                                            {
+                                              "token": "eyJhbGciOiJSUzI1NiIs...",
+                                              "expiresIn": 3600
+                                            }
+                                            """
+                            )
                     )
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Invalid credentials : username or password incorrect"
+                    description = "Invalid credentials : username or password incorrect",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Missing or malformed request body"
+                    description = "Missing or malformed request body",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             )
     })
     @PostMapping("/login")
@@ -122,8 +143,13 @@ public class AuthApiController {
      */
     @Operation(
             summary = "Logout the current user.",
-            description = "Logs out the currently authenticated user by invalidating their session and clearing the security context."
+            description = """
+                    Logs out the current user.
+                    
+                    This endpoint invalidates the current server-side session and clears the security context.
+                    """
     )
+    @PublicOperation
     @ApiResponses({
             @ApiResponse(
                     responseCode = "204",
@@ -151,11 +177,10 @@ public class AuthApiController {
      * @return a {@link MeResponse} containing the user's ID, username, and roles
      */
     @Operation(
-            summary = "Get authenticated user self information.",
-            description = "Retrieves information about the currently authenticated user." +
-                    "If the authentication is null, returns null." +
-                    "If the user cannot be found, throws an IllegalStateException."
+            summary = "Get the current authenticated user",
+            description = "Returns the current authenticated user and granted roles."
     )
+    @AuthenticatedOperation
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -167,11 +192,13 @@ public class AuthApiController {
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "User not authenticated"
+                    description = "User not authenticated",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Authenticated user not found in database"
+                    description = "Authenticated user not found",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             )
     })
     @GetMapping("/me")
@@ -194,26 +221,36 @@ public class AuthApiController {
      */
     @Operation(
             summary = "Registers a new user.",
-            description = "Registers a new user with the provided details." +
-                    "Ensures that valid data is provided and checks if the username or email is already in use." +
-                    "If the registration is successful, creates a new user and returns the response containing the user's ID and username."
+            description = "Registers a new user and returns the created account identifier."
     )
+    @PublicOperation
     @ApiResponses({
             @ApiResponse(
                     responseCode = "201",
                     description = "Registered successfully.",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = RegisterResponse.class)
+                            schema = @Schema(implementation = RegisterResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Register response",
+                                    value = """
+                                            {
+                                              "id": 12,
+                                              "username": "alice"
+                                            }
+                                            """
+                            )
                     )
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Invalid input : missing required fields, password too short, or malformed data"
+                    description = "Invalid input : missing required fields, password too short, or malformed data",
+            content = @Content(schema = @Schema(implementation = ApiError.class))
             ),
             @ApiResponse(
                     responseCode = "409",
-                    description = "Conflict : username or email already exists"
+                    description = "Conflict : username or email already exists",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             )
     })
     @PostMapping("/register")

@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.titiplex.api.dto.ApiError;
 import org.titiplex.api.dto.AudioRowDto;
 import org.titiplex.api.dto.CreateAudioResponse;
+import org.titiplex.api.dto.UpdateMarkerRequest;
 import org.titiplex.api.security.ApiAccess;
 import org.titiplex.api.security.ApiAccessLevel;
 import org.titiplex.api.security.PublicOperation;
@@ -37,8 +38,6 @@ import java.util.List;
 )
 public class AudioApiController {
 
-    public record UpdateMarkerRequest(Double markerX, Double markerY, String markerLabel) {
-    }
 
     private final AudioService audioService;
     private final UserService userService;
@@ -213,22 +212,43 @@ public class AudioApiController {
             summary = "Update an audio marker.",
             description = """
                     Updates the marker for an audio, could it be modifying it or creating it for the first time.
-                    One must be connected and be the owner of the concerned audio.
-                    """,
-            security = @SecurityRequirement(name = "bearerAuth")
+                    """
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Marker updated successfully"),
-            @ApiResponse(responseCode = "403", description = "Access denied"),
-            @ApiResponse(responseCode = "404", description = "Audio not found")
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Marker updated successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Access denied",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Audio not found",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            )
     })
+    @ApiAccess(
+            level = ApiAccessLevel.OWNER_OR_ADMIN,
+            rule = "Requires authentication. Authorization: related resource owner or ADMIN only.",
+            ownerResource = "audio"
+    )
+    @SecurityRequirement(name = "bearerAuth")
     @PreAuthorize("hasRole('USER') and @scenarioSecurity.isOwnerByAudioId(#audioId, authentication.name, @audioService)")
     @PatchMapping("/audios/{audioId}/marker")
     public void updateMarker(
             @Parameter(description = "ID of the audio file whose marker is to be updated", required = true)
             @PathVariable Long audioId,
 
-
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "New marker information.",
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = UpdateMarkerRequest.class)
+                    )
+            )
             @RequestBody UpdateMarkerRequest req
     ) {
         audioService.updateMarker(audioId, req.markerX(), req.markerY(), req.markerLabel());
@@ -242,14 +262,19 @@ public class AudioApiController {
      */
     @Operation(
             summary = "Deletes an audio file.",
-            description = "Deletes the audio file associated to the given ID. One must have the appropriate permissions (owner/manager of the audio or admin).",
-            security = @SecurityRequirement(name = "bearerAuth")
+            description = "Deletes the audio file associated to the given ID. One must have the appropriate permissions (owner/manager of the audio or admin)."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Audio successfully deleted"),
-            @ApiResponse(responseCode = "404", description = "Audio not found"),
-            @ApiResponse(responseCode = "403", description = "Forbidden - not the owner")
+            @ApiResponse(responseCode = "404", description = "Audio not found", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "403", description = "Forbidden : not the owner", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
+    @ApiAccess(
+            level = ApiAccessLevel.OWNER_OR_ADMIN,
+            rule = "Requires authentication. Authorization: related resource owner or ADMIN only.",
+            ownerResource = "audio"
+    )
+    @SecurityRequirement(name = "bearerAuth")
     @PreAuthorize("hasRole('USER') and @scenarioSecurity.isOwnerByAudioId(#audioId, authentication.name, @audioService)")
     @DeleteMapping("/audios/{audioId}")
     public void delete(

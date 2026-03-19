@@ -1,18 +1,51 @@
 <!doctype html>
-<html lang="fr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vignette API - Documentation</title>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>Vignette API Documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="icon" type="image/png" href="storytelling.png">
     <style>
-      body {
-        margin: 0;
-        padding: 0;
-      }
+        body {
+            margin: 0;
+            font-family: Inter, Arial, sans-serif;
+            /*background: #0b1020;*/
+            /*color: #e8ecf3;*/
+        }
+
+        .topbar {
+            padding: 18px 24px;
+            border-bottom: 1px solid #24304a;
+            background: #11172a;
+        }
+
+        .topbar h1 {
+            margin: 0 0 6px;
+            font-size: 1.4rem;
+        }
+
+        .topbar p {
+            margin: 0;
+            color: #b7c0d1;
+        }
+
+        .topbar a {
+            color: #8ab4ff;
+            text-decoration: none;
+        }
     </style>
-  </head>
-  <body>
-    <redoc spec-url="./openapi.json"></redoc>
-    <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
-  </body>
+</head>
+<body>
+<div class="topbar">
+    <h1>Vignette API</h1>
+    <p>
+        REST API for storyboard-based language documentation and learning.
+        <a href="https://github.com/Titiplex/vignette">Repository</a> ·
+        <a href="./openapi.json">OpenAPI JSON</a>
+    </p>
+</div>
+
+<redoc spec-url="./openapi.json"></redoc>
+<script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
+</body>
 </html>

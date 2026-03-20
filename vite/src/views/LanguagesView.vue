@@ -3,6 +3,11 @@ import {onMounted, ref, watch} from "vue";
 import {RouterLink, useRoute, useRouter} from "vue-router";
 import {fetchLanguages} from "../api/languages";
 import PaginationControls from "../components/PaginationControls.vue";
+import BasePageHeader from "../components/ui/BasePageHeader.vue";
+import BaseLoader from "../components/ui/BaseLoader.vue";
+import BaseAlert from "../components/ui/BaseAlert.vue";
+import BaseEmptyState from "../components/ui/BaseEmptyState.vue";
+import {useDebouncedRef} from "../composables/useDebouncedRef";
 
 const route = useRoute();
 const router = useRouter();
@@ -10,9 +15,10 @@ const router = useRouter();
 const languages = ref([]);
 const loading = ref(false);
 const error = ref("");
-const search = ref(route.query.q ?? "");
 const page = ref(Number(route.query.page ?? 0));
 const totalPages = ref(0);
+
+const {source: search, debounced} = useDebouncedRef(route.query.q ?? "", 350);
 
 async function load() {
   loading.value = true;
@@ -41,11 +47,11 @@ async function load() {
   }
 }
 
-function submitSearch() {
+function updateRouteSearch(queryValue) {
   router.push({
     path: "/languages",
     query: {
-      q: search.value.trim() || undefined,
+      q: queryValue.trim() || undefined,
       page: 0,
     },
   });
@@ -61,6 +67,12 @@ function goToPage(nextPage) {
   });
 }
 
+watch(debounced, (value) => {
+  if ((route.query.q ?? "") !== value) {
+    updateRouteSearch(value);
+  }
+});
+
 watch(() => route.fullPath, load);
 onMounted(load);
 </script>
@@ -68,12 +80,10 @@ onMounted(load);
 <template>
   <main class="page">
     <section class="section">
-      <div class="section-heading">
-        <div>
-          <h1>Language catalog</h1>
-          <p class="muted">Browse the language inventory used by the platform.</p>
-        </div>
-      </div>
+      <BasePageHeader
+          title="Language catalog"
+          subtitle="Browse the language inventory used by the platform."
+      />
 
       <div class="card search-panel">
         <div class="toolbar">
@@ -81,14 +91,16 @@ onMounted(load);
               v-model="search"
               type="text"
               placeholder="Search languages"
-              @keyup.enter="submitSearch"
           />
-          <button class="btn btn--primary" @click="submitSearch">Search</button>
         </div>
       </div>
 
-      <p v-if="loading" class="muted">Loading languages...</p>
-      <p v-else-if="error" class="error">{{ error }}</p>
+      <BaseLoader v-if="loading">Loading languages...</BaseLoader>
+
+      <BaseAlert v-else-if="error" type="error">
+        {{ error }}
+      </BaseAlert>
+
       <template v-else>
         <div class="results-meta">
           <span>{{ languages.length }} result(s) on this page</span>
@@ -122,10 +134,11 @@ onMounted(load);
           </table>
         </div>
 
-        <div v-else class="card empty-state">
-          <h3>No languages found</h3>
-          <p class="muted">Try another query or clear the search field.</p>
-        </div>
+        <BaseEmptyState
+            v-else
+            title="No languages found"
+            message="Try another search query."
+        />
 
         <PaginationControls
             :page="page"

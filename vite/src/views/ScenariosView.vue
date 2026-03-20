@@ -1,16 +1,28 @@
 <script setup>
-import {computed, onMounted, ref} from "vue";
+import {computed, onMounted, ref, watch} from "vue";
 import {fetchScenarios, fetchScenarioThumbnails} from "../api/scenarios";
 import ScenarioCard from "../components/ScenarioCard.vue";
+import BasePageHeader from "../components/ui/BasePageHeader.vue";
+import BaseLoader from "../components/ui/BaseLoader.vue";
+import BaseAlert from "../components/ui/BaseAlert.vue";
+import BaseEmptyState from "../components/ui/BaseEmptyState.vue";
+import {useDebouncedRef} from "../composables/useDebouncedRef";
+import {RouterLink} from "vue-router";
 
 const scenarios = ref([]);
 const previewMap = ref({});
-const search = ref("");
 const error = ref("");
 const loading = ref(false);
 
+const {source: search, debounced} = useDebouncedRef("", 250);
+const effectiveSearch = ref("");
+
+watch(debounced, (value) => {
+  effectiveSearch.value = value.trim().toLowerCase();
+});
+
 const filtered = computed(() => {
-  const q = search.value.trim().toLowerCase();
+  const q = effectiveSearch.value;
   if (!q) return scenarios.value;
 
   return scenarios.value.filter((s) => {
@@ -62,21 +74,27 @@ onMounted(load);
 <template>
   <main class="page">
     <section class="section">
-      <div class="section-heading">
-        <div>
-          <h1>Scenario gallery</h1>
-          <p class="muted">
-            Browse published scenarios and open them to view thumbnails and audio recordings.
-          </p>
-        </div>
-      </div>
+      <BasePageHeader
+          title="Scenario gallery"
+          subtitle="Browse published scenarios and open them to view thumbnails and audio recordings."
+      >
+        <template #actions>
+          <RouterLink to="/create-scenario" class="btn btn--primary">
+            Create scenario
+          </RouterLink>
+        </template>
+      </BasePageHeader>
 
       <div class="card search-panel">
         <input v-model="search" placeholder="Search scenarios"/>
       </div>
 
-      <p v-if="loading" class="muted">Loading scenarios...</p>
-      <p v-else-if="error" class="error">{{ error }}</p>
+      <BaseLoader v-if="loading">Loading scenarios...</BaseLoader>
+
+      <BaseAlert v-else-if="error" type="error">
+        {{ error }}
+      </BaseAlert>
+
       <template v-else>
         <div class="results-meta">
           <span>{{ filtered.length }} scenario(s)</span>
@@ -91,10 +109,11 @@ onMounted(load);
           />
         </section>
 
-        <div v-else class="card empty-state">
-          <h3>No scenarios found</h3>
-          <p class="muted">Try another search query.</p>
-        </div>
+        <BaseEmptyState
+            v-else
+            title="No scenarios found"
+            message="Try another search query."
+        />
       </template>
     </section>
   </main>

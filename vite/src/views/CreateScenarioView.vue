@@ -3,8 +3,12 @@ import {onMounted, ref} from "vue";
 import {useRouter} from "vue-router";
 import {fetchLanguageOptions} from "../api/languages";
 import {createScenario} from "../api/scenarios";
+import BasePageHeader from "../components/ui/BasePageHeader.vue";
+import BaseAlert from "../components/ui/BaseAlert.vue";
+import {useToast} from "../composables/useToast";
 
 const router = useRouter();
+const toast = useToast();
 
 const form = ref({
   title: "",
@@ -17,7 +21,6 @@ const filter = ref("");
 const page = ref(0);
 const totalPages = ref(0);
 const error = ref("");
-const success = ref("");
 const loading = ref(false);
 
 async function loadLanguages(pageNumber = 0, q = "") {
@@ -39,7 +42,6 @@ async function loadLanguages(pageNumber = 0, q = "") {
 async function submit() {
   loading.value = true;
   error.value = "";
-  success.value = "";
 
   try {
     const created = await createScenario({
@@ -48,10 +50,11 @@ async function submit() {
       languageId: form.value.languageId,
     });
 
-    success.value = "Scenario created successfully.";
+    toast.success("Scenario created successfully.");
     router.push(`/scenarios/${created.id}`);
   } catch (e) {
     error.value = e.message;
+    toast.error(e.message || "Failed to create scenario.");
   } finally {
     loading.value = false;
   }
@@ -87,14 +90,10 @@ onMounted(async () => {
 <template>
   <main class="page">
     <section class="section">
-      <div class="section-heading">
-        <div>
-          <h1>Create a scenario</h1>
-          <p class="muted">
-            Set up a vignette sequence to collect oral responses in context.
-          </p>
-        </div>
-      </div>
+      <BasePageHeader
+          title="Create a scenario"
+          subtitle="Set up a vignette sequence to collect oral responses in context."
+      />
 
       <form @submit.prevent="submit" class="form-card">
         <label>
@@ -153,8 +152,9 @@ onMounted(async () => {
           {{ loading ? "Creating..." : "Create scenario" }}
         </button>
 
-        <p v-if="success" class="success">{{ success }}</p>
-        <p v-if="error" class="error">{{ error }}</p>
+        <BaseAlert v-if="error" type="error">
+          {{ error }}
+        </BaseAlert>
       </form>
     </section>
   </main>

@@ -1,6 +1,7 @@
 <script setup>
 import {ref, watch} from "vue";
 import {uploadThumbnailAudio} from "../api/scenarios";
+import {useToast} from "../composables/useToast";
 
 const props = defineProps({
   selectedThumb: {type: Object, default: null},
@@ -8,6 +9,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["uploaded"]);
+const toast = useToast();
 
 const audioTitle = ref("");
 const audioFile = ref(null);
@@ -71,6 +73,7 @@ async function startRecording() {
     isRecording.value = true;
   } catch (e) {
     audioErr.value = e.message || "Unable to start recording.";
+    toast.error(audioErr.value);
   }
 }
 
@@ -106,9 +109,11 @@ async function uploadRecording() {
     clearMarker();
     recordedBlob = null;
     audioSuccess.value = "Recording uploaded successfully.";
+    toast.success(audioSuccess.value);
     emit("uploaded");
   } catch (e) {
     audioErr.value = e.message;
+    toast.error(audioErr.value);
   }
 }
 
@@ -130,9 +135,11 @@ async function uploadExistingAudio() {
     audioFile.value = null;
     clearMarker();
     audioSuccess.value = "Audio file uploaded successfully.";
+    toast.success(audioSuccess.value);
     emit("uploaded");
   } catch (e) {
     audioErr.value = e.message;
+    toast.error(audioErr.value);
   }
 }
 

@@ -2,10 +2,13 @@
 import {ref} from "vue";
 import {RouterLink, useRoute, useRouter} from "vue-router";
 import {useAuth} from "../composables/useAuth";
+import BaseAlert from "../components/ui/BaseAlert.vue";
+import {useToast} from "../composables/useToast";
 
 const router = useRouter();
 const route = useRoute();
 const {login} = useAuth();
+const toast = useToast();
 
 const username = ref("");
 const password = ref("");
@@ -18,9 +21,11 @@ async function submit() {
 
   try {
     await login(username.value.trim(), password.value);
+    toast.success("Logged in successfully.");
     router.push(route.query.redirect || "/");
   } catch (e) {
     error.value = e.message;
+    toast.error(e.message || "Login failed.");
   } finally {
     loading.value = false;
   }
@@ -57,7 +62,9 @@ async function submit() {
           {{ loading ? "Logging in..." : "Login" }}
         </button>
 
-        <p v-if="error" class="error">{{ error }}</p>
+        <BaseAlert v-if="error" type="error">
+          {{ error }}
+        </BaseAlert>
 
         <p class="muted">
           Don’t have an account?

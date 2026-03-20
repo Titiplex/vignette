@@ -2,8 +2,11 @@
 import {ref} from "vue";
 import {RouterLink, useRouter} from "vue-router";
 import {register} from "../api/auth";
+import BaseAlert from "../components/ui/BaseAlert.vue";
+import {useToast} from "../composables/useToast";
 
 const router = useRouter();
+const toast = useToast();
 
 const form = ref({
   username: "",
@@ -28,11 +31,14 @@ async function submit() {
     });
 
     success.value = "Account created successfully. You can now log in.";
+    toast.success("Account created successfully.");
+
     setTimeout(() => {
       router.push("/login");
     }, 700);
   } catch (e) {
     error.value = e.message;
+    toast.error(e.message || "Registration failed.");
   } finally {
     loading.value = false;
   }
@@ -69,8 +75,13 @@ async function submit() {
           {{ loading ? "Creating..." : "Create account" }}
         </button>
 
-        <p v-if="success" class="success">{{ success }}</p>
-        <p v-if="error" class="error">{{ error }}</p>
+        <BaseAlert v-if="success" type="success">
+          {{ success }}
+        </BaseAlert>
+
+        <BaseAlert v-if="error" type="error">
+          {{ error }}
+        </BaseAlert>
 
         <p class="muted">
           Already registered?

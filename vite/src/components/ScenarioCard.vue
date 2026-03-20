@@ -1,5 +1,6 @@
 <script setup>
 import {computed} from "vue";
+import {RouterLink} from "vue-router";
 
 const props = defineProps({
   scenario: {type: Object, required: true},

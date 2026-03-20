@@ -1,16 +1,22 @@
 <script setup>
-import {onMounted, ref} from "vue";
+import {computed, onMounted, ref} from "vue";
 import {fetchLanguage} from "../api/languages";
 import {fetchScenario, fetchScenarioThumbnails, fetchThumbnailAudios, uploadScenarioThumbnail,} from "../api/scenarios";
 import {useAuth} from "../composables/useAuth";
+import {useToast} from "../composables/useToast";
 import ThumbnailCard from "../components/ThumbnailCard.vue";
 import AudioPanel from "../components/AudioPanel.vue";
+import BasePageHeader from "../components/ui/BasePageHeader.vue";
+import BaseLoader from "../components/ui/BaseLoader.vue";
+import BaseAlert from "../components/ui/BaseAlert.vue";
+import BaseEmptyState from "../components/ui/BaseEmptyState.vue";
 
 const props = defineProps({
   id: {type: String, required: true},
 });
 
 const {currentUser, loadMe} = useAuth();
+const toast = useToast();
 
 const scenario = ref(null);
 const languageName = ref("");
@@ -25,6 +31,11 @@ const loading = ref(false);
 
 const uploadTitle = ref("");
 const uploadFile = ref(null);
+
+const selectedAudios = computed(() => {
+  if (!selectedThumb.value) return [];
+  return audioMap.value[selectedThumb.value.id] || [];
+});
 
 function onImageChange(event) {
   uploadFile.value = event.target.files?.[0] ?? null;
@@ -63,6 +74,11 @@ async function loadThumbs() {
 
   if (!selectedThumb.value && thumbnails.value.length) {
     selectedThumb.value = thumbnails.value[0];
+  } else if (
+      selectedThumb.value &&
+      !thumbnails.value.some((t) => t.id === selectedThumb.value.id)
+  ) {
+    selectedThumb.value = thumbnails.value[0] || null;
   }
 }
 
@@ -107,9 +123,11 @@ async function uploadImage() {
     uploadTitle.value = "";
     uploadFile.value = null;
     uploadSuccess.value = "Image uploaded successfully.";
+    toast.success("Thumbnail uploaded successfully.");
     await loadThumbs();
   } catch (e) {
     uploadError.value = e.message;
+    toast.error(e.message || "Upload failed.");
   }
 }
 
@@ -122,97 +140,123 @@ onMounted(loadAll);
 
 <template>
   <main class="page">
-    <p v-if="loading" class="muted">Loading scenario workspace...</p>
-    <p v-else-if="error" class="error">{{ error }}</p>
+    <BaseLoader v-if="loading">Loading scenario workspace...</BaseLoader>
+
+    <BaseAlert v-else-if="error" type="error">
+      {{ error }}
+    </BaseAlert>
 
     <template v-else-if="scenario">
       <section class="section">
-        <div class="section-heading">
-          <div>
-            <h1>{{ scenario.title ?? "Scenario" }}</h1>
-            <p class="muted">Scenario workspace and media management</p>
-          </div>
-        </div>
-
-        <div class="card info-grid">
-          <div>
-            <h3>Language</h3>
-            <p>{{ languageName }}</p>
-          </div>
-          <div>
-            <h3>Author</h3>
-            <p>{{ scenario.authorUsername ?? "-" }}</p>
-          </div>
-          <div>
-            <h3>Status</h3>
-            <p>{{ isOwner ? "Owner view" : "Read-only view" }}</p>
-          </div>
-        </div>
-
-        <section class="card">
-          <h2>Description</h2>
-          <p class="text">{{ scenario.description ?? "No description available." }}</p>
-        </section>
-
-        <section v-if="isOwner" class="card">
-          <h2>Add a thumbnail</h2>
-
-          <div class="form-grid">
-            <label>
-              Title
-              <input v-model="uploadTitle" placeholder="Optional image title"/>
-            </label>
-
-            <label>
-              Image file
-              <input type="file" accept="image/*" @change="onImageChange"/>
-            </label>
-          </div>
-
-          <div class="toolbar">
-            <button class="btn btn--primary" @click="uploadImage">
-              Upload image
-            </button>
-          </div>
-
-          <p v-if="uploadSuccess" class="success">{{ uploadSuccess }}</p>
-          <p v-if="uploadError" class="error">{{ uploadError }}</p>
-        </section>
-
-        <section class="section">
-          <div class="section-heading">
-            <div>
-              <h2>Thumbnails</h2>
-              <p class="muted">
-                {{ thumbnails.length }} thumbnail(s) available in this scenario.
-              </p>
-            </div>
-          </div>
-
-          <div v-if="thumbnails.length" class="card-grid">
-            <ThumbnailCard
-                v-for="thumb in thumbnails"
-                :key="thumb.id"
-                :thumb="thumb"
-                :audios="audioMap[thumb.id] || []"
-                :selected="selectedThumb?.id === thumb.id"
-                @select="selectThumb"
-            />
-          </div>
-
-          <div v-else class="card empty-state">
-            <h3>No thumbnails yet</h3>
-            <p class="muted">
-              Upload an image to start building the scenario.
-            </p>
-          </div>
-        </section>
-
-        <AudioPanel
-            :selected-thumb="selectedThumb"
-            :is-owner="isOwner"
-            @uploaded="refreshAudios"
+        <BasePageHeader
+            :title="scenario.title ?? 'Scenario'"
+            subtitle="Scenario workspace and media management"
         />
+
+        <div class="scenario-layout">
+          <div class="scenario-layout__main">
+            <div class="card info-grid">
+              <div>
+                <h3>Language</h3>
+                <p>{{ languageName }}</p>
+              </div>
+              <div>
+                <h3>Author</h3>
+                <p>{{ scenario.authorUsername ?? "-" }}</p>
+              </div>
+              <div>
+                <h3>Status</h3>
+                <p>{{ isOwner ? "Owner view" : "Read-only view" }}</p>
+              </div>
+            </div>
+
+            <section class="card">
+              <h2>Description</h2>
+              <p class="text">{{ scenario.description ?? "No description available." }}</p>
+            </section>
+
+            <section v-if="isOwner" class="card">
+              <h2>Add a thumbnail</h2>
+
+              <div class="form-grid">
+                <label>
+                  Title
+                  <input v-model="uploadTitle" placeholder="Optional image title"/>
+                </label>
+
+                <label>
+                  Image file
+                  <input type="file" accept="image/*" @change="onImageChange"/>
+                </label>
+              </div>
+
+              <div class="toolbar">
+                <button class="btn btn--primary" @click="uploadImage">
+                  Upload image
+                </button>
+              </div>
+
+              <BaseAlert v-if="uploadSuccess" type="success">
+                {{ uploadSuccess }}
+              </BaseAlert>
+
+              <BaseAlert v-if="uploadError" type="error">
+                {{ uploadError }}
+              </BaseAlert>
+            </section>
+
+            <section class="section">
+              <div class="section-heading">
+                <div>
+                  <h2>Thumbnails</h2>
+                  <p class="muted">
+                    {{ thumbnails.length }} thumbnail(s) available in this scenario.
+                  </p>
+                </div>
+              </div>
+
+              <div v-if="thumbnails.length" class="card-grid">
+                <ThumbnailCard
+                    v-for="thumb in thumbnails"
+                    :key="thumb.id"
+                    :thumb="thumb"
+                    :audios="audioMap[thumb.id] || []"
+                    :selected="selectedThumb?.id === thumb.id"
+                    @select="selectThumb"
+                />
+              </div>
+
+              <BaseEmptyState
+                  v-else
+                  title="No thumbnails yet"
+                  message="Upload an image to start building the scenario."
+              />
+            </section>
+          </div>
+
+          <aside class="scenario-layout__side">
+            <section v-if="selectedThumb" class="card selected-preview">
+              <h2>Selected thumbnail</h2>
+              <img
+                  :src="`/api/thumbnails/${selectedThumb.id}/content`"
+                  :alt="selectedThumb.title || 'Selected thumbnail'"
+                  class="selected-preview__image"
+              />
+              <p class="muted">
+                {{ selectedThumb.title || `Thumbnail #${selectedThumb.idx ?? selectedThumb.id}` }}
+              </p>
+              <p class="muted">
+                {{ selectedAudios.length }} audio clip(s) attached
+              </p>
+            </section>
+
+            <AudioPanel
+                :selected-thumb="selectedThumb"
+                :is-owner="isOwner"
+                @uploaded="refreshAudios"
+            />
+          </aside>
+        </div>
       </section>
     </template>
   </main>

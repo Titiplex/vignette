@@ -1,3 +1,7 @@
+<script setup>
+import {RouterLink} from "vue-router";
+</script>
+
 <template>
   <main class="page">
     <section class="hero">

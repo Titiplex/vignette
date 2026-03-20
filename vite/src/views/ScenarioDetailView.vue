@@ -10,6 +10,7 @@ import BasePageHeader from "../components/ui/BasePageHeader.vue";
 import BaseLoader from "../components/ui/BaseLoader.vue";
 import BaseAlert from "../components/ui/BaseAlert.vue";
 import BaseEmptyState from "../components/ui/BaseEmptyState.vue";
+import BaseBadge from "../components/ui/BaseBadge.vue";
 
 const props = defineProps({
   id: {type: String, required: true},
@@ -151,11 +152,17 @@ onMounted(loadAll);
         <BasePageHeader
             :title="scenario.title ?? 'Scenario'"
             subtitle="Scenario workspace and media management"
-        />
+        >
+          <template #actions>
+            <BaseBadge :variant="isOwner ? 'success' : 'neutral'">
+              {{ isOwner ? "Owner view" : "Read-only" }}
+            </BaseBadge>
+          </template>
+        </BasePageHeader>
 
         <div class="scenario-layout">
           <div class="scenario-layout__main">
-            <div class="card info-grid">
+            <div class="card info-grid info-grid--premium">
               <div>
                 <h3>Language</h3>
                 <p>{{ languageName }}</p>
@@ -165,8 +172,8 @@ onMounted(loadAll);
                 <p>{{ scenario.authorUsername ?? "-" }}</p>
               </div>
               <div>
-                <h3>Status</h3>
-                <p>{{ isOwner ? "Owner view" : "Read-only view" }}</p>
+                <h3>Thumbnails</h3>
+                <p>{{ thumbnails.length }}</p>
               </div>
             </div>
 
@@ -175,7 +182,7 @@ onMounted(loadAll);
               <p class="text">{{ scenario.description ?? "No description available." }}</p>
             </section>
 
-            <section v-if="isOwner" class="card">
+            <section v-if="isOwner" class="card form-card--premium">
               <h2>Add a thumbnail</h2>
 
               <div class="form-grid">
@@ -206,14 +213,10 @@ onMounted(loadAll);
             </section>
 
             <section class="section">
-              <div class="section-heading">
-                <div>
-                  <h2>Thumbnails</h2>
-                  <p class="muted">
-                    {{ thumbnails.length }} thumbnail(s) available in this scenario.
-                  </p>
-                </div>
-              </div>
+              <BasePageHeader
+                  title="Thumbnails"
+                  :subtitle="`${thumbnails.length} thumbnail(s) available in this scenario.`"
+              />
 
               <div v-if="thumbnails.length" class="card-grid">
                 <ThumbnailCard
@@ -235,18 +238,25 @@ onMounted(loadAll);
           </div>
 
           <aside class="scenario-layout__side">
-            <section v-if="selectedThumb" class="card selected-preview">
+            <section v-if="selectedThumb" class="card selected-preview selected-preview--premium">
               <h2>Selected thumbnail</h2>
               <img
                   :src="`/api/thumbnails/${selectedThumb.id}/content`"
                   :alt="selectedThumb.title || 'Selected thumbnail'"
                   class="selected-preview__image"
               />
-              <p class="muted">
+
+              <div class="meta-badges">
+                <BaseBadge variant="info">
+                  #{{ selectedThumb.idx ?? selectedThumb.id }}
+                </BaseBadge>
+                <BaseBadge variant="neutral">
+                  {{ selectedAudios.length }} audio clip(s)
+                </BaseBadge>
+              </div>
+
+              <p class="muted selected-preview__title">
                 {{ selectedThumb.title || `Thumbnail #${selectedThumb.idx ?? selectedThumb.id}` }}
-              </p>
-              <p class="muted">
-                {{ selectedAudios.length }} audio clip(s) attached
               </p>
             </section>
 

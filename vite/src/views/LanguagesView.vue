@@ -7,6 +7,7 @@ import BasePageHeader from "../components/ui/BasePageHeader.vue";
 import BaseLoader from "../components/ui/BaseLoader.vue";
 import BaseAlert from "../components/ui/BaseAlert.vue";
 import BaseEmptyState from "../components/ui/BaseEmptyState.vue";
+import BaseBadge from "../components/ui/BaseBadge.vue";
 import {useDebouncedRef} from "../composables/useDebouncedRef";
 
 const route = useRoute();
@@ -19,6 +20,15 @@ const page = ref(Number(route.query.page ?? 0));
 const totalPages = ref(0);
 
 const {source: search, debounced} = useDebouncedRef(route.query.q ?? "", 350);
+
+function levelVariant(level) {
+  if (!level) return "neutral";
+  const l = String(level).toLowerCase();
+  if (l.includes("family")) return "info";
+  if (l.includes("language")) return "success";
+  if (l.includes("dialect")) return "warning";
+  return "neutral";
+}
 
 async function load() {
   loading.value = true;
@@ -107,7 +117,7 @@ onMounted(load);
           <span>{{ totalPages > 0 ? `Page ${page + 1} of ${totalPages}` : "No pages" }}</span>
         </div>
 
-        <div v-if="languages.length" class="table-wrap card">
+        <div v-if="languages.length" class="table-wrap card table-card">
           <table class="table">
             <thead>
             <tr>
@@ -120,13 +130,17 @@ onMounted(load);
             </thead>
             <tbody>
             <tr v-for="l in languages" :key="l.id">
-              <td>{{ l.id }}</td>
+              <td class="table__mono">{{ l.id }}</td>
               <td>
-                <RouterLink :to="`/languages/${l.id}`">
+                <RouterLink :to="`/languages/${l.id}`" class="table__primary-link">
                   {{ l.name ?? "" }}
                 </RouterLink>
               </td>
-              <td>{{ l.level ?? "-" }}</td>
+              <td>
+                <BaseBadge :variant="levelVariant(l.level)">
+                  {{ l.level ?? "-" }}
+                </BaseBadge>
+              </td>
               <td>{{ l.family ?? "-" }}</td>
               <td>{{ l.parent ?? "-" }}</td>
             </tr>

@@ -1,5 +1,5 @@
 <script setup>
-import {ref} from "vue";
+import {computed, ref} from "vue";
 import {RouterLink, useRouter} from "vue-router";
 import {register} from "../api/auth";
 import BaseAlert from "../components/ui/BaseAlert.vue";
@@ -18,7 +18,37 @@ const error = ref("");
 const loading = ref(false);
 const success = ref("");
 
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const usernameError = computed(() => {
+  if (!form.value.username.trim()) return "Username is required.";
+  if (form.value.username.trim().length < 3) return "Minimum 3 characters.";
+  return "";
+});
+
+const emailError = computed(() => {
+  if (!form.value.email.trim()) return "Email is required.";
+  if (!emailRegex.test(form.value.email.trim())) return "Invalid email address.";
+  return "";
+});
+
+const passwordError = computed(() => {
+  if (!form.value.password) return "Password is required.";
+  if (form.value.password.length < 6) return "Minimum 6 characters.";
+  return "";
+});
+
+const isFormValid = computed(() => {
+  return !usernameError.value && !emailError.value && !passwordError.value;
+});
+
 async function submit() {
+  if (!isFormValid.value) {
+    error.value =
+        usernameError.value || emailError.value || passwordError.value;
+    return;
+  }
+
   loading.value = true;
   error.value = "";
   success.value = "";
@@ -47,7 +77,7 @@ async function submit() {
 
 <template>
   <main class="page auth-page">
-    <section class="form-card auth-card">
+    <section class="form-card auth-card auth-card--premium">
       <div class="section-heading">
         <div>
           <h1>Create your account</h1>
@@ -59,19 +89,28 @@ async function submit() {
         <label>
           Username
           <input v-model="form.username" autocomplete="username"/>
+          <span v-if="form.username && usernameError" class="field-error">
+            {{ usernameError }}
+          </span>
         </label>
 
         <label>
           Email
           <input v-model="form.email" type="email" autocomplete="email"/>
+          <span v-if="form.email && emailError" class="field-error">
+            {{ emailError }}
+          </span>
         </label>
 
         <label>
           Password
           <input v-model="form.password" type="password" autocomplete="new-password"/>
+          <span v-if="form.password && passwordError" class="field-error">
+            {{ passwordError }}
+          </span>
         </label>
 
-        <button type="submit" :disabled="loading" class="btn btn--primary">
+        <button type="submit" :disabled="loading || !isFormValid" class="btn btn--primary">
           {{ loading ? "Creating..." : "Create account" }}
         </button>
 

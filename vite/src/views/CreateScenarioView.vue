@@ -1,10 +1,11 @@
 <script setup>
-import {onMounted, ref} from "vue";
+import {computed, onMounted, ref} from "vue";
 import {useRouter} from "vue-router";
 import {fetchLanguageOptions} from "../api/languages";
 import {createScenario} from "../api/scenarios";
 import BasePageHeader from "../components/ui/BasePageHeader.vue";
 import BaseAlert from "../components/ui/BaseAlert.vue";
+import BaseBadge from "../components/ui/BaseBadge.vue";
 import {useToast} from "../composables/useToast";
 
 const router = useRouter();
@@ -23,6 +24,21 @@ const totalPages = ref(0);
 const error = ref("");
 const loading = ref(false);
 
+const titleError = computed(() => {
+  if (!form.value.title.trim()) return "Title is required.";
+  if (form.value.title.trim().length < 3) return "Title is too short.";
+  return "";
+});
+
+const languageError = computed(() => {
+  if (!form.value.languageId) return "Please choose a language.";
+  return "";
+});
+
+const isFormValid = computed(() => {
+  return !titleError.value && !languageError.value;
+});
+
 async function loadLanguages(pageNumber = 0, q = "") {
   const params = new URLSearchParams({
     page: String(pageNumber),
@@ -40,6 +56,11 @@ async function loadLanguages(pageNumber = 0, q = "") {
 }
 
 async function submit() {
+  if (!isFormValid.value) {
+    error.value = titleError.value || languageError.value;
+    return;
+  }
+
   loading.value = true;
   error.value = "";
 
@@ -95,10 +116,18 @@ onMounted(async () => {
           subtitle="Set up a vignette sequence to collect oral responses in context."
       />
 
-      <form @submit.prevent="submit" class="form-card">
+      <form @submit.prevent="submit" class="form-card form-card--premium">
+        <div class="meta-badges">
+          <BaseBadge variant="info">Research workflow</BaseBadge>
+          <BaseBadge variant="neutral">Scenario builder</BaseBadge>
+        </div>
+
         <label>
           Title
           <input v-model="form.title" placeholder="Scenario title"/>
+          <span v-if="form.title && titleError" class="field-error">
+            {{ titleError }}
+          </span>
         </label>
 
         <label>
@@ -127,6 +156,9 @@ onMounted(async () => {
               {{ l.name }}
             </option>
           </select>
+          <span v-if="languageError" class="field-error">
+            {{ languageError }}
+          </span>
         </label>
 
         <div class="toolbar">
@@ -148,7 +180,7 @@ onMounted(async () => {
           </button>
         </div>
 
-        <button type="submit" class="btn btn--primary" :disabled="loading">
+        <button type="submit" class="btn btn--primary" :disabled="loading || !isFormValid">
           {{ loading ? "Creating..." : "Create scenario" }}
         </button>
 

@@ -2,6 +2,11 @@
 import {onMounted, ref} from "vue";
 import {RouterLink} from "vue-router";
 import {fetchLanguage, fetchLanguageScenarios} from "../api/languages";
+import BasePageHeader from "../components/ui/BasePageHeader.vue";
+import BaseLoader from "../components/ui/BaseLoader.vue";
+import BaseAlert from "../components/ui/BaseAlert.vue";
+import BaseEmptyState from "../components/ui/BaseEmptyState.vue";
+import BaseBadge from "../components/ui/BaseBadge.vue";
 
 const props = defineProps({
   id: {type: String, required: true},
@@ -11,6 +16,15 @@ const language = ref(null);
 const scenarios = ref([]);
 const error = ref("");
 const loading = ref(false);
+
+function levelVariant(level) {
+  if (!level) return "neutral";
+  const l = String(level).toLowerCase();
+  if (l.includes("family")) return "info";
+  if (l.includes("language")) return "success";
+  if (l.includes("dialect")) return "warning";
+  return "neutral";
+}
 
 async function load() {
   loading.value = true;
@@ -31,19 +45,23 @@ onMounted(load);
 
 <template>
   <main class="page">
-    <p v-if="loading" class="muted">Loading language details...</p>
-    <p v-else-if="error" class="error">{{ error }}</p>
+    <BaseLoader v-if="loading">Loading language details...</BaseLoader>
+    <BaseAlert v-else-if="error" type="error">{{ error }}</BaseAlert>
 
     <template v-else-if="language">
       <section class="section">
-        <div class="section-heading">
-          <div>
-            <h1>{{ language.name ?? "Language" }}</h1>
-            <p class="muted">Detailed language entry</p>
-          </div>
-        </div>
+        <BasePageHeader
+            :title="language.name ?? 'Language'"
+            subtitle="Detailed language entry"
+        >
+          <template #actions>
+            <BaseBadge :variant="levelVariant(language.level)">
+              {{ language.level ?? "-" }}
+            </BaseBadge>
+          </template>
+        </BasePageHeader>
 
-        <div class="card info-grid">
+        <div class="card info-grid info-grid--premium">
           <div>
             <h3>Family</h3>
             <p>
@@ -71,7 +89,7 @@ onMounted(load);
 
           <div>
             <h3>ID</h3>
-            <p>{{ language.id ?? "-" }}</p>
+            <p class="table__mono">{{ language.id ?? "-" }}</p>
           </div>
         </div>
 
@@ -81,14 +99,12 @@ onMounted(load);
         </section>
 
         <section class="section">
-          <div class="section-heading">
-            <div>
-              <h2>Related scenarios</h2>
-              <p class="muted">{{ scenarios.length }} scenario(s) linked to this language.</p>
-            </div>
-          </div>
+          <BasePageHeader
+              title="Related scenarios"
+              :subtitle="`${scenarios.length} scenario(s) linked to this language.`"
+          />
 
-          <div v-if="scenarios.length" class="table-wrap card">
+          <div v-if="scenarios.length" class="table-wrap card table-card">
             <table class="table">
               <thead>
               <tr>
@@ -100,7 +116,7 @@ onMounted(load);
               <tbody>
               <tr v-for="s in scenarios" :key="s.id">
                 <td>
-                  <RouterLink :to="`/scenarios/${s.id}`">
+                  <RouterLink :to="`/scenarios/${s.id}`" class="table__primary-link">
                     {{ s.title ?? "Untitled scenario" }}
                   </RouterLink>
                 </td>
@@ -111,10 +127,11 @@ onMounted(load);
             </table>
           </div>
 
-          <div v-else class="card empty-state">
-            <h3>No scenarios linked yet</h3>
-            <p class="muted">This language is not yet associated with a scenario.</p>
-          </div>
+          <BaseEmptyState
+              v-else
+              title="No scenarios linked yet"
+              message="This language is not yet associated with a scenario."
+          />
         </section>
       </section>
     </template>

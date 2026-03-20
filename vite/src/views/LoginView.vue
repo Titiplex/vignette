@@ -1,5 +1,5 @@
 <script setup>
-import {ref} from "vue";
+import {computed, ref} from "vue";
 import {RouterLink, useRoute, useRouter} from "vue-router";
 import {useAuth} from "../composables/useAuth";
 import BaseAlert from "../components/ui/BaseAlert.vue";
@@ -15,7 +15,27 @@ const password = ref("");
 const error = ref("");
 const loading = ref(false);
 
+const usernameError = computed(() => {
+  if (!username.value) return "Username is required.";
+  return "";
+});
+
+const passwordError = computed(() => {
+  if (!password.value) return "Password is required.";
+  if (password.value.length < 4) return "Password is too short.";
+  return "";
+});
+
+const isFormValid = computed(() => {
+  return !usernameError.value && !passwordError.value;
+});
+
 async function submit() {
+  if (!isFormValid.value) {
+    error.value = usernameError.value || passwordError.value;
+    return;
+  }
+
   loading.value = true;
   error.value = "";
 
@@ -34,7 +54,7 @@ async function submit() {
 
 <template>
   <main class="page auth-page">
-    <section class="form-card auth-card">
+    <section class="form-card auth-card auth-card--premium">
       <div class="section-heading">
         <div>
           <h1>Login</h1>
@@ -46,6 +66,9 @@ async function submit() {
         <label>
           Username
           <input v-model="username" name="username" autocomplete="username"/>
+          <span v-if="username && usernameError" class="field-error">
+            {{ usernameError }}
+          </span>
         </label>
 
         <label>
@@ -56,9 +79,12 @@ async function submit() {
               name="password"
               autocomplete="current-password"
           />
+          <span v-if="password && passwordError" class="field-error">
+            {{ passwordError }}
+          </span>
         </label>
 
-        <button :disabled="loading" type="submit" class="btn btn--primary">
+        <button :disabled="loading || !isFormValid" type="submit" class="btn btn--primary">
           {{ loading ? "Logging in..." : "Login" }}
         </button>
 

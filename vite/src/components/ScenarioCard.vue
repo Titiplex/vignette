@@ -1,6 +1,7 @@
 <script setup>
 import {computed} from "vue";
 import {RouterLink} from "vue-router";
+import BaseBadge from "./ui/BaseBadge.vue";
 
 const props = defineProps({
   scenario: {type: Object, required: true},
@@ -9,8 +10,8 @@ const props = defineProps({
 
 const description = computed(() => {
   const raw = props.scenario.description?.trim() || "No description available.";
-  if (raw.length <= 140) return raw;
-  return raw.slice(0, 137) + "...";
+  if (raw.length <= 150) return raw;
+  return raw.slice(0, 147) + "...";
 });
 </script>
 
@@ -29,22 +30,30 @@ const description = computed(() => {
     </div>
 
     <div class="scenario-card__body">
-      <h3 class="scenario-card__title">
-        {{ scenario.title ?? "Untitled scenario" }}
-      </h3>
+      <div class="scenario-card__top">
+        <h3 class="scenario-card__title">
+          {{ scenario.title ?? "Untitled scenario" }}
+        </h3>
+
+        <div class="scenario-card__badges">
+          <BaseBadge variant="info">
+            {{ scenario.languageId ?? "Unknown language" }}
+          </BaseBadge>
+          <BaseBadge variant="neutral">
+            {{ scenario.authorUsername ?? "Unknown author" }}
+          </BaseBadge>
+        </div>
+      </div>
 
       <p class="scenario-card__description">
         {{ description }}
       </p>
 
-      <div class="scenario-card__meta">
-        <span><strong>Language:</strong> {{ scenario.languageId ?? "-" }}</span>
-        <span><strong>Author:</strong> {{ scenario.authorUsername ?? "-" }}</span>
+      <div class="scenario-card__footer">
+        <RouterLink :to="`/scenarios/${scenario.id}`" class="btn btn--primary">
+          Open scenario
+        </RouterLink>
       </div>
-
-      <RouterLink :to="`/scenarios/${scenario.id}`" class="btn btn--primary">
-        Open scenario
-      </RouterLink>
     </div>
   </article>
 </template>

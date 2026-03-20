@@ -1,5 +1,7 @@
 <script setup>
-const props = defineProps({
+import BaseBadge from "./ui/BaseBadge.vue";
+
+defineProps({
   thumb: {type: Object, required: true},
   audios: {type: Array, default: () => []},
   selected: {type: Boolean, default: false},
@@ -21,17 +23,20 @@ const emit = defineEmits(["select"]);
     />
 
     <div class="thumb-card__body">
-      <h3 class="thumb-card__title">
-        {{ thumb.title || `Thumbnail #${thumb.idx ?? thumb.id}` }}
-      </h3>
+      <div class="thumb-card__header">
+        <h3 class="thumb-card__title">
+          {{ thumb.title || `Thumbnail #${thumb.idx ?? thumb.id}` }}
+        </h3>
 
-      <p class="thumb-card__meta">
-        <strong>Index:</strong> {{ thumb.idx ?? "-" }}
-      </p>
+        <BaseBadge :variant="selected ? 'success' : 'neutral'">
+          {{ selected ? "Selected" : "Available" }}
+        </BaseBadge>
+      </div>
 
-      <p class="thumb-card__meta">
-        <strong>Audio clips:</strong> {{ audios.length }}
-      </p>
+      <div class="thumb-card__meta-row">
+        <BaseBadge variant="info">Index {{ thumb.idx ?? "-" }}</BaseBadge>
+        <BaseBadge variant="neutral">{{ audios.length }} audio</BaseBadge>
+      </div>
 
       <p class="thumb-card__hint">
         Click to manage audio and marker placement.

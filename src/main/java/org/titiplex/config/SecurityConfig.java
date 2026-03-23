@@ -60,7 +60,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/scenarios/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/scenarios/*/thumbnails").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/thumbnails/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/thumbnails/*/audios").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/thumbnails/*/content").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/audio/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/audios/*/content").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users/*/profile").permitAll()
 
                         .requestMatchers(HttpMethod.PUT, "/api/users/me/profile").authenticated()

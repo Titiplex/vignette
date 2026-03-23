@@ -1,10 +1,12 @@
 <script setup>
 import {ref, watch} from "vue";
 import {uploadThumbnailAudio} from "../api/scenarios";
+import {buildApiUrl} from "../api/rest";
 import {useToast} from "../composables/useToast";
 
 const props = defineProps({
   selectedThumb: {type: Object, default: null},
+  audios: {type: Array, default: () => []},
   isOwner: {type: Boolean, default: false},
 });
 
@@ -37,6 +39,21 @@ function resetFormMessages() {
 
 function onFileChange(event) {
   audioFile.value = event.target.files?.[0] ?? null;
+}
+
+function thumbnailContentUrl() {
+  if (!props.selectedThumb?.id) return "";
+  return buildApiUrl(`/api/thumbnails/${props.selectedThumb.id}/content`);
+}
+
+function audioContentUrl(audio) {
+  if (!audio?.id) return "";
+  return buildApiUrl(`/api/audios/${audio.id}/content`);
+}
+
+function formatMarker(value) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num.toFixed(2) : "-";
 }
 
 async function ensureRecorder() {
@@ -175,6 +192,46 @@ watch(
       </div>
     </div>
 
+    <section class="audio-panel__section">
+      <h3>Existing audio clips</h3>
+      <p class="muted">
+        Listen to the audio already attached to this thumbnail.
+      </p>
+
+      <div v-if="audios.length" class="audio-list">
+        <article v-for="audio in audios" :key="audio.id" class="audio-item">
+          <div class="audio-item__header">
+            <div>
+              <h4 class="audio-item__title">
+                {{ audio.title || `Audio #${audio.id}` }}
+              </h4>
+
+              <p class="muted audio-item__meta">
+                <template v-if="audio.markerLabel">
+                  Marker label: <strong>{{ audio.markerLabel }}</strong>
+                </template>
+                <template v-if="audio.markerX != null && audio.markerY != null">
+                  <span v-if="audio.markerLabel"> · </span>
+                  Marker:
+                  <strong>{{ formatMarker(audio.markerX) }}%</strong>,
+                  <strong>{{ formatMarker(audio.markerY) }}%</strong>
+                </template>
+              </p>
+            </div>
+          </div>
+
+          <audio class="audio-player" controls preload="none">
+            <source :src="audioContentUrl(audio)"/>
+            Your browser does not support audio playback.
+          </audio>
+        </article>
+      </div>
+
+      <p v-else class="muted">
+        No audio clips are attached to this thumbnail yet.
+      </p>
+    </section>
+
     <template v-if="isOwner">
       <div class="audio-panel__grid">
         <section class="audio-panel__section">
@@ -185,7 +242,7 @@ watch(
 
           <div class="marker-picker">
             <img
-                :src="`/api/thumbnails/${selectedThumb.id}/content`"
+                :src="thumbnailContentUrl()"
                 alt="Marker picker"
                 class="marker-image"
                 @click="onImageClick"

@@ -1,4 +1,5 @@
 <script setup>
+import {buildApiUrl} from "../api/rest";
 import BaseBadge from "./ui/BaseBadge.vue";
 
 defineProps({
@@ -8,6 +9,11 @@ defineProps({
 });
 
 const emit = defineEmits(["select"]);
+
+function thumbnailContentUrl(thumb) {
+  if (!thumb?.id) return "";
+  return buildApiUrl(`/api/thumbnails/${thumb.id}/content`);
+}
 </script>
 
 <template>
@@ -17,7 +23,7 @@ const emit = defineEmits(["select"]);
       @click="emit('select', thumb)"
   >
     <img
-        :src="`/api/thumbnails/${thumb.id}/content`"
+        :src="thumbnailContentUrl(thumb)"
         :alt="thumb.title || `Thumbnail ${thumb.id}`"
         class="thumb-preview"
     />

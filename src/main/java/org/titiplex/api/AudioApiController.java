@@ -57,6 +57,7 @@ public class AudioApiController {
             summary = "List audio files for a thumbnail",
             description = "Returns all audio files associated with a thumbnail."
     )
+    @PublicOperation
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",

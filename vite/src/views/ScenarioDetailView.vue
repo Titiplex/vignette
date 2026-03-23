@@ -2,6 +2,7 @@
 import {computed, onMounted, ref} from "vue";
 import {fetchLanguage} from "../api/languages";
 import {fetchScenario, fetchScenarioThumbnails, fetchThumbnailAudios, uploadScenarioThumbnail,} from "../api/scenarios";
+import {buildApiUrl} from "../api/rest";
 import {useAuth} from "../composables/useAuth";
 import {useToast} from "../composables/useToast";
 import ThumbnailCard from "../components/ThumbnailCard.vue";
@@ -40,6 +41,11 @@ const selectedAudios = computed(() => {
 
 function onImageChange(event) {
   uploadFile.value = event.target.files?.[0] ?? null;
+}
+
+function thumbnailContentUrl(thumb) {
+  if (!thumb?.id) return "";
+  return buildApiUrl(`/api/thumbnails/${thumb.id}/content`);
 }
 
 async function loadScenario() {
@@ -241,7 +247,7 @@ onMounted(loadAll);
             <section v-if="selectedThumb" class="card selected-preview selected-preview--premium">
               <h2>Selected thumbnail</h2>
               <img
-                  :src="`/api/thumbnails/${selectedThumb.id}/content`"
+                  :src="thumbnailContentUrl(selectedThumb)"
                   :alt="selectedThumb.title || 'Selected thumbnail'"
                   class="selected-preview__image"
               />
@@ -262,6 +268,7 @@ onMounted(loadAll);
 
             <AudioPanel
                 :selected-thumb="selectedThumb"
+                :audios="selectedAudios"
                 :is-owner="isOwner"
                 @uploaded="refreshAudios"
             />

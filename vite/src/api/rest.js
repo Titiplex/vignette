@@ -20,6 +20,28 @@ function getCookie(name) {
         ?.split("=")[1];
 }
 
+function isAbsoluteUrl(value) {
+    return /^https?:\/\//i.test(value);
+}
+
+export function buildApiUrl(path) {
+    if (!path) return path;
+    if (isAbsoluteUrl(path)) return path;
+
+    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+    const apiBase = (import.meta.env.VITE_API_BASE || "").trim();
+
+    if (!apiBase) {
+        return normalizedPath;
+    }
+
+    const normalizedBase = apiBase.endsWith("/")
+        ? apiBase.slice(0, -1)
+        : apiBase;
+
+    return `${normalizedBase}${normalizedPath}`;
+}
+
 export async function apiFetch(path, options = {}) {
     const headers = new Headers(options.headers || {});
     headers.set("Accept", "application/json");
@@ -48,7 +70,7 @@ export async function apiFetch(path, options = {}) {
         headers.set("X-XSRF-TOKEN", decodeURIComponent(xsrf));
     }
 
-    const res = await fetch(path, {
+    const res = await fetch(buildApiUrl(path), {
         ...options,
         method,
         headers,

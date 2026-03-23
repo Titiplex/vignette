@@ -6,9 +6,9 @@ const profile = ref({
   displayName: "",
   institution: "",
   researchInterests: "",
-  biography: "",
-  affiliationsText: "",
-  publicProfile: false,
+  bio: "",
+  academyAffiliations: "",
+  profilePublic: false,
 });
 
 const roles = ref([]);
@@ -24,13 +24,13 @@ async function loadProfile() {
     displayName: data.displayName ?? "",
     institution: data.institution ?? "",
     researchInterests: data.researchInterests ?? "",
-    biography: data.biography ?? "",
-    affiliationsText: (data.affiliations ?? []).join("\n"),
-    publicProfile: !!data.publicProfile,
+    bio: data.bio ?? "",
+    academyAffiliations: (data.academyAffiliations ?? []).join("\n"),
+    profilePublic: !!data.profilePublic,
   };
 
   roles.value = data.roles ?? [];
-  affiliations.value = data.affiliations ?? [];
+  affiliations.value = data.academyAffiliations ?? [];
 }
 
 async function save() {
@@ -43,12 +43,12 @@ async function save() {
       displayName: profile.value.displayName,
       institution: profile.value.institution,
       researchInterests: profile.value.researchInterests,
-      biography: profile.value.biography,
-      affiliations: profile.value.affiliationsText
+      bio: profile.value.bio,
+      academyAffiliations: profile.value.academyAffiliations
           .split("\n")
           .map((s) => s.trim())
           .filter(Boolean),
-      publicProfile: profile.value.publicProfile,
+      profilePublic: profile.value.profilePublic,
     });
 
     success.value = "Profile saved.";
@@ -99,16 +99,16 @@ onMounted(async () => {
 
         <label>
           Biography
-          <textarea v-model="profile.biography" rows="5"/>
+          <textarea v-model="profile.bio" rows="5"/>
         </label>
 
         <label>
           Academic affiliations (one per line)
-          <textarea v-model="profile.affiliationsText" rows="5"/>
+          <textarea v-model="profile.academyAffiliations" rows="5"/>
         </label>
 
         <label class="checkbox-row">
-          <input v-model="profile.publicProfile" type="checkbox"/>
+          <input v-model="profile.profilePublic" type="checkbox"/>
           <span>Make my profile public</span>
         </label>
 

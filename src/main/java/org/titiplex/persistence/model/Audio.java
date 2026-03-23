@@ -15,10 +15,14 @@ public class Audio {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
 
-    @Lob
-    @Basic(fetch = FetchType.LAZY)
-    @Column(name = "audio_bytes", nullable = false)
-    private byte[] audioBytes;
+    @Column(name = "storage_path", nullable = false, length = 512)
+    private String storagePath;
+
+    @Column(name = "size_bytes", nullable = false)
+    private Long sizeBytes;
+
+    @Column(name = "original_filename")
+    private String originalFilename;
 
     @Column(name = "audio_sha256", nullable = false, unique = true, length = 64)
     private String audioSha256;
@@ -29,7 +33,7 @@ public class Audio {
     @Column(name = "idx", nullable = false)
     private Integer idx;
 
-    @Column(name="mime", nullable=false, length=64)
+    @Column(name = "mime", nullable = false, length = 64)
     private String mime; //audio/webm
 
     @Column(name = "author_id", nullable = false)

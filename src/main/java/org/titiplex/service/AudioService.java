@@ -8,8 +8,10 @@ import org.titiplex.persistence.model.Audio;
 import org.titiplex.persistence.model.Scenario;
 import org.titiplex.persistence.model.Thumbnail;
 import org.titiplex.persistence.repo.AudioRepository;
+import org.titiplex.service.storage.FileStorageService;
+import org.titiplex.service.storage.MediaContent;
+import org.titiplex.service.storage.StoredFile;
 
-import java.security.MessageDigest;
 import java.util.List;
 
 @Service
@@ -17,10 +19,12 @@ public class AudioService {
 
     private final AudioRepository audios;
     private final ThumbnailService thumbnailService;
+    private final FileStorageService storage;
 
-    public AudioService(AudioRepository audios, ThumbnailService thumbnailService) {
+    public AudioService(AudioRepository audios, ThumbnailService thumbnailService, FileStorageService storage) {
         this.audios = audios;
         this.thumbnailService = thumbnailService;
+        this.storage = storage;
     }
 
     public List<AudioRowDto> listForThumbnail(Long thumbnailId) {
@@ -47,49 +51,38 @@ public class AudioService {
             throw new IllegalArgumentException("audio is empty");
         }
 
-        byte[] bytes = audioFile.getBytes();
-        if (bytes.length > 10_000_000) { // 10MB MVP
-            throw new IllegalArgumentException("audio too large");
-        }
-
-        String mime = audioFile.getContentType();
-        if (mime == null || !mime.startsWith("audio/")) {
-            //  audio/webm or audio/ogg
-            mime = "audio/webm";
-        }
-
-
         if (markerX != null && (markerX < 0.0 || markerX > 100.0)) {
             throw new IllegalArgumentException("markerX must be between 0 and 100");
         }
-
         if (markerY != null && (markerY < 0.0 || markerY > 100.0)) {
             throw new IllegalArgumentException("markerY must be between 0 and 100");
         }
-
         if ((markerX == null) != (markerY == null)) {
             throw new IllegalArgumentException("markerX and markerY must be both set or both empty");
         }
 
         Thumbnail t = thumbnailService.getThumbnailById(thumbnailId);
+        Scenario s = t.getScenario();
 
         int effectiveIdx = (idx != null) ? idx : (audios.maxIdx(thumbnailId) + 1);
         if (audios.existsByThumbnailIdAndIdx(thumbnailId, effectiveIdx)) {
             throw new IllegalArgumentException("idx already used for this thumbnail");
         }
 
+        StoredFile stored = storage.storeAudio(audioFile, t.getScenarioId(), thumbnailId);
+
         Audio a = new Audio();
         a.setThumbnailId(thumbnailId);
-        a.setAudioBytes(bytes);
-        a.setMime(mime);
-        a.setAudioSha256(sha256Hex(bytes));
+        a.setMime(stored.contentType());
+        a.setAudioSha256(stored.sha256());
+        a.setStoragePath(stored.relativePath());
+        a.setSizeBytes(stored.sizeBytes());
+        a.setOriginalFilename(stored.originalFilename());
         a.setTitle((title == null || title.isBlank()) ? ("Audio " + effectiveIdx) : title.trim());
         a.setIdx(effectiveIdx);
         a.setMarkerX(markerX);
         a.setMarkerY(markerY);
         a.setMarkerLabel((markerLabel == null || markerLabel.isBlank()) ? null : markerLabel.trim());
-
-        Scenario s = t.getScenario();
 
         a.setAuthorId(authorId);
         a.setScenarioId(t.getScenarioId());
@@ -99,17 +92,19 @@ public class AudioService {
         return a.getId();
     }
 
+    public MediaContent loadContent(Long audioId) {
+        Audio a = getAudioOrThrow(audioId);
+        return storage.load(a.getStoragePath(), a.getMime(), a.getAudioSha256());
+    }
 
     @Transactional
     public void updateMarker(Long audioId, Double markerX, Double markerY, String markerLabel) {
         if (markerX != null && (markerX < 0.0 || markerX > 100.0)) {
             throw new IllegalArgumentException("markerX must be between 0 and 100");
         }
-
         if (markerY != null && (markerY < 0.0 || markerY > 100.0)) {
             throw new IllegalArgumentException("markerY must be between 0 and 100");
         }
-
         if ((markerX == null) != (markerY == null)) {
             throw new IllegalArgumentException("markerX and markerY must be both set or both empty");
         }
@@ -123,14 +118,8 @@ public class AudioService {
 
     @Transactional
     public void deleteAudio(Long audioId) {
-        audios.deleteById(audioId);
-    }
-
-    private static String sha256Hex(byte[] bytes) throws Exception {
-        MessageDigest md = MessageDigest.getInstance("SHA-256");
-        byte[] dig = md.digest(bytes);
-        StringBuilder sb = new StringBuilder();
-        for (byte b : dig) sb.append(String.format("%02x", b));
-        return sb.toString();
+        Audio a = getAudioOrThrow(audioId);
+        storage.deleteQuietly(a.getStoragePath());
+        audios.delete(a);
     }
 }

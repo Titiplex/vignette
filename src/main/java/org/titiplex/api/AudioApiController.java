@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Min;
+import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -86,16 +87,16 @@ public class AudioApiController {
     }
 
     /**
-     * Retrieves the content of an audio file by its ID and returns it as a byte array.
+     * Retrieves the content of an audio file by its ID and returns it.
      * The response includes the appropriate MIME type and caching headers.
      *
      * @param id ({@link Long}) the unique identifier of the audio file
-     * @return a {@link ResponseEntity} containing the byte array representation of the audio content,
+     * @return a {@link ResponseEntity} containing the representation of the audio content,
      * the MIME type of the file, and caching headers
      */
     @Operation(
             summary = "Retrieves the content of an audio file.",
-            description = "Returns the audio file content as a byte array, with appropriate MIME type and caching headers."
+            description = "Returns the audio file content, with appropriate MIME type and caching headers."
     )
     @PublicOperation
     @ApiResponses({
@@ -104,7 +105,7 @@ public class AudioApiController {
                     description = "Audio content retrieved successfully",
                     content = @Content(
                             mediaType = "audio/*",
-                            schema = @Schema(type = "string", format = "binary")
+                            schema = @Schema(implementation = ResponseEntity.class, contains = Resource.class)
                     )
             ),
             @ApiResponse(
@@ -114,15 +115,18 @@ public class AudioApiController {
             )
     })
     @GetMapping("/audios/{id}/content")
-    public ResponseEntity<byte[]> content(
+    public ResponseEntity<Resource> content(
             @Parameter(description = "ID of the audio file to retrieve", required = true)
             @PathVariable Long id
     ) {
-        var a = audioService.getAudioOrThrow(id);
+        var media = audioService.loadContent(id);
+
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(a.getMime()))
+                .contentType(MediaType.parseMediaType(media.contentType()))
+                .contentLength(media.sizeBytes())
+                .eTag(media.etag())
                 .header("Cache-Control", "private, max-age=3600")
-                .body(a.getAudioBytes());
+                .body(media.resource());
     }
 
     /**

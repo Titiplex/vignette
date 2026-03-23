@@ -30,10 +30,14 @@ public class Thumbnail {
     @Column(name = "scenario_id", nullable = false)
     private Long scenarioId;
 
-    @Lob
-    @Basic(fetch = FetchType.LAZY)
-    @Column(name = "image_bytes", nullable = false)
-    private byte[] imageBytes;
+    @Column(name = "storage_path", nullable = false, length = 512)
+    private String storagePath;
+
+    @Column(name = "size_bytes", nullable = false)
+    private Long sizeBytes;
+
+    @Column(name = "original_filename")
+    private String originalFilename;
 
     @Column(name = "image_sha256", nullable = false, unique = true, length = 64)
     private String imageSha256;

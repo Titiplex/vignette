@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -30,7 +31,6 @@ import org.titiplex.service.ScenarioService;
 import org.titiplex.service.ThumbnailService;
 import org.titiplex.service.UserService;
 
-import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -104,8 +104,6 @@ public class ThumbnailApiController {
      * @param image      the image file ({@link MultipartFile}) to be uploaded as a thumbnail; must not be null or empty
      * @param auth       the authentication object representing the currently authenticated user
      * @return an {@link UploadResponse} containing the ID of the newly uploaded thumbnail
-     * @throws IOException              if an I/O error occurs during image processing or saving
-     * @throws IllegalArgumentException if the provided image file is null or empty
      */
     @Operation(
             summary = "Upload a thumbnail image",
@@ -191,7 +189,7 @@ public class ThumbnailApiController {
 
             @Parameter(hidden = true)
             Authentication auth
-    ) throws IOException {
+    ) throws Exception {
 
         if (image == null || image.isEmpty()) throw new IllegalArgumentException("Image is required");
 
@@ -206,7 +204,7 @@ public class ThumbnailApiController {
      * Retrieves the binary content of a thumbnail image by its ID.
      *
      * @param id the ID ({@link Long}) of the thumbnail whose binary content is to be retrieved
-     * @return a {@link ResponseEntity} containing the binary content ( byte array ) of the thumbnail image
+     * @return a {@link ResponseEntity} containing the content's stream of the thumbnail image
      * with the appropriate content type header, or the default content type
      * of "application/octet-stream" if none is specified
      */
@@ -221,7 +219,7 @@ public class ThumbnailApiController {
                     description = "Thumbnail content retrieved successfully",
                     content = @Content(
                             mediaType = "image/*",
-                            schema = @Schema(type = "string", format = "binary")
+                            schema = @Schema(implementation = ResponseEntity.class, contains = Resource.class)
                     )
             ),
             @ApiResponse(
@@ -230,7 +228,7 @@ public class ThumbnailApiController {
             )
     })
     @GetMapping("/thumbnails/{id}/content")
-    public ResponseEntity<byte[]> content(
+    public ResponseEntity<Resource> content(
             @Parameter(
                     description = "ID of the thumbnail to retrieve",
                     required = true,
@@ -238,13 +236,13 @@ public class ThumbnailApiController {
             )
             @PathVariable Long id
     ) {
-        Thumbnail t = thumbnailService.getThumbnailById(id);
-
-        String ct = t.getContentType();
-        if (ct == null || ct.isBlank()) ct = MediaType.APPLICATION_OCTET_STREAM_VALUE;
+        var media = thumbnailService.loadContent(id);
 
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(ct))
-                .body(t.getImageBytes());
+                .contentType(MediaType.parseMediaType(media.contentType()))
+                .contentLength(media.sizeBytes())
+                .eTag(media.etag())
+                .header("Cache-Control", "public, max-age=3600")
+                .body(media.resource());
     }
 }

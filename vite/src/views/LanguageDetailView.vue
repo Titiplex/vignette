@@ -1,5 +1,5 @@
 <script setup>
-import {onMounted, ref} from "vue";
+import {ref, watch} from "vue";
 import {RouterLink} from "vue-router";
 import {fetchLanguage, fetchLanguageScenarios} from "../api/languages";
 import BasePageHeader from "../components/ui/BasePageHeader.vue";
@@ -26,21 +26,34 @@ function levelVariant(level) {
   return "neutral";
 }
 
-async function load() {
+async function load(id) {
   loading.value = true;
   error.value = "";
+  language.value = null;
+  scenarios.value = [];
 
   try {
-    language.value = await fetchLanguage(props.id);
-    scenarios.value = await fetchLanguageScenarios(props.id);
+    const [lang, linkedScenarios] = await Promise.all([
+      fetchLanguage(id),
+      fetchLanguageScenarios(id),
+    ]);
+
+    language.value = lang;
+    scenarios.value = linkedScenarios;
   } catch (e) {
-    error.value = e.message;
+    error.value = e.message || "Failed to load language details.";
   } finally {
     loading.value = false;
   }
 }
 
-onMounted(load);
+watch(
+    () => props.id,
+    (id) => {
+      load(id);
+    },
+    {immediate: true}
+);
 </script>
 
 <template>

@@ -5,24 +5,31 @@ const currentUser = ref(null);
 const authLoaded = ref(false);
 const authLoading = ref(false);
 
+let loadPromise = null;
+
 export function useAuth() {
     const isAuthenticated = computed(() => !!currentUser.value);
 
     async function loadMe(force = false) {
-        if (authLoading.value) return currentUser.value;
+        if (loadPromise) return loadPromise;
         if (authLoaded.value && !force) return currentUser.value;
 
-        authLoading.value = true;
-        try {
-            currentUser.value = await apiMe();
-            return currentUser.value;
-        } catch {
-            currentUser.value = null;
-            return null;
-        } finally {
-            authLoaded.value = true;
-            authLoading.value = false;
-        }
+        loadPromise = (async () => {
+            authLoading.value = true;
+            try {
+                currentUser.value = await apiMe();
+                return currentUser.value;
+            } catch {
+                currentUser.value = null;
+                return null;
+            } finally {
+                authLoaded.value = true;
+                authLoading.value = false;
+                loadPromise = null;
+            }
+        })();
+
+        return loadPromise;
     }
 
     async function login(username, password) {

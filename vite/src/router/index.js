@@ -49,14 +49,11 @@ const router = createRouter({
     routes,
 });
 
-let authInitialized = false;
-
 router.beforeEach(async (to) => {
-    const {isAuthenticated, loadMe} = useAuth();
+    const {isAuthenticated, authLoaded, loadMe} = useAuth();
 
-    if (!authInitialized) {
+    if (!authLoaded.value) {
         await loadMe();
-        authInitialized = true;
     }
 
     if (to.meta.requiresAuth && !isAuthenticated.value) {

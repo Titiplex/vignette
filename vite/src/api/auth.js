@@ -6,19 +6,22 @@ export async function login(username, password) {
         body: {username, password},
     });
 
-    setAccessToken(data.accessToken);
+    setAccessToken(data.accessToken ?? data.token ?? null);
     return data;
 }
 
 export async function refresh() {
     const data = await apiFetch("/api/auth/refresh", {method: "POST"});
-    setAccessToken(data.accessToken);
+    setAccessToken(data.accessToken ?? data.token ?? null);
     return data;
 }
 
 export async function logout() {
-    await apiFetch("/api/auth/logout", {method: "POST"});
-    setAccessToken(null);
+    try {
+        await apiFetch("/api/auth/logout", {method: "POST"});
+    } finally {
+        setAccessToken(null);
+    }
 }
 
 export async function me() {

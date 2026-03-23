@@ -1,4 +1,5 @@
 let accessToken = sessionStorage.getItem("accessToken") || null;
+let refreshPromise = null;
 
 export function setAccessToken(token) {
     accessToken = token;
@@ -42,7 +43,69 @@ export function buildApiUrl(path) {
     return `${normalizedBase}${normalizedPath}`;
 }
 
-export async function apiFetch(path, options = {}) {
+function isSessionAuthPath(path) {
+    return path === "/api/auth/me"
+        || path === "/api/auth/refresh"
+        || path === "/api/auth/logout";
+}
+
+function shouldAttachBearer(path) {
+    return !!accessToken && !isSessionAuthPath(path);
+}
+
+async function requestAccessTokenRefresh() {
+    if (refreshPromise) return refreshPromise;
+
+    refreshPromise = (async () => {
+        try {
+            const res = await fetch(buildApiUrl("/api/auth/refresh"), {
+                method: "POST",
+                headers: {
+                    Accept: "application/json",
+                },
+                credentials: "include",
+            });
+
+            if (!res.ok) {
+                setAccessToken(null);
+                return false;
+            }
+
+            const ct = res.headers.get("content-type") || "";
+            if (!ct.includes("application/json")) {
+                setAccessToken(null);
+                return false;
+            }
+
+            const data = await res.json();
+            const newToken = data?.accessToken ?? data?.token ?? null;
+
+            if (!newToken) {
+                setAccessToken(null);
+                return false;
+            }
+
+            setAccessToken(newToken);
+            return true;
+        } catch {
+            setAccessToken(null);
+            return false;
+        } finally {
+            refreshPromise = null;
+        }
+    })();
+
+    return refreshPromise;
+}
+
+function buildErrorMessage(data, fallback) {
+    if (!data) return fallback;
+    return data.message || data.error || data.detail || JSON.stringify(data);
+}
+
+export async function apiFetch(path, options = {}, meta = {}) {
+    const allowRefresh = meta.allowRefresh ?? true;
+
     const headers = new Headers(options.headers || {});
     headers.set("Accept", "application/json");
 
@@ -60,7 +123,7 @@ export async function apiFetch(path, options = {}) {
         body = JSON.stringify(body);
     }
 
-    if (accessToken) {
+    if (shouldAttachBearer(path)) {
         headers.set("Authorization", `Bearer ${accessToken}`);
     }
 
@@ -78,13 +141,25 @@ export async function apiFetch(path, options = {}) {
         credentials: "include",
     });
 
+    if (
+        res.status === 401
+        && allowRefresh
+        && !!accessToken
+        && !isSessionAuthPath(path)
+    ) {
+        const refreshed = await requestAccessTokenRefresh();
+        if (refreshed) {
+            return apiFetch(path, options, {allowRefresh: false});
+        }
+    }
+
     if (!res.ok) {
         let message = `HTTP ${res.status}`;
         try {
             const ct = res.headers.get("content-type") || "";
             if (ct.includes("application/json")) {
                 const data = await res.json();
-                message = data.message || data.error || JSON.stringify(data);
+                message = buildErrorMessage(data, message);
             } else {
                 const text = await res.text();
                 if (text) message = text;

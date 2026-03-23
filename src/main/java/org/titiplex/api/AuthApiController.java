@@ -38,11 +38,37 @@ public class AuthApiController {
     private final AuthenticationManager authManager;
     private final JwtEncoder jwtEncoder;
     private final UserService users;
+    private static final long ACCESS_TOKEN_EXPIRES_IN_SECONDS = 60 * 60; // 1h
 
     public AuthApiController(AuthenticationManager authManager, JwtEncoder jwtEncoder, UserService users) {
         this.authManager = authManager;
         this.jwtEncoder = jwtEncoder;
         this.users = users;
+    }
+
+    private Authentication requireAuthenticated(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(String.valueOf(auth.getPrincipal()))) {
+            throw new UnauthenticatedException();
+        }
+        return auth;
+    }
+
+    private LoginResponse issueToken(Authentication auth) {
+        Instant now = Instant.now();
+
+        var roles = auth.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .toList();
+
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+                .issuedAt(now)
+                .expiresAt(now.plusSeconds(ACCESS_TOKEN_EXPIRES_IN_SECONDS))
+                .subject(auth.getName())
+                .claim("roles", roles)
+                .build();
+
+        String token = jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+        return new LoginResponse(token, ACCESS_TOKEN_EXPIRES_IN_SECONDS);
     }
 
     /**
@@ -119,21 +145,7 @@ public class AuthApiController {
                 context
         );
 
-        // 2) JWT
-        Instant now = Instant.now();
-        long expires = 60 * 60; // 1h
-
-        var roles = auth.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
-
-        JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuedAt(now)
-                .expiresAt(now.plusSeconds(expires))
-                .subject(auth.getName())
-                .claim("roles", roles)
-                .build();
-
-        String token = jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
-        return new LoginResponse(token, expires);
+        return issueToken(auth);
     }
 
     /**
@@ -203,10 +215,15 @@ public class AuthApiController {
     })
     @GetMapping("/me")
     public MeResponse me(@Parameter(hidden = true) Authentication auth) {
-        if (auth == null) return null;
-        User u = users.getUserByUsername(auth.getName());
+        Authentication authenticated = requireAuthenticated(auth);
+
+        User u = users.getUserByUsername(authenticated.getName());
         if (u == null) throw new IllegalStateException("user not found");
-        var roles = auth.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
+
+        var roles = authenticated.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .toList();
+
         return new MeResponse(u.getId(), u.getUsername(), roles);
     }
 
@@ -245,7 +262,7 @@ public class AuthApiController {
             @ApiResponse(
                     responseCode = "400",
                     description = "Invalid input : missing required fields, password too short, or malformed data",
-            content = @Content(schema = @Schema(implementation = ApiError.class))
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
             ),
             @ApiResponse(
                     responseCode = "409",
@@ -279,5 +296,44 @@ public class AuthApiController {
 
         User u = users.register(username, email, pwd);
         return new RegisterResponse(u.getId(), u.getUsername());
+    }
+
+    @Operation(
+            summary = "Refresh the current access token",
+            description = """
+                    Issues a new JWT access token for the current authenticated session.
+                    
+                    This endpoint is meant to be called with the existing server-side session
+                    cookie, not with an Authorization bearer token.
+                    """
+    )
+    @PublicOperation
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "A new access token was issued successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = LoginResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "No authenticated session available",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            )
+    })
+    @PostMapping("/refresh")
+    public LoginResponse refresh(@Parameter(hidden = true) Authentication auth) {
+        Authentication authenticated = requireAuthenticated(auth);
+
+        User u = users.getUserByUsername(authenticated.getName());
+        if (u == null) throw new IllegalStateException("user not found");
+
+        return issueToken(authenticated);
+    }
+
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    private static class UnauthenticatedException extends RuntimeException {
     }
 }

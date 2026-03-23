@@ -48,9 +48,10 @@ public class UserApiController {
      */
     @Operation(
             summary = "Get my profile",
-            description = "Returns the complete private profile of the current authenticated user.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            description = "Returns the complete private profile of the current authenticated user."
     )
+//    @AuthenticatedOperation
+    @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -108,9 +109,9 @@ public class UserApiController {
      */
     @Operation(
             summary = "Update my profile",
-            description = "Updates the private profile of the current authenticated user.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            description = "Updates the private profile of the current authenticated user."
     )
+    @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",

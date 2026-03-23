@@ -19,7 +19,6 @@ import org.springframework.data.web.config.SpringDataWebSettings;
  * (@{@link AutoConfiguration}(after = {@link RepositoryRestMvcAutoConfiguration}.class), @{@link ConditionalOnMissingBean}({@link PageableHandlerMethodArgumentResolver}.class))
  *
  * @see SpringDataWebAutoConfiguration#springDataWebSettings()
- * // * @see RepositoryRestMvcConfiguration#pageableResolver()
  */
 @Configuration
 @EnableConfigurationProperties(SpringDataWebProperties.class)
@@ -29,5 +28,5 @@ public class DataRestConfig {
     public SpringDataWebSettings springDataWebSettings(SpringDataWebProperties springDataWebProperties) {
         return new SpringDataWebSettings(springDataWebProperties.getPageable().getSerializationMode());
     }
-
+// // * @see RepositoryRestMvcConfiguration#pageableResolver()
 }

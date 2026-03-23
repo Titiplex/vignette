@@ -25,6 +25,7 @@ const languageName = ref("");
 const thumbnails = ref([]);
 const audioMap = ref({});
 const selectedThumb = ref(null);
+const activeAudioId = ref(null);
 const error = ref("");
 const uploadError = ref("");
 const uploadSuccess = ref("");
@@ -39,6 +40,28 @@ const selectedAudios = computed(() => {
   return audioMap.value[selectedThumb.value.id] || [];
 });
 
+const selectedAudioMarkers = computed(() => {
+  return selectedAudios.value
+      .filter((audio) =>
+          audio?.markerX !== null &&
+          audio?.markerX !== undefined &&
+          audio?.markerY !== null &&
+          audio?.markerY !== undefined &&
+          audio?.markerX !== "" &&
+          audio?.markerY !== ""
+      )
+      .map((audio) => {
+        const x = Number(audio.markerX);
+        const y = Number(audio.markerY);
+        return {
+          ...audio,
+          _x: Number.isFinite(x) ? Math.max(0, Math.min(100, x)) : null,
+          _y: Number.isFinite(y) ? Math.max(0, Math.min(100, y)) : null,
+        };
+      })
+      .filter((audio) => audio._x !== null && audio._y !== null);
+});
+
 function onImageChange(event) {
   uploadFile.value = event.target.files?.[0] ?? null;
 }
@@ -46,6 +69,26 @@ function onImageChange(event) {
 function thumbnailContentUrl(thumb) {
   if (!thumb?.id) return "";
   return buildApiUrl(`/api/thumbnails/${thumb.id}/content`);
+}
+
+function markerStyle(audio) {
+  return {
+    left: `${audio._x}%`,
+    top: `${audio._y}%`,
+  };
+}
+
+function isMarkerActive(audio) {
+  return String(activeAudioId.value ?? "") === String(audio?.id ?? "");
+}
+
+function selectThumb(thumb) {
+  selectedThumb.value = thumb;
+  activeAudioId.value = null;
+}
+
+function setActiveAudio(audio) {
+  activeAudioId.value = audio?.id ?? null;
 }
 
 async function loadScenario() {
@@ -87,6 +130,13 @@ async function loadThumbs() {
   ) {
     selectedThumb.value = thumbnails.value[0] || null;
   }
+
+  if (
+      activeAudioId.value != null &&
+      !selectedAudios.value.some((audio) => String(audio.id) === String(activeAudioId.value))
+  ) {
+    activeAudioId.value = null;
+  }
 }
 
 async function loadAll() {
@@ -107,10 +157,6 @@ async function loadAll() {
   } finally {
     loading.value = false;
   }
-}
-
-function selectThumb(thumb) {
-  selectedThumb.value = thumb;
 }
 
 async function uploadImage() {
@@ -224,7 +270,7 @@ onMounted(loadAll);
                   :subtitle="`${thumbnails.length} thumbnail(s) available in this scenario.`"
               />
 
-              <div v-if="thumbnails.length" class="card-grid">
+              <div v-if="thumbnails.length" class="card-grid card-grid--thumbs">
                 <ThumbnailCard
                     v-for="thumb in thumbnails"
                     :key="thumb.id"
@@ -246,11 +292,27 @@ onMounted(loadAll);
           <aside class="scenario-layout__side">
             <section v-if="selectedThumb" class="card selected-preview selected-preview--premium">
               <h2>Selected thumbnail</h2>
-              <img
-                  :src="thumbnailContentUrl(selectedThumb)"
-                  :alt="selectedThumb.title || 'Selected thumbnail'"
-                  class="selected-preview__image"
-              />
+
+              <div class="selected-preview__stage">
+                <img
+                    :src="thumbnailContentUrl(selectedThumb)"
+                    :alt="selectedThumb.title || 'Selected thumbnail'"
+                    class="selected-preview__image"
+                />
+
+                <button
+                    v-for="audio in selectedAudioMarkers"
+                    :key="audio.id"
+                    type="button"
+                    class="marker-dot"
+                    :class="{ 'marker-dot--active': isMarkerActive(audio) }"
+                    :style="markerStyle(audio)"
+                    :title="audio.markerLabel || audio.title || `Audio #${audio.id}`"
+                >
+                  <span class="marker-dot__pulse"></span>
+                  <span class="marker-dot__core"></span>
+                </button>
+              </div>
 
               <div class="meta-badges">
                 <BaseBadge variant="info">
@@ -258,6 +320,9 @@ onMounted(loadAll);
                 </BaseBadge>
                 <BaseBadge variant="neutral">
                   {{ selectedAudios.length }} audio clip(s)
+                </BaseBadge>
+                <BaseBadge variant="warning">
+                  {{ selectedAudioMarkers.length }} marker(s)
                 </BaseBadge>
               </div>
 
@@ -269,8 +334,10 @@ onMounted(loadAll);
             <AudioPanel
                 :selected-thumb="selectedThumb"
                 :audios="selectedAudios"
+                :active-audio-id="activeAudioId"
                 :is-owner="isOwner"
                 @uploaded="refreshAudios"
+                @play-audio="setActiveAudio"
             />
           </aside>
         </div>

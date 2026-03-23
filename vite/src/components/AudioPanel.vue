@@ -1,5 +1,5 @@
 <script setup>
-import {ref, watch} from "vue";
+import {computed, ref, watch} from "vue";
 import {uploadThumbnailAudio} from "../api/scenarios";
 import {buildApiUrl} from "../api/rest";
 import {useToast} from "../composables/useToast";
@@ -8,9 +8,10 @@ const props = defineProps({
   selectedThumb: {type: Object, default: null},
   audios: {type: Array, default: () => []},
   isOwner: {type: Boolean, default: false},
+  activeAudioId: {type: [Number, String, null], default: null},
 });
 
-const emit = defineEmits(["uploaded"]);
+const emit = defineEmits(["uploaded", "play-audio"]);
 const toast = useToast();
 
 const audioTitle = ref("");
@@ -51,10 +52,33 @@ function audioContentUrl(audio) {
   return buildApiUrl(`/api/audios/${audio.id}/content`);
 }
 
+function hasMarker(audio) {
+  return (
+      audio?.markerX !== null &&
+      audio?.markerX !== undefined &&
+      audio?.markerY !== null &&
+      audio?.markerY !== undefined &&
+      audio?.markerX !== "" &&
+      audio?.markerY !== ""
+  );
+}
+
 function formatMarker(value) {
   const num = Number(value);
   return Number.isFinite(num) ? num.toFixed(2) : "-";
 }
+
+function isAudioActive(audio) {
+  return String(props.activeAudioId ?? "") === String(audio?.id ?? "");
+}
+
+const markerPreviewStyle = computed(() => {
+  if (markerX.value === "" || markerY.value === "") return null;
+  return {
+    left: `${markerX.value}%`,
+    top: `${markerY.value}%`,
+  };
+});
 
 async function ensureRecorder() {
   const stream = await navigator.mediaDevices.getUserMedia({audio: true});
@@ -168,6 +192,22 @@ function onImageClick(event) {
   markerY.value = Math.max(0, Math.min(100, y)).toFixed(2);
 }
 
+function onAudioPlay(audio) {
+  emit("play-audio", audio);
+}
+
+function onAudioPause(audio) {
+  if (isAudioActive(audio)) {
+    emit("play-audio", null);
+  }
+}
+
+function onAudioEnded(audio) {
+  if (isAudioActive(audio)) {
+    emit("play-audio", null);
+  }
+}
+
 watch(
     () => props.selectedThumb,
     () => {
@@ -177,6 +217,7 @@ watch(
       audioFile.value = null;
       recordedBlob = null;
       isRecording.value = false;
+      emit("play-audio", null);
     }
 );
 </script>
@@ -199,7 +240,12 @@ watch(
       </p>
 
       <div v-if="audios.length" class="audio-list">
-        <article v-for="audio in audios" :key="audio.id" class="audio-item">
+        <article
+            v-for="audio in audios"
+            :key="audio.id"
+            class="audio-item"
+            :class="{ 'audio-item--active': isAudioActive(audio) }"
+        >
           <div class="audio-item__header">
             <div>
               <h4 class="audio-item__title">
@@ -210,7 +256,7 @@ watch(
                 <template v-if="audio.markerLabel">
                   Marker label: <strong>{{ audio.markerLabel }}</strong>
                 </template>
-                <template v-if="audio.markerX != null && audio.markerY != null">
+                <template v-if="hasMarker(audio)">
                   <span v-if="audio.markerLabel"> · </span>
                   Marker:
                   <strong>{{ formatMarker(audio.markerX) }}%</strong>,
@@ -220,7 +266,14 @@ watch(
             </div>
           </div>
 
-          <audio class="audio-player" controls preload="none">
+          <audio
+              class="audio-player"
+              controls
+              preload="none"
+              @play="onAudioPlay(audio)"
+              @pause="onAudioPause(audio)"
+              @ended="onAudioEnded(audio)"
+          >
             <source :src="audioContentUrl(audio)"/>
             Your browser does not support audio playback.
           </audio>
@@ -241,12 +294,21 @@ watch(
           </p>
 
           <div class="marker-picker">
-            <img
-                :src="thumbnailContentUrl()"
-                alt="Marker picker"
-                class="marker-image"
-                @click="onImageClick"
-            />
+            <div class="marker-image-stage">
+              <img
+                  :src="thumbnailContentUrl()"
+                  alt="Marker picker"
+                  class="marker-image"
+                  @click="onImageClick"
+              />
+
+              <div
+                  v-if="markerPreviewStyle"
+                  class="marker-dot marker-dot--draft"
+                  :style="markerPreviewStyle"
+                  title="Selected marker position"
+              ></div>
+            </div>
           </div>
 
           <p class="muted">

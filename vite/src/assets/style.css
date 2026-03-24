@@ -1181,3 +1181,24 @@ textarea {
     gap: 10px;
     flex-wrap: wrap;
 }
+
+.transport-toggles {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.transport-flags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.thumb-card.selected.thumb-card--highlighted {
+    border-color: #f59e0b;
+    box-shadow:
+            0 0 0 3px rgba(245, 158, 11, 0.22),
+            0 0 0 6px rgba(15, 118, 110, 0.12),
+            var(--shadow);
+}

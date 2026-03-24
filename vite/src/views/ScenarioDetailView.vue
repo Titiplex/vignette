@@ -162,7 +162,9 @@ function focusPlaybackItem(item) {
 }
 
 const autoplay = useScenarioAutoplay(playbackQueue, {
-  gapMs: 250,
+  gapMs: 320,
+  autoContinue: true,
+  loopScenario: false,
   onItemChange: (item) => {
     focusPlaybackItem(item);
   },
@@ -174,6 +176,24 @@ const autoplay = useScenarioAutoplay(playbackQueue, {
     toast.success("Automatic playback finished.");
   },
 });
+
+function toggleAutoContinue() {
+  autoplay.toggleAutoContinue();
+  toast.info(
+      autoplay.autoContinue.value
+          ? "Auto-continue enabled."
+          : "Auto-continue disabled."
+  );
+}
+
+function toggleLoopScenario() {
+  autoplay.toggleLoopScenario();
+  toast.info(
+      autoplay.loopScenario.value
+          ? "Loop scenario enabled."
+          : "Loop scenario disabled."
+  );
+}
 
 function findStartIndex() {
   if (!playbackQueue.value.length) return 0;
@@ -470,14 +490,34 @@ onMounted(loadAll);
                       <template v-if="autoplay.currentItem">
                         Thumbnail #{{ autoplay.currentItem.thumbnailIdx ?? autoplay.currentItem.thumbnailId }}
                         <span v-if="autoplay.currentItem.audioIdx != null">
-                          · Audio order {{ autoplay.currentItem.audioIdx }}
-                        </span>
+              · Audio order {{ autoplay.currentItem.audioIdx }}
+            </span>
                         · {{ playerStateLabel }}
                       </template>
                       <template v-else>
                         Idle
                       </template>
                     </p>
+                  </div>
+
+                  <div class="transport-toggles">
+                    <button
+                        type="button"
+                        class="btn"
+                        :class="autoplay.autoContinue ? 'btn--primary' : 'btn--ghost'"
+                        @click="toggleAutoContinue"
+                    >
+                      Auto-continue {{ autoplay.autoContinue ? "On" : "Off" }}
+                    </button>
+
+                    <button
+                        type="button"
+                        class="btn"
+                        :class="autoplay.loopScenario ? 'btn--primary' : 'btn--ghost'"
+                        @click="toggleLoopScenario"
+                    >
+                      Loop {{ autoplay.loopScenario ? "On" : "Off" }}
+                    </button>
                   </div>
                 </div>
 
@@ -504,6 +544,15 @@ onMounted(loadAll);
                       @click="autoplay.previous"
                   >
                     Previous
+                  </button>
+
+                  <button
+                      type="button"
+                      class="btn btn--ghost"
+                      :disabled="!playbackQueue.length"
+                      @click="autoplay.replayCurrent"
+                  >
+                    Replay
                   </button>
 
                   <button
@@ -542,6 +591,16 @@ onMounted(loadAll);
                   >
                     Stop
                   </button>
+                </div>
+
+                <div class="transport-flags">
+                  <BaseBadge :variant="autoplay.autoContinue ? 'success' : 'neutral'">
+                    Auto-continue {{ autoplay.autoContinue ? "enabled" : "disabled" }}
+                  </BaseBadge>
+
+                  <BaseBadge :variant="autoplay.loopScenario ? 'warning' : 'neutral'">
+                    Loop {{ autoplay.loopScenario ? "enabled" : "disabled" }}
+                  </BaseBadge>
                 </div>
               </div>
             </section>

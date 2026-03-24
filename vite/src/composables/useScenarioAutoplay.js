@@ -2,12 +2,12 @@ import {computed, onBeforeUnmount, ref, watch} from "vue";
 
 export function useScenarioAutoplay(playlistRef, options = {}) {
     const gapMs = options.gapMs ?? 320;
-    const onItemChange = options.onItemChange ?? (() => {
-    });
-    const onStop = options.onStop ?? (() => {
-    });
-    const onEndedAll = options.onEndedAll ?? (() => {
-    });
+    const onItemChange = options.onItemChange ?? (() => {});
+    const onStop = options.onStop ?? (() => {});
+    const onEndedAll = options.onEndedAll ?? (() => {});
+
+    const autoContinue = ref(options.autoContinue ?? true);
+    const loopScenario = ref(options.loopScenario ?? false);
 
     const audio = new Audio();
     audio.preload = "auto";
@@ -80,6 +80,14 @@ export function useScenarioAutoplay(playlistRef, options = {}) {
         await playIndex(safeIndex);
     }
 
+    async function replayCurrent() {
+        if (currentIndex.value < 0) {
+            await playFromStart();
+            return;
+        }
+        await playIndex(currentIndex.value);
+    }
+
     async function resume() {
         if (!audio.src) {
             await playFromStart();
@@ -116,9 +124,16 @@ export function useScenarioAutoplay(playlistRef, options = {}) {
     }
 
     async function next() {
+        if (!playlistRef.value.length) return;
+
         const nextIndex = currentIndex.value + 1;
 
         if (nextIndex >= playlistRef.value.length) {
+            if (loopScenario.value) {
+                await playIndex(0);
+                return;
+            }
+
             stop();
             onEndedAll();
             return;
@@ -129,6 +144,11 @@ export function useScenarioAutoplay(playlistRef, options = {}) {
 
     async function previous() {
         if (!playlistRef.value.length) return;
+
+        if (currentTime.value > 3 && currentIndex.value >= 0) {
+            await replayCurrent();
+            return;
+        }
 
         const prevIndex = currentIndex.value <= 0 ? 0 : currentIndex.value - 1;
         await playIndex(prevIndex);
@@ -155,6 +175,14 @@ export function useScenarioAutoplay(playlistRef, options = {}) {
         return `${minutes}:${String(seconds).padStart(2, "0")}`;
     }
 
+    function toggleAutoContinue() {
+        autoContinue.value = !autoContinue.value;
+    }
+
+    function toggleLoopScenario() {
+        loopScenario.value = !loopScenario.value;
+    }
+
     audio.addEventListener("loadedmetadata", () => {
         duration.value = Number.isFinite(audio.duration) ? audio.duration : 0;
     });
@@ -165,6 +193,13 @@ export function useScenarioAutoplay(playlistRef, options = {}) {
 
     audio.addEventListener("ended", () => {
         clearPendingNext();
+
+        if (!autoContinue.value) {
+            isPlaying.value = false;
+            isPaused.value = false;
+            return;
+        }
+
         nextTimeout = setTimeout(() => {
             next().catch(() => {
                 stop();
@@ -226,8 +261,11 @@ export function useScenarioAutoplay(playlistRef, options = {}) {
         isPlaying,
         isPaused,
         isLoading,
+        autoContinue,
+        loopScenario,
         playFromStart,
         playFromIndex,
+        replayCurrent,
         resume,
         pause,
         stop,
@@ -236,5 +274,7 @@ export function useScenarioAutoplay(playlistRef, options = {}) {
         seekToPercent,
         seekToSeconds,
         formatTime,
+        toggleAutoContinue,
+        toggleLoopScenario,
     };
 }

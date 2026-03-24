@@ -1,0 +1,217 @@
+package org.titiplex.api;
+
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+import org.titiplex.service.CommunityService;
+import org.titiplex.service.UserService;
+import org.titiplex.persistence.model.*;
+
+import java.time.Instant;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/community")
+public class CommunityApiController {
+    private final CommunityService communityService;
+    private final UserService userService;
+
+    public CommunityApiController(CommunityService communityService, UserService userService) {
+        this.communityService = communityService;
+        this.userService = userService;
+    }
+
+    public record DiscussionMessageDto(Long id,
+                                       DiscussionTargetType targetType,
+                                       String targetId,
+                                       Long parentMessageId,
+                                       Long authorId,
+                                       String authorUsername,
+                                       ContributionType contributionType,
+                                       String content,
+                                       Instant createdAt) {
+    }
+
+    public record CreateDiscussionMessageRequest(DiscussionTargetType targetType,
+                                                 String targetId,
+                                                 Long parentMessageId,
+                                                 ContributionType contributionType,
+                                                 String content) {
+    }
+
+    public record AccreditationRequestDto(Long id,
+                                          Long requestedByUserId,
+                                          String requestedByUsername,
+                                          AccreditationScopeType scopeType,
+                                          Long scenarioId,
+                                          String motivation,
+                                          AccreditationRequestStatus status,
+                                          Long reviewedByUserId,
+                                          String reviewNote,
+                                          Instant createdAt,
+                                          Instant reviewedAt) {
+    }
+
+    public record CreateAccreditationRequestBody(AccreditationScopeType scopeType,
+                                                 Long scenarioId,
+                                                 String motivation) {
+    }
+
+    public record ReviewAccreditationRequestBody(boolean approved, String reviewNote) {
+    }
+
+    public record CommunityAccreditationDto(Long id,
+                                            Long userId,
+                                            String username,
+                                            AccreditationScopeType scopeType,
+                                            Long scenarioId,
+                                            Long grantedByUserId,
+                                            Instant grantedAt,
+                                            String note) {
+    }
+
+    public record GrantAccreditationBody(Long userId,
+                                         AccreditationScopeType scopeType,
+                                         Long scenarioId,
+                                         String note) {
+    }
+
+    @GetMapping("/discussions")
+    public List<DiscussionMessageDto> listDiscussions(@RequestParam DiscussionTargetType targetType,
+                                                       @RequestParam String targetId) {
+        return communityService.listMessages(targetType, targetId).stream().map(this::toDto).toList();
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @PostMapping("/discussions")
+    public DiscussionMessageDto createDiscussion(@RequestBody CreateDiscussionMessageRequest req,
+                                                 Authentication auth) {
+        Long userId = userService.getUserByUsername(auth.getName()).getId();
+        DiscussionMessage created = communityService.createMessage(
+                userId,
+                req.targetType(),
+                req.targetId(),
+                req.parentMessageId(),
+                req.contributionType(),
+                req.content()
+        );
+        return toDto(created);
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @PostMapping("/accreditation-requests")
+    public AccreditationRequestDto createAccreditationRequest(@RequestBody CreateAccreditationRequestBody req,
+                                                              Authentication auth) {
+        Long userId = userService.getUserByUsername(auth.getName()).getId();
+        AccreditationRequest created = communityService.createRequest(userId, req.scopeType(), req.scenarioId(), req.motivation());
+        return toDto(created);
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @GetMapping("/accreditation-requests")
+    public List<AccreditationRequestDto> listAccreditationRequests(@RequestParam AccreditationScopeType scopeType,
+                                                                   @RequestParam(required = false) Long scenarioId,
+                                                                   Authentication auth) {
+        if (!canReview(scopeType, scenarioId, auth)) {
+            throw new IllegalArgumentException("Not allowed to read these accreditation requests");
+        }
+
+        return communityService.listRequests(scopeType, scenarioId).stream().map(this::toDto).toList();
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @PostMapping("/accreditation-requests/{requestId}/review")
+    public AccreditationRequestDto reviewAccreditationRequest(@PathVariable Long requestId,
+                                                              @RequestBody ReviewAccreditationRequestBody req,
+                                                              Authentication auth) {
+        Long reviewerUserId = userService.getUserByUsername(auth.getName()).getId();
+        AccreditationRequest request = communityService.getRequest(requestId);
+
+        if (!canReview(request.getScopeType(), request.getScenarioId(), auth)) {
+            throw new IllegalArgumentException("Not allowed to review this request");
+        }
+
+        AccreditationRequest reviewed = communityService.reviewRequest(requestId, reviewerUserId, req.approved(), req.reviewNote());
+        return toDto(reviewed);
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @GetMapping("/accreditations")
+    public List<CommunityAccreditationDto> listAccreditations(@RequestParam AccreditationScopeType scopeType,
+                                                              @RequestParam(required = false) Long scenarioId,
+                                                              Authentication auth) {
+        if (!canReview(scopeType, scenarioId, auth)) {
+            throw new IllegalArgumentException("Not allowed to list accreditations for this scope");
+        }
+        return communityService.listAccreditations(scopeType, scenarioId).stream().map(this::toDto).toList();
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @PostMapping("/accreditations")
+    public CommunityAccreditationDto grantAccreditation(@RequestBody GrantAccreditationBody req,
+                                                        Authentication auth) {
+        if (!canReview(req.scopeType(), req.scenarioId(), auth)) {
+            throw new IllegalArgumentException("Not allowed to grant accreditation for this scope");
+        }
+        Long granterUserId = userService.getUserByUsername(auth.getName()).getId();
+        CommunityAccreditation created = communityService.grantAccreditation(
+                req.userId(),
+                req.scopeType(),
+                req.scenarioId(),
+                granterUserId,
+                req.note()
+        );
+        return toDto(created);
+    }
+
+    private boolean canReview(AccreditationScopeType scopeType, Long scenarioId, Authentication auth) {
+        boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        if (scopeType == AccreditationScopeType.GLOBAL) {
+            return isAdmin;
+        }
+        return isAdmin || (scenarioId != null && communityService.isScenarioOwner(scenarioId, auth.getName()));
+    }
+
+    private DiscussionMessageDto toDto(DiscussionMessage message) {
+        return new DiscussionMessageDto(
+                message.getId(),
+                message.getTargetType(),
+                message.getTargetId(),
+                message.getParentMessageId(),
+                message.getAuthorId(),
+                message.getAuthor() == null ? "Unknown" : message.getAuthor().getUsername(),
+                message.getContributionType(),
+                message.getContent(),
+                message.getCreatedAt()
+        );
+    }
+
+    private AccreditationRequestDto toDto(AccreditationRequest request) {
+        return new AccreditationRequestDto(
+                request.getId(),
+                request.getRequestedByUserId(),
+                request.getRequester() == null ? "Unknown" : request.getRequester().getUsername(),
+                request.getScopeType(),
+                request.getScenarioId(),
+                request.getMotivation(),
+                request.getStatus(),
+                request.getReviewedByUserId(),
+                request.getReviewNote(),
+                request.getCreatedAt(),
+                request.getReviewedAt()
+        );
+    }
+
+    private CommunityAccreditationDto toDto(CommunityAccreditation accreditation) {
+        return new CommunityAccreditationDto(
+                accreditation.getId(),
+                accreditation.getUserId(),
+                accreditation.getUser() == null ? "Unknown" : accreditation.getUser().getUsername(),
+                accreditation.getScopeType(),
+                accreditation.getScenarioId(),
+                accreditation.getGrantedByUserId(),
+                accreditation.getGrantedAt(),
+                accreditation.getNote()
+        );
+    }
+}

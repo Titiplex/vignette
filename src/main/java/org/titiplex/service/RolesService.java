@@ -15,6 +15,7 @@ public class RolesService {
     public void loadRoles() {
         getAdminRole();
         getUserRole();
+        getLinguistRole();
     }
 
     public Role getUserRole() {
@@ -25,6 +26,12 @@ public class RolesService {
     public Role getAdminRole() {
         return roleRepository.findById("ROLE_ADMIN")
                 .orElseGet(() -> roleRepository.save(newRole("ROLE_ADMIN")));
+    }
+
+
+    public Role getLinguistRole() {
+        return roleRepository.findById("ROLE_LINGUIST")
+                .orElseGet(() -> roleRepository.save(newRole("ROLE_LINGUIST")));
     }
 
     private Role newRole(String name) {

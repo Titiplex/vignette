@@ -1,17 +1,22 @@
 package org.titiplex.api;
 
-import org.springframework.security.access.prepost.PreAuthorize;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.titiplex.api.dto.*;
+import org.titiplex.api.security.PublicOperation;
+import org.titiplex.api.security.UserOperation;
+import org.titiplex.persistence.model.*;
 import org.titiplex.service.CommunityService;
 import org.titiplex.service.UserService;
-import org.titiplex.persistence.model.*;
 
-import java.time.Instant;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/community")
+@Tag(name = "Community", description = "Endpoints for community-related operations.")
 public class CommunityApiController {
     private final CommunityService communityService;
     private final UserService userService;
@@ -21,68 +26,28 @@ public class CommunityApiController {
         this.userService = userService;
     }
 
-    public record DiscussionMessageDto(Long id,
-                                       DiscussionTargetType targetType,
-                                       String targetId,
-                                       Long parentMessageId,
-                                       Long authorId,
-                                       String authorUsername,
-                                       ContributionType contributionType,
-                                       String content,
-                                       Instant createdAt) {
-    }
-
-    public record CreateDiscussionMessageRequest(DiscussionTargetType targetType,
-                                                 String targetId,
-                                                 Long parentMessageId,
-                                                 ContributionType contributionType,
-                                                 String content) {
-    }
-
-    public record AccreditationRequestDto(Long id,
-                                          Long requestedByUserId,
-                                          String requestedByUsername,
-                                          AccreditationScopeType scopeType,
-                                          Long scenarioId,
-                                          String motivation,
-                                          AccreditationRequestStatus status,
-                                          Long reviewedByUserId,
-                                          String reviewNote,
-                                          Instant createdAt,
-                                          Instant reviewedAt) {
-    }
-
-    public record CreateAccreditationRequestBody(AccreditationScopeType scopeType,
-                                                 Long scenarioId,
-                                                 String motivation) {
-    }
-
-    public record ReviewAccreditationRequestBody(boolean approved, String reviewNote) {
-    }
-
-    public record CommunityAccreditationDto(Long id,
-                                            Long userId,
-                                            String username,
-                                            AccreditationScopeType scopeType,
-                                            Long scenarioId,
-                                            Long grantedByUserId,
-                                            Instant grantedAt,
-                                            String note) {
-    }
-
-    public record GrantAccreditationBody(Long userId,
-                                         AccreditationScopeType scopeType,
-                                         Long scenarioId,
-                                         String note) {
-    }
-
+    @Operation(
+            summary = "Lists messages in a discussion.",
+            description = "Retrieves all messages in a discussion depending on its type and id."
+    )
+    @PublicOperation
+    @ApiResponses({})
     @GetMapping("/discussions")
     public List<DiscussionMessageDto> listDiscussions(@RequestParam DiscussionTargetType targetType,
-                                                       @RequestParam String targetId) {
+                                                      @RequestParam String targetId) {
         return communityService.listMessages(targetType, targetId).stream().map(this::toDto).toList();
     }
 
-    @PreAuthorize("hasRole('USER')")
+    @Operation(
+            summary = "Create a discussion.",
+            description = """
+                    Creates a discussion on a specific topic.
+                    
+                    The discussion is meant for everyone to see and debate.
+                    """
+    )
+    @UserOperation
+    @ApiResponses({})
     @PostMapping("/discussions")
     public DiscussionMessageDto createDiscussion(@RequestBody CreateDiscussionMessageRequest req,
                                                  Authentication auth) {
@@ -98,7 +63,9 @@ public class CommunityApiController {
         return toDto(created);
     }
 
-    @PreAuthorize("hasRole('USER')")
+    @Operation()
+    @UserOperation
+    @ApiResponses({})
     @PostMapping("/accreditation-requests")
     public AccreditationRequestDto createAccreditationRequest(@RequestBody CreateAccreditationRequestBody req,
                                                               Authentication auth) {
@@ -107,7 +74,9 @@ public class CommunityApiController {
         return toDto(created);
     }
 
-    @PreAuthorize("hasRole('USER')")
+    @Operation()
+    @UserOperation
+    @ApiResponses({})
     @GetMapping("/accreditation-requests")
     public List<AccreditationRequestDto> listAccreditationRequests(@RequestParam AccreditationScopeType scopeType,
                                                                    @RequestParam(required = false) Long scenarioId,
@@ -119,7 +88,9 @@ public class CommunityApiController {
         return communityService.listRequests(scopeType, scenarioId).stream().map(this::toDto).toList();
     }
 
-    @PreAuthorize("hasRole('USER')")
+    @Operation()
+    @UserOperation
+    @ApiResponses({})
     @PostMapping("/accreditation-requests/{requestId}/review")
     public AccreditationRequestDto reviewAccreditationRequest(@PathVariable Long requestId,
                                                               @RequestBody ReviewAccreditationRequestBody req,
@@ -135,7 +106,9 @@ public class CommunityApiController {
         return toDto(reviewed);
     }
 
-    @PreAuthorize("hasRole('USER')")
+    @Operation()
+    @UserOperation
+    @ApiResponses({})
     @GetMapping("/accreditations")
     public List<CommunityAccreditationDto> listAccreditations(@RequestParam AccreditationScopeType scopeType,
                                                               @RequestParam(required = false) Long scenarioId,
@@ -146,7 +119,9 @@ public class CommunityApiController {
         return communityService.listAccreditations(scopeType, scenarioId).stream().map(this::toDto).toList();
     }
 
-    @PreAuthorize("hasRole('USER')")
+    @Operation()
+    @UserOperation
+    @ApiResponses({})
     @PostMapping("/accreditations")
     public CommunityAccreditationDto grantAccreditation(@RequestBody GrantAccreditationBody req,
                                                         Authentication auth) {

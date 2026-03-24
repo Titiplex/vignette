@@ -165,7 +165,7 @@ public class CommunityService {
         boolean exists = switch (targetType) {
             case LANGUAGE -> languageRepository.existsById(targetId);
             case AUDIO -> {
-                Long audioId;
+                long audioId;
                 try {
                     audioId = Long.parseLong(targetId);
                 } catch (NumberFormatException e) {

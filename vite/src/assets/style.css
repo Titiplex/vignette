@@ -1107,3 +1107,21 @@ textarea {
 .thumb-card[data-thumbnail-id] {
     scroll-margin-top: 96px;
 }
+
+.scenario-player-card {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.82);
+    padding: 14px;
+}
+
+.scenario-player-card__text {
+    margin: 0;
+}
+
+.audio-item__actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}

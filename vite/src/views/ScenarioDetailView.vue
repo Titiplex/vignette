@@ -100,6 +100,13 @@ const playbackQueue = computed(() => {
   });
 });
 
+const playerStateLabel = computed(() => {
+  if (autoplay.isLoading.value) return "loading";
+  if (autoplay.isPlaying.value) return "playing";
+  if (autoplay.isPaused.value) return "paused";
+  return "idle";
+});
+
 function markerStyle(audio) {
   return {
     left: `${audio._x}%`,
@@ -178,9 +185,24 @@ async function playAllFromContext() {
   await autoplay.playFromIndex(findStartIndex());
 }
 
-function setActiveAudio(audio) {
-  autoplay.stop();
-  activeAudioId.value = audio?.id ?? null;
+async function setActiveAudio(audio) {
+  if (!audio || !selectedThumb.value) {
+    autoplay.stop();
+    activeAudioId.value = null;
+    return;
+  }
+
+  const idx = playbackQueue.value.findIndex(
+      (item) =>
+          String(item.thumbnailId) === String(selectedThumb.value.id) &&
+          String(item.audioId) === String(audio.id)
+  );
+
+  if (idx >= 0) {
+    await autoplay.playFromIndex(idx);
+  } else {
+    activeAudioId.value = audio?.id ?? null;
+  }
 }
 
 async function playAudioFromMarker(audio) {
@@ -446,6 +468,15 @@ onMounted(loadAll);
                     type="button"
                     class="btn btn--ghost"
                     :disabled="!playbackQueue.length"
+                    @click="autoplay.previous"
+                >
+                  Previous
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn--ghost"
+                    :disabled="!playbackQueue.length"
                     @click="autoplay.next"
                 >
                   Next
@@ -524,6 +555,8 @@ onMounted(loadAll);
                 :selected-thumb="selectedThumb"
                 :audios="selectedAudios"
                 :active-audio-id="activeAudioId"
+                :active-audio-title="autoplay.currentItem?.audioTitle ?? ''"
+                :player-state="playerStateLabel"
                 :is-owner="isOwner"
                 @uploaded="refreshAudios"
                 @play-audio="setActiveAudio"

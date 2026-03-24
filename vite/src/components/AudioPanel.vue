@@ -3,15 +3,22 @@ import {computed, ref, watch} from "vue";
 import {uploadThumbnailAudio} from "../api/scenarios";
 import {buildApiUrl} from "../api/rest";
 import {useToast} from "../composables/useToast";
+import BaseBadge from "./ui/BaseBadge.vue";
 
 const props = defineProps({
   selectedThumb: {type: Object, default: null},
   audios: {type: Array, default: () => []},
   isOwner: {type: Boolean, default: false},
   activeAudioId: {type: [Number, String, null], default: null},
+  activeAudioTitle: {type: String, default: ""},
+  playerState: {type: String, default: "idle"}, // idle | playing | paused | loading
 });
 
-const emit = defineEmits(["uploaded", "play-audio"]);
+const emit = defineEmits([
+  "uploaded",
+  "play-audio",
+]);
+
 const toast = useToast();
 
 const audioTitle = ref("");
@@ -45,11 +52,6 @@ function onFileChange(event) {
 function thumbnailContentUrl() {
   if (!props.selectedThumb?.id) return "";
   return buildApiUrl(`/api/thumbnails/${props.selectedThumb.id}/content`);
-}
-
-function audioContentUrl(audio) {
-  if (!audio?.id) return "";
-  return buildApiUrl(`/api/audios/${audio.id}/content`);
 }
 
 function hasMarker(audio) {
@@ -192,20 +194,8 @@ function onImageClick(event) {
   markerY.value = Math.max(0, Math.min(100, y)).toFixed(2);
 }
 
-function onAudioPlay(audio) {
+function playAudio(audio) {
   emit("play-audio", audio);
-}
-
-function onAudioPause(audio) {
-  if (isAudioActive(audio)) {
-    emit("play-audio", null);
-  }
-}
-
-function onAudioEnded(audio) {
-  if (isAudioActive(audio)) {
-    emit("play-audio", null);
-  }
 }
 
 watch(
@@ -217,7 +207,6 @@ watch(
       audioFile.value = null;
       recordedBlob = null;
       isRecording.value = false;
-      emit("play-audio", null);
     }
 );
 </script>
@@ -231,12 +220,34 @@ watch(
           Selected thumbnail #{{ selectedThumb.idx ?? selectedThumb.id }}
         </p>
       </div>
+
+      <BaseBadge variant="info">
+        {{ audios.length }} clip(s)
+      </BaseBadge>
     </div>
+
+    <section class="audio-panel__section">
+      <h3>Scenario player</h3>
+
+      <div class="scenario-player-card">
+        <p class="muted scenario-player-card__text">
+          <template v-if="activeAudioId">
+            Current audio:
+            <strong>{{ activeAudioTitle || `Audio #${activeAudioId}` }}</strong>
+            ·
+            <strong>{{ playerState }}</strong>
+          </template>
+          <template v-else>
+            No audio currently selected.
+          </template>
+        </p>
+      </div>
+    </section>
 
     <section class="audio-panel__section">
       <h3>Existing audio clips</h3>
       <p class="muted">
-        Listen to the audio already attached to this thumbnail.
+        Click on a clip to play it through the single scenario player.
       </p>
 
       <div v-if="audios.length" class="audio-list">
@@ -264,19 +275,21 @@ watch(
                 </template>
               </p>
             </div>
-          </div>
 
-          <audio
-              class="audio-player"
-              controls
-              preload="none"
-              @play="onAudioPlay(audio)"
-              @pause="onAudioPause(audio)"
-              @ended="onAudioEnded(audio)"
-          >
-            <source :src="audioContentUrl(audio)"/>
-            Your browser does not support audio playback.
-          </audio>
+            <div class="audio-item__actions">
+              <BaseBadge v-if="isAudioActive(audio)" variant="warning">
+                Active
+              </BaseBadge>
+
+              <button
+                  type="button"
+                  class="btn btn--primary"
+                  @click="playAudio(audio)"
+              >
+                Play
+              </button>
+            </div>
+          </div>
         </article>
       </div>
 

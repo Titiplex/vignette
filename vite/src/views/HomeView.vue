@@ -62,6 +62,23 @@ import {RouterLink} from "vue-router";
             Work from scenes and local meaning rather than relying only on direct translation pipelines.
           </p>
         </article>
+
+        <article class="card">
+          <h3>Document language use</h3>
+          <p class="text">
+            Participate to the effort to document low-resource language use in a more accessible way.
+          </p>
+        </article>
+      </div>
+      <div>
+        <article class="card">
+          <h3>Links</h3>
+          <ul>
+            <li><a>Github Repository</a></li>
+            <li><a>Project Report</a></li>
+            <li><a>API Documentation</a></li>
+          </ul>
+        </article>
       </div>
     </section>
   </main>

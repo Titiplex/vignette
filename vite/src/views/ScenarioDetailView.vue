@@ -1,10 +1,11 @@
 <script setup>
-import {computed, onMounted, ref} from "vue";
+import {computed, nextTick, onMounted, ref} from "vue";
 import {fetchLanguage} from "../api/languages";
 import {fetchScenario, fetchScenarioThumbnails, fetchThumbnailAudios, uploadScenarioThumbnail,} from "../api/scenarios";
 import {buildApiUrl} from "../api/rest";
 import {useAuth} from "../composables/useAuth";
 import {useToast} from "../composables/useToast";
+import {useScenarioAutoplay} from "../composables/useScenarioAutoplay";
 import ThumbnailCard from "../components/ThumbnailCard.vue";
 import AudioPanel from "../components/AudioPanel.vue";
 import BasePageHeader from "../components/ui/BasePageHeader.vue";
@@ -35,9 +36,26 @@ const loading = ref(false);
 const uploadTitle = ref("");
 const uploadFile = ref(null);
 
+function safeNumber(value, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+const sortedThumbnails = computed(() => {
+  return [...thumbnails.value].sort((a, b) => {
+    const aIdx = safeNumber(a?.idx, Number.MAX_SAFE_INTEGER);
+    const bIdx = safeNumber(b?.idx, Number.MAX_SAFE_INTEGER);
+    if (aIdx !== bIdx) return aIdx - bIdx;
+    return safeNumber(a?.id, 0) - safeNumber(b?.id, 0);
+  });
+});
+
 const selectedAudios = computed(() => {
   if (!selectedThumb.value) return [];
-  return audioMap.value[selectedThumb.value.id] || [];
+
+  return [...(audioMap.value[selectedThumb.value.id] || [])].sort((a, b) => {
+    return safeNumber(a?.id, 0) - safeNumber(b?.id, 0);
+  });
 });
 
 const selectedAudioMarkers = computed(() => {
@@ -62,14 +80,25 @@ const selectedAudioMarkers = computed(() => {
       .filter((audio) => audio._x !== null && audio._y !== null);
 });
 
-function onImageChange(event) {
-  uploadFile.value = event.target.files?.[0] ?? null;
-}
+const playbackQueue = computed(() => {
+  return sortedThumbnails.value.flatMap((thumb) => {
+    const audios = [...(audioMap.value[thumb.id] || [])].sort((a, b) => {
+      return safeNumber(a?.id, 0) - safeNumber(b?.id, 0);
+    });
 
-function thumbnailContentUrl(thumb) {
-  if (!thumb?.id) return "";
-  return buildApiUrl(`/api/thumbnails/${thumb.id}/content`);
-}
+    return audios.map((audio) => ({
+      thumbnailId: thumb.id,
+      thumbnailIdx: thumb.idx ?? null,
+      thumbnailTitle: thumb.title ?? "",
+      audioId: audio.id,
+      audioTitle: audio.title ?? "",
+      audioUrl: buildApiUrl(`/api/audios/${audio.id}/content`),
+      markerX: audio.markerX,
+      markerY: audio.markerY,
+      markerLabel: audio.markerLabel,
+    }));
+  });
+});
 
 function markerStyle(audio) {
   return {
@@ -82,13 +111,88 @@ function isMarkerActive(audio) {
   return String(activeAudioId.value ?? "") === String(audio?.id ?? "");
 }
 
+function onImageChange(event) {
+  uploadFile.value = event.target.files?.[0] ?? null;
+}
+
+function thumbnailContentUrl(thumb) {
+  if (!thumb?.id) return "";
+  return buildApiUrl(`/api/thumbnails/${thumb.id}/content`);
+}
+
 function selectThumb(thumb) {
   selectedThumb.value = thumb;
   activeAudioId.value = null;
 }
 
+function focusPlaybackItem(item) {
+  const thumb = thumbnails.value.find((t) => String(t.id) === String(item.thumbnailId)) ?? null;
+
+  selectedThumb.value = thumb;
+  activeAudioId.value = item.audioId ?? null;
+
+  nextTick(() => {
+    const el = document.querySelector(`[data-thumbnail-id="${item.thumbnailId}"]`);
+    el?.scrollIntoView({behavior: "smooth", block: "center"});
+  });
+}
+
+const autoplay = useScenarioAutoplay(playbackQueue, {
+  gapMs: 250,
+  onItemChange: (item) => {
+    focusPlaybackItem(item);
+  },
+  onStop: () => {
+    activeAudioId.value = null;
+  },
+  onEndedAll: () => {
+    activeAudioId.value = null;
+    toast.success("Automatic playback finished.");
+  },
+});
+
+function findStartIndex() {
+  if (!playbackQueue.value.length) return 0;
+
+  if (selectedThumb.value && activeAudioId.value != null) {
+    const exactIndex = playbackQueue.value.findIndex(
+        (item) =>
+            String(item.thumbnailId) === String(selectedThumb.value.id) &&
+            String(item.audioId) === String(activeAudioId.value)
+    );
+    if (exactIndex >= 0) return exactIndex;
+  }
+
+  if (selectedThumb.value) {
+    const thumbIndex = playbackQueue.value.findIndex(
+        (item) => String(item.thumbnailId) === String(selectedThumb.value.id)
+    );
+    if (thumbIndex >= 0) return thumbIndex;
+  }
+
+  return 0;
+}
+
+async function playAllFromContext() {
+  if (!playbackQueue.value.length) return;
+  await autoplay.playFromIndex(findStartIndex());
+}
+
 function setActiveAudio(audio) {
+  autoplay.stop();
   activeAudioId.value = audio?.id ?? null;
+}
+
+async function playAudioFromMarker(audio) {
+  const idx = playbackQueue.value.findIndex(
+      (item) =>
+          String(item.thumbnailId) === String(selectedThumb.value?.id) &&
+          String(item.audioId) === String(audio.id)
+  );
+
+  if (idx >= 0) {
+    await autoplay.playFromIndex(idx);
+  }
 }
 
 async function loadScenario() {
@@ -122,13 +226,13 @@ async function loadThumbs() {
 
   audioMap.value = map;
 
-  if (!selectedThumb.value && thumbnails.value.length) {
-    selectedThumb.value = thumbnails.value[0];
+  if (!selectedThumb.value && sortedThumbnails.value.length) {
+    selectedThumb.value = sortedThumbnails.value[0];
   } else if (
       selectedThumb.value &&
       !thumbnails.value.some((t) => t.id === selectedThumb.value.id)
   ) {
-    selectedThumb.value = thumbnails.value[0] || null;
+    selectedThumb.value = sortedThumbnails.value[0] || null;
   }
 
   if (
@@ -227,6 +331,10 @@ onMounted(loadAll);
                 <h3>Thumbnails</h3>
                 <p>{{ thumbnails.length }}</p>
               </div>
+              <div>
+                <h3>Audio clips</h3>
+                <p>{{ playbackQueue.length }}</p>
+              </div>
             </div>
 
             <section class="card">
@@ -270,9 +378,9 @@ onMounted(loadAll);
                   :subtitle="`${thumbnails.length} thumbnail(s) available in this scenario.`"
               />
 
-              <div v-if="thumbnails.length" class="card-grid card-grid--thumbs">
+              <div v-if="sortedThumbnails.length" class="card-grid card-grid--thumbs">
                 <ThumbnailCard
-                    v-for="thumb in thumbnails"
+                    v-for="thumb in sortedThumbnails"
                     :key="thumb.id"
                     :thumb="thumb"
                     :audios="audioMap[thumb.id] || []"
@@ -290,6 +398,86 @@ onMounted(loadAll);
           </div>
 
           <aside class="scenario-layout__side">
+            <section class="card autoplay-panel">
+              <div class="autoplay-panel__header">
+                <div>
+                  <h2>Automatic playback</h2>
+                  <p class="muted">
+                    Reads all audio clips one after another in thumbnail order.
+                  </p>
+                </div>
+
+                <BaseBadge variant="info">
+                  {{
+                    autoplay.currentIndex >= 0 ? `${autoplay.currentIndex + 1}/${playbackQueue.length}` : `0/${playbackQueue.length}`
+                  }}
+                </BaseBadge>
+              </div>
+
+              <div class="autoplay-panel__actions">
+                <button
+                    type="button"
+                    class="btn btn--primary"
+                    :disabled="!playbackQueue.length || autoplay.isLoading"
+                    @click="playAllFromContext"
+                >
+                  Play all
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn--ghost"
+                    :disabled="!autoplay.isPlaying"
+                    @click="autoplay.pause"
+                >
+                  Pause
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn--ghost"
+                    :disabled="!autoplay.isPaused"
+                    @click="autoplay.resume"
+                >
+                  Resume
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn--ghost"
+                    :disabled="!playbackQueue.length"
+                    @click="autoplay.next"
+                >
+                  Next
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn--ghost"
+                    :disabled="autoplay.currentIndex < 0"
+                    @click="autoplay.stop"
+                >
+                  Stop
+                </button>
+              </div>
+
+              <p class="muted autoplay-panel__status">
+                <template v-if="autoplay.currentItem">
+                  Current:
+                  <strong>
+                    {{ autoplay.currentItem.audioTitle || `Audio #${autoplay.currentItem.audioId}` }}
+                  </strong>
+                  · thumbnail
+                  <strong>
+                    #{{ autoplay.currentItem.thumbnailIdx ?? autoplay.currentItem.thumbnailId }}
+                  </strong>
+                </template>
+                <template v-else>
+                  No automatic playback running.
+                </template>
+              </p>
+            </section>
+
             <section v-if="selectedThumb" class="card selected-preview selected-preview--premium">
               <h2>Selected thumbnail</h2>
 
@@ -308,6 +496,7 @@ onMounted(loadAll);
                     :class="{ 'marker-dot--active': isMarkerActive(audio) }"
                     :style="markerStyle(audio)"
                     :title="audio.markerLabel || audio.title || `Audio #${audio.id}`"
+                    @click="playAudioFromMarker(audio)"
                 >
                   <span class="marker-dot__pulse"></span>
                   <span class="marker-dot__core"></span>

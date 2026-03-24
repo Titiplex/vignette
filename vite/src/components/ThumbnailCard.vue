@@ -32,6 +32,7 @@ const markerCount = computed(() => {
   <article
       class="card thumb-card"
       :class="{ selected }"
+      :data-thumbnail-id="thumb.id"
       @click="emit('select', thumb)"
   >
     <div class="thumb-card__media">

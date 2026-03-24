@@ -36,6 +36,8 @@ const loading = ref(false);
 const uploadTitle = ref("");
 const uploadFile = ref(null);
 
+const highlightedThumbnailId = ref(null);
+
 function safeNumber(value, fallback = 0) {
   const n = Number(value);
   return Number.isFinite(n) ? n : fallback;
@@ -54,6 +56,9 @@ const selectedAudios = computed(() => {
   if (!selectedThumb.value) return [];
 
   return [...(audioMap.value[selectedThumb.value.id] || [])].sort((a, b) => {
+    const aIdx = safeNumber(a?.idx, Number.MAX_SAFE_INTEGER);
+    const bIdx = safeNumber(b?.idx, Number.MAX_SAFE_INTEGER);
+    if (aIdx !== bIdx) return aIdx - bIdx;
     return safeNumber(a?.id, 0) - safeNumber(b?.id, 0);
   });
 });
@@ -83,6 +88,9 @@ const selectedAudioMarkers = computed(() => {
 const playbackQueue = computed(() => {
   return sortedThumbnails.value.flatMap((thumb) => {
     const audios = [...(audioMap.value[thumb.id] || [])].sort((a, b) => {
+      const aIdx = safeNumber(a?.idx, Number.MAX_SAFE_INTEGER);
+      const bIdx = safeNumber(b?.idx, Number.MAX_SAFE_INTEGER);
+      if (aIdx !== bIdx) return aIdx - bIdx;
       return safeNumber(a?.id, 0) - safeNumber(b?.id, 0);
     });
 
@@ -91,6 +99,7 @@ const playbackQueue = computed(() => {
       thumbnailIdx: thumb.idx ?? null,
       thumbnailTitle: thumb.title ?? "",
       audioId: audio.id,
+      audioIdx: audio.idx ?? null,
       audioTitle: audio.title ?? "",
       audioUrl: buildApiUrl(`/api/audios/${audio.id}/content`),
       markerX: audio.markerX,
@@ -137,11 +146,19 @@ function focusPlaybackItem(item) {
 
   selectedThumb.value = thumb;
   activeAudioId.value = item.audioId ?? null;
+  highlightedThumbnailId.value = item.thumbnailId;
 
   nextTick(() => {
     const el = document.querySelector(`[data-thumbnail-id="${item.thumbnailId}"]`);
     el?.scrollIntoView({behavior: "smooth", block: "center"});
   });
+
+  window.clearTimeout(focusPlaybackItem._highlightTimeout);
+  focusPlaybackItem._highlightTimeout = window.setTimeout(() => {
+    if (String(highlightedThumbnailId.value) === String(item.thumbnailId)) {
+      highlightedThumbnailId.value = null;
+    }
+  }, 1400);
 }
 
 const autoplay = useScenarioAutoplay(playbackQueue, {
@@ -407,6 +424,7 @@ onMounted(loadAll);
                     :thumb="thumb"
                     :audios="audioMap[thumb.id] || []"
                     :selected="selectedThumb?.id === thumb.id"
+                    :highlighted="highlightedThumbnailId === thumb.id"
                     @select="selectThumb"
                 />
               </div>
@@ -423,9 +441,9 @@ onMounted(loadAll);
             <section class="card autoplay-panel">
               <div class="autoplay-panel__header">
                 <div>
-                  <h2>Automatic playback</h2>
+                  <h2>Scenario player</h2>
                   <p class="muted">
-                    Reads all audio clips one after another in thumbnail order.
+                    Automatic playback through all audio clips in thumbnail order.
                   </p>
                 </div>
 
@@ -436,77 +454,96 @@ onMounted(loadAll);
                 </BaseBadge>
               </div>
 
-              <div class="autoplay-panel__actions">
-                <button
-                    type="button"
-                    class="btn btn--primary"
-                    :disabled="!playbackQueue.length || autoplay.isLoading"
-                    @click="playAllFromContext"
-                >
-                  Play all
-                </button>
+              <div class="transport-card">
+                <div class="transport-card__top">
+                  <div>
+                    <p class="transport-card__title">
+                      <template v-if="autoplay.currentItem">
+                        {{ autoplay.currentItem.audioTitle || `Audio #${autoplay.currentItem.audioId}` }}
+                      </template>
+                      <template v-else>
+                        No audio selected
+                      </template>
+                    </p>
 
-                <button
-                    type="button"
-                    class="btn btn--ghost"
-                    :disabled="!autoplay.isPlaying"
-                    @click="autoplay.pause"
-                >
-                  Pause
-                </button>
+                    <p class="muted transport-card__subtitle">
+                      <template v-if="autoplay.currentItem">
+                        Thumbnail #{{ autoplay.currentItem.thumbnailIdx ?? autoplay.currentItem.thumbnailId }}
+                        <span v-if="autoplay.currentItem.audioIdx != null">
+                          · Audio order {{ autoplay.currentItem.audioIdx }}
+                        </span>
+                        · {{ playerStateLabel }}
+                      </template>
+                      <template v-else>
+                        Idle
+                      </template>
+                    </p>
+                  </div>
+                </div>
 
-                <button
-                    type="button"
-                    class="btn btn--ghost"
-                    :disabled="!autoplay.isPaused"
-                    @click="autoplay.resume"
-                >
-                  Resume
-                </button>
+                <div class="transport-progress">
+                  <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      :value="autoplay.progressPercent"
+                      @input="autoplay.seekToPercent($event.target.value)"
+                  />
+                  <div class="transport-progress__times">
+                    <span>{{ autoplay.formatTime(autoplay.currentTime) }}</span>
+                    <span>{{ autoplay.formatTime(autoplay.duration) }}</span>
+                  </div>
+                </div>
 
-                <button
-                    type="button"
-                    class="btn btn--ghost"
-                    :disabled="!playbackQueue.length"
-                    @click="autoplay.previous"
-                >
-                  Previous
-                </button>
+                <div class="transport-controls">
+                  <button
+                      type="button"
+                      class="btn btn--ghost"
+                      :disabled="!playbackQueue.length"
+                      @click="autoplay.previous"
+                  >
+                    Previous
+                  </button>
 
-                <button
-                    type="button"
-                    class="btn btn--ghost"
-                    :disabled="!playbackQueue.length"
-                    @click="autoplay.next"
-                >
-                  Next
-                </button>
+                  <button
+                      v-if="!autoplay.isPlaying"
+                      type="button"
+                      class="btn btn--primary"
+                      :disabled="!playbackQueue.length || autoplay.isLoading"
+                      @click="autoplay.isPaused ? autoplay.resume() : playAllFromContext()"
+                  >
+                    {{ autoplay.isPaused ? "Resume" : "Play" }}
+                  </button>
 
-                <button
-                    type="button"
-                    class="btn btn--ghost"
-                    :disabled="autoplay.currentIndex < 0"
-                    @click="autoplay.stop"
-                >
-                  Stop
-                </button>
+                  <button
+                      v-else
+                      type="button"
+                      class="btn btn--primary"
+                      @click="autoplay.pause"
+                  >
+                    Pause
+                  </button>
+
+                  <button
+                      type="button"
+                      class="btn btn--ghost"
+                      :disabled="!playbackQueue.length"
+                      @click="autoplay.next"
+                  >
+                    Next
+                  </button>
+
+                  <button
+                      type="button"
+                      class="btn btn--ghost"
+                      :disabled="autoplay.currentIndex < 0"
+                      @click="autoplay.stop"
+                  >
+                    Stop
+                  </button>
+                </div>
               </div>
-
-              <p class="muted autoplay-panel__status">
-                <template v-if="autoplay.currentItem">
-                  Current:
-                  <strong>
-                    {{ autoplay.currentItem.audioTitle || `Audio #${autoplay.currentItem.audioId}` }}
-                  </strong>
-                  · thumbnail
-                  <strong>
-                    #{{ autoplay.currentItem.thumbnailIdx ?? autoplay.currentItem.thumbnailId }}
-                  </strong>
-                </template>
-                <template v-else>
-                  No automatic playback running.
-                </template>
-              </p>
             </section>
 
             <section v-if="selectedThumb" class="card selected-preview selected-preview--premium">

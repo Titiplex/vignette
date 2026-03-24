@@ -1,12 +1,7 @@
 import {computed, onBeforeUnmount, ref, watch} from "vue";
 
-function normalizeIndex(value, fallback = 0) {
-    const n = Number(value);
-    return Number.isFinite(n) ? n : fallback;
-}
-
 export function useScenarioAutoplay(playlistRef, options = {}) {
-    const gapMs = options.gapMs ?? 250;
+    const gapMs = options.gapMs ?? 320;
     const onItemChange = options.onItemChange ?? (() => {
     });
     const onStop = options.onStop ?? (() => {
@@ -22,9 +17,17 @@ export function useScenarioAutoplay(playlistRef, options = {}) {
     const isPaused = ref(false);
     const isLoading = ref(false);
 
+    const currentTime = ref(0);
+    const duration = ref(0);
+
     const currentItem = computed(() => {
         if (currentIndex.value < 0) return null;
         return playlistRef.value[currentIndex.value] ?? null;
+    });
+
+    const progressPercent = computed(() => {
+        if (!duration.value || duration.value <= 0) return 0;
+        return Math.max(0, Math.min(100, (currentTime.value / duration.value) * 100));
     });
 
     let nextTimeout = null;
@@ -36,18 +39,23 @@ export function useScenarioAutoplay(playlistRef, options = {}) {
         }
     }
 
+    function resetTimeState() {
+        currentTime.value = 0;
+        duration.value = 0;
+    }
+
     async function playIndex(index) {
         const item = playlistRef.value[index];
         if (!item?.audioUrl) return;
 
         clearPendingNext();
-
         isLoading.value = true;
 
         try {
             audio.pause();
             audio.src = item.audioUrl;
             audio.currentTime = 0;
+            resetTimeState();
 
             currentIndex.value = index;
             onItemChange(item, index);
@@ -102,6 +110,7 @@ export function useScenarioAutoplay(playlistRef, options = {}) {
         isPlaying.value = false;
         isPaused.value = false;
         isLoading.value = false;
+        resetTimeState();
 
         onStop();
     }
@@ -124,6 +133,35 @@ export function useScenarioAutoplay(playlistRef, options = {}) {
         const prevIndex = currentIndex.value <= 0 ? 0 : currentIndex.value - 1;
         await playIndex(prevIndex);
     }
+
+    function seekToPercent(percent) {
+        if (!duration.value || duration.value <= 0) return;
+        const clamped = Math.max(0, Math.min(100, Number(percent) || 0));
+        audio.currentTime = (clamped / 100) * duration.value;
+        currentTime.value = audio.currentTime;
+    }
+
+    function seekToSeconds(seconds) {
+        if (!duration.value || duration.value <= 0) return;
+        const clamped = Math.max(0, Math.min(duration.value, Number(seconds) || 0));
+        audio.currentTime = clamped;
+        currentTime.value = clamped;
+    }
+
+    function formatTime(totalSeconds) {
+        const secs = Math.max(0, Math.floor(Number(totalSeconds) || 0));
+        const minutes = Math.floor(secs / 60);
+        const seconds = secs % 60;
+        return `${minutes}:${String(seconds).padStart(2, "0")}`;
+    }
+
+    audio.addEventListener("loadedmetadata", () => {
+        duration.value = Number.isFinite(audio.duration) ? audio.duration : 0;
+    });
+
+    audio.addEventListener("timeupdate", () => {
+        currentTime.value = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
+    });
 
     audio.addEventListener("ended", () => {
         clearPendingNext();
@@ -182,6 +220,9 @@ export function useScenarioAutoplay(playlistRef, options = {}) {
         audio,
         currentIndex,
         currentItem,
+        currentTime,
+        duration,
+        progressPercent,
         isPlaying,
         isPaused,
         isLoading,
@@ -192,6 +233,8 @@ export function useScenarioAutoplay(playlistRef, options = {}) {
         stop,
         next,
         previous,
-        normalizeIndex,
+        seekToPercent,
+        seekToSeconds,
+        formatTime,
     };
 }

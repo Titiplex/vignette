@@ -264,11 +264,17 @@ watch(
               </h4>
 
               <p class="muted audio-item__meta">
+                <span v-if="audio.idx != null">
+                  Order: <strong>{{ audio.idx }}</strong>
+                </span>
+
                 <template v-if="audio.markerLabel">
+                  <span v-if="audio.idx != null"> · </span>
                   Marker label: <strong>{{ audio.markerLabel }}</strong>
                 </template>
+
                 <template v-if="hasMarker(audio)">
-                  <span v-if="audio.markerLabel"> · </span>
+                  <span v-if="audio.idx != null || audio.markerLabel"> · </span>
                   Marker:
                   <strong>{{ formatMarker(audio.markerX) }}%</strong>,
                   <strong>{{ formatMarker(audio.markerY) }}%</strong>

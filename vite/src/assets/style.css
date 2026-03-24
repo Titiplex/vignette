@@ -1094,6 +1094,62 @@ textarea {
     flex-wrap: wrap;
 }
 
+.transport-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.82);
+}
+
+.transport-card__top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.transport-card__title {
+    margin: 0;
+    font-weight: 800;
+}
+
+.transport-card__subtitle {
+    margin: 4px 0 0;
+}
+
+.transport-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.transport-progress input[type="range"] {
+    padding: 0;
+}
+
+.transport-progress__times {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 0.9rem;
+    color: var(--text-soft);
+}
+
+.transport-controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.thumb-card--highlighted {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18), var(--shadow);
+    transform: translateY(-2px);
+}
+
 .autoplay-panel__actions {
     display: flex;
     gap: 10px;

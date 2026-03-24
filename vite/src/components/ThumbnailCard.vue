@@ -7,6 +7,7 @@ const props = defineProps({
   thumb: {type: Object, required: true},
   audios: {type: Array, default: () => []},
   selected: {type: Boolean, default: false},
+  highlighted: {type: Boolean, default: false},
 });
 
 const emit = defineEmits(["select"]);
@@ -31,7 +32,7 @@ const markerCount = computed(() => {
 <template>
   <article
       class="card thumb-card"
-      :class="{ selected }"
+      :class="{ selected, 'thumb-card--highlighted': highlighted }"
       :data-thumbnail-id="thumb.id"
       @click="emit('select', thumb)"
   >

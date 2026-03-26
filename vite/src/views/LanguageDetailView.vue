@@ -7,6 +7,7 @@ import BaseLoader from "../components/ui/BaseLoader.vue";
 import BaseAlert from "../components/ui/BaseAlert.vue";
 import BaseEmptyState from "../components/ui/BaseEmptyState.vue";
 import BaseBadge from "../components/ui/BaseBadge.vue";
+import DiscussionThread from "../components/community/DiscussionThread.vue";
 
 const props = defineProps({
   id: {type: String, required: true},
@@ -109,6 +110,17 @@ watch(
         <section class="card">
           <h2>Description</h2>
           <p class="text">{{ language.description ?? "No description available." }}</p>
+        </section>
+
+        <section class="section">
+          <DiscussionThread
+              title="Language discussion"
+              subtitle="Questions, collaborative notes and linguistic discussion around this language."
+              target-type="LANGUAGE"
+              :target-id="language.id"
+              empty-title="No discussion yet"
+              empty-message="Be the first to start a discussion on this language."
+          />
         </section>
 
         <section class="section">

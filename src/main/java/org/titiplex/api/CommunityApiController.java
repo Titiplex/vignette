@@ -3,8 +3,10 @@ package org.titiplex.api;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import org.titiplex.api.dto.*;
 import org.titiplex.api.security.PublicOperation;
 import org.titiplex.api.security.UserOperation;
@@ -82,7 +84,7 @@ public class CommunityApiController {
                                                                    @RequestParam(required = false) Long scenarioId,
                                                                    Authentication auth) {
         if (!canReview(scopeType, scenarioId, auth)) {
-            throw new IllegalArgumentException("Not allowed to read these accreditation requests");
+            throw forbidden("Not allowed to read these accreditation requests");
         }
 
         return communityService.listRequests(scopeType, scenarioId).stream().map(this::toDto).toList();
@@ -99,7 +101,7 @@ public class CommunityApiController {
         AccreditationRequest request = communityService.getRequest(requestId);
 
         if (!canReview(request.getScopeType(), request.getScenarioId(), auth)) {
-            throw new IllegalArgumentException("Not allowed to review this request");
+            throw forbidden("Not allowed to review this request");
         }
 
         AccreditationRequest reviewed = communityService.reviewRequest(requestId, reviewerUserId, req.approved(), req.reviewNote());
@@ -114,7 +116,7 @@ public class CommunityApiController {
                                                               @RequestParam(required = false) Long scenarioId,
                                                               Authentication auth) {
         if (!canReview(scopeType, scenarioId, auth)) {
-            throw new IllegalArgumentException("Not allowed to list accreditations for this scope");
+            throw forbidden("Not allowed to list accreditations for this scope");
         }
         return communityService.listAccreditations(scopeType, scenarioId).stream().map(this::toDto).toList();
     }
@@ -126,7 +128,7 @@ public class CommunityApiController {
     public CommunityAccreditationDto grantAccreditation(@RequestBody GrantAccreditationBody req,
                                                         Authentication auth) {
         if (!canReview(req.scopeType(), req.scenarioId(), auth)) {
-            throw new IllegalArgumentException("Not allowed to grant accreditation for this scope");
+            throw forbidden("Not allowed to grant accreditation for this scope");
         }
         Long granterUserId = userService.getUserByUsername(auth.getName()).getId();
         CommunityAccreditation created = communityService.grantAccreditation(
@@ -188,5 +190,9 @@ public class CommunityApiController {
                 accreditation.getGrantedAt(),
                 accreditation.getNote()
         );
+    }
+
+    private ResponseStatusException forbidden(String message) {
+        return new ResponseStatusException(HttpStatus.FORBIDDEN, message);
     }
 }

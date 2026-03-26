@@ -73,6 +73,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/thumbnails").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/audio").authenticated()
 
+                        .requestMatchers(HttpMethod.GET, "/api/community/discussions").permitAll()
+
                         .anyRequest().authenticated()
                 )
                 // session cookie OK

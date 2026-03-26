@@ -48,8 +48,16 @@ public class CommunityService {
         if (!userRepository.existsById(authorId)) throw new IllegalArgumentException("Unknown user");
         validateTarget(targetType, targetId);
 
-        if (parentMessageId != null && discussionRepo.findById(parentMessageId).isEmpty()) {
-            throw new IllegalArgumentException("Unknown parent message");
+        if (parentMessageId != null) {
+            DiscussionMessage parent = discussionRepo.findById(parentMessageId)
+                    .orElseThrow(() -> new IllegalArgumentException("Unknown parent message"));
+
+            boolean sameTargetType = parent.getTargetType() == targetType;
+            boolean sameTargetId = targetId.equals(parent.getTargetId());
+
+            if (!sameTargetType || !sameTargetId) {
+                throw new IllegalArgumentException("Parent message belongs to a different discussion");
+            }
         }
 
         DiscussionMessage message = new DiscussionMessage();
@@ -68,6 +76,7 @@ public class CommunityService {
                                               Long scenarioId,
                                               String motivation) {
         if (motivation == null || motivation.isBlank()) throw new IllegalArgumentException("Motivation is required");
+        if (!userRepository.existsById(requesterId)) throw new IllegalArgumentException("Unknown user");
         validateScope(scopeType, scenarioId);
 
         boolean pendingExists = requestRepo.existsByRequestedByUserIdAndScopeTypeAndScenarioIdAndStatus(
@@ -160,6 +169,7 @@ public class CommunityService {
     }
 
     private void validateTarget(DiscussionTargetType targetType, String targetId) {
+        if (targetType == null) throw new IllegalArgumentException("targetType is required");
         if (targetId == null || targetId.isBlank()) throw new IllegalArgumentException("targetId is required");
 
         boolean exists = switch (targetType) {
@@ -179,6 +189,7 @@ public class CommunityService {
     }
 
     private void validateScope(AccreditationScopeType scopeType, Long scenarioId) {
+        if (scopeType == null) throw new IllegalArgumentException("scopeType is required");
         if (scopeType == AccreditationScopeType.SCENARIO) {
             if (scenarioId == null) throw new IllegalArgumentException("scenarioId is required for scenario scope");
             if (!scenarioRepository.existsById(scenarioId)) throw new IllegalArgumentException("Unknown scenario");

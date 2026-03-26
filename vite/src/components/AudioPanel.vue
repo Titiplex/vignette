@@ -4,6 +4,7 @@ import {uploadThumbnailAudio} from "../api/scenarios";
 import {buildApiUrl} from "../api/rest";
 import {useToast} from "../composables/useToast";
 import BaseBadge from "./ui/BaseBadge.vue";
+import DiscussionThread from "./community/DiscussionThread.vue";
 
 const props = defineProps({
   selectedThumb: {type: Object, default: null},
@@ -29,6 +30,7 @@ const markerX = ref("");
 const markerY = ref("");
 const markerLabel = ref("");
 const isRecording = ref(false);
+const focusedDiscussionAudioId = ref(null);
 
 let mediaRecorder = null;
 let chunks = [];
@@ -73,6 +75,26 @@ function formatMarker(value) {
 function isAudioActive(audio) {
   return String(props.activeAudioId ?? "") === String(audio?.id ?? "");
 }
+
+const discussionAudio = computed(() => {
+  if (!props.audios.length) return null;
+
+  if (focusedDiscussionAudioId.value != null) {
+    const focused = props.audios.find(
+        (audio) => String(audio.id) === String(focusedDiscussionAudioId.value)
+    );
+    if (focused) return focused;
+  }
+
+  if (props.activeAudioId != null) {
+    const active = props.audios.find(
+        (audio) => String(audio.id) === String(props.activeAudioId)
+    );
+    if (active) return active;
+  }
+
+  return props.audios[0] ?? null;
+});
 
 const markerPreviewStyle = computed(() => {
   if (markerX.value === "" || markerY.value === "") return null;
@@ -198,6 +220,10 @@ function playAudio(audio) {
   emit("play-audio", audio);
 }
 
+function openDiscussion(audio) {
+  focusedDiscussionAudioId.value = audio?.id ?? null;
+}
+
 watch(
     () => props.selectedThumb,
     () => {
@@ -207,7 +233,26 @@ watch(
       audioFile.value = null;
       recordedBlob = null;
       isRecording.value = false;
+      focusedDiscussionAudioId.value = null;
     }
+);
+
+watch(
+    () => props.audios,
+    (audios) => {
+      if (!audios.length) {
+        focusedDiscussionAudioId.value = null;
+        return;
+      }
+
+      if (
+          focusedDiscussionAudioId.value != null &&
+          !audios.some((audio) => String(audio.id) === String(focusedDiscussionAudioId.value))
+      ) {
+        focusedDiscussionAudioId.value = null;
+      }
+    },
+    {deep: true}
 );
 </script>
 
@@ -289,6 +334,14 @@ watch(
 
               <button
                   type="button"
+                  class="btn btn--ghost"
+                  @click="openDiscussion(audio)"
+              >
+                Discuss
+              </button>
+
+              <button
+                  type="button"
                   class="btn btn--primary"
                   @click="playAudio(audio)"
               >
@@ -302,6 +355,17 @@ watch(
       <p v-else class="muted">
         No audio clips are attached to this thumbnail yet.
       </p>
+    </section>
+
+    <section v-if="discussionAudio" class="audio-panel__section">
+      <DiscussionThread
+          title="Audio discussion"
+          :subtitle="`Comments and annotation debate for ${discussionAudio.title || `Audio #${discussionAudio.id}`}.`"
+          target-type="AUDIO"
+          :target-id="discussionAudio.id"
+          empty-title="No comments on this clip yet"
+          empty-message="Use this space for transcription, translation, gloss or interpretation notes."
+      />
     </section>
 
     <template v-if="isOwner">

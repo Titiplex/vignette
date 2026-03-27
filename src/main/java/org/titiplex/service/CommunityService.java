@@ -1,6 +1,9 @@
 package org.titiplex.service;
 
 import org.springframework.stereotype.Service;
+import org.titiplex.persistence.repo.AccreditationRequestRepository;
+import org.titiplex.persistence.repo.CommunityAccreditationRepository;
+import org.titiplex.persistence.repo.DiscussionMessageRepository;
 import org.titiplex.persistence.model.*;
 import org.titiplex.persistence.repo.*;
 

@@ -9,7 +9,7 @@ import java.time.Instant;
 @Entity
 @Getter
 @Setter
-@Table(name = "accreditation_request")
+@Table(name = "accreditation_request", schema = "community")
 public class AccreditationRequest {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

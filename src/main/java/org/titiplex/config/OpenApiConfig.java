@@ -12,6 +12,7 @@ import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.titiplex.api.security.OpenApiAccessCustomizer;
+import org.titiplex.api.security.OwnerOrAdminOpenApiCustomizer;
 
 @Configuration
 public class OpenApiConfig {
@@ -84,5 +85,10 @@ public class OpenApiConfig {
     @Bean
     OperationCustomizer accessCustomizer() {
         return new OpenApiAccessCustomizer();
+    }
+
+    @Bean
+    OperationCustomizer ownerOrAdminCustomizer() {
+        return new OwnerOrAdminOpenApiCustomizer();
     }
 }

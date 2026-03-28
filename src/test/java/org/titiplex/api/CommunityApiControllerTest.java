@@ -61,7 +61,7 @@ class CommunityApiControllerTest {
         );
 
         assertEquals(1, result.size());
-        DiscussionMessageDto dto = result.getFirst();
+        DiscussionMessageDto dto = result.get(0);
         assertEquals(1L, dto.id());
         assertEquals("alice", dto.authorUsername());
         assertEquals(ContributionType.GLOSS, dto.contributionType());
@@ -154,8 +154,8 @@ class CommunityApiControllerTest {
         );
 
         assertEquals(1, result.size());
-        assertEquals("bob", result.getFirst().requestedByUsername());
-        assertEquals("I can help", result.getFirst().motivation());
+        assertEquals("bob", result.get(0).requestedByUsername());
+        assertEquals("I can help", result.get(0).motivation());
     }
 
     @Test

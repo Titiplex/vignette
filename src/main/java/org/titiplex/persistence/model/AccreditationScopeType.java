@@ -2,5 +2,7 @@ package org.titiplex.persistence.model;
 
 public enum AccreditationScopeType {
     GLOBAL,
-    SCENARIO
+    SCENARIO,
+    LANGUAGE,
+    LANGUAGE_FAMILY
 }

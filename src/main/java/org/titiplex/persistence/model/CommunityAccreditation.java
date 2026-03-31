@@ -21,10 +21,14 @@ public class CommunityAccreditation {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    private AccreditationPermissionType permissionType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private AccreditationScopeType scopeType;
 
-    @Column
-    private Long scenarioId;
+    @Column(name = "target_id")
+    private String targetId;
 
     @Column(nullable = false)
     private Long grantedByUserId;

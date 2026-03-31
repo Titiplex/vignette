@@ -227,7 +227,13 @@ public class CommunityApiController {
             Authentication auth
     ) {
         Long userId = userService.getUserByUsername(auth.getName()).getId();
-        AccreditationRequest created = communityService.createRequest(userId, req.scopeType(), req.scenarioId(), req.motivation());
+        AccreditationRequest created = communityService.createRequest(
+                userId,
+                req.permissionType(),
+                req.scopeType(),
+                req.targetId(),
+                req.motivation()
+        );
         return toDto(created);
     }
 
@@ -270,6 +276,13 @@ public class CommunityApiController {
     @GetMapping("/accreditation-requests")
     public List<AccreditationRequestDto> listAccreditationRequests(
             @Parameter(
+                    description = "Permission of accreditation request to receive",
+                    required = true,
+                    example = "LANGUAGE_EDIT"
+            )
+            @RequestParam AccreditationPermissionType permissionType,
+
+            @Parameter(
                     description = "Scope of accreditation requests to retrieve",
                     required = true,
                     example = "SCENARIO"
@@ -277,19 +290,19 @@ public class CommunityApiController {
             @RequestParam AccreditationScopeType scopeType,
 
             @Parameter(
-                    description = "Scenario identifier when scopeType is SCENARIO",
+                    description = "target identifier for scopeType",
                     example = "12"
             )
-            @RequestParam(required = false) Long scenarioId,
+            @RequestParam(required = false) String targetId,
 
             @Parameter(hidden = true)
             Authentication auth
     ) {
-        if (!canReview(scopeType, scenarioId, auth)) {
+        if (!canManage(scopeType, targetId, auth)) {
             throw forbidden("Not allowed to read these accreditation requests");
         }
 
-        return communityService.listRequests(scopeType, scenarioId).stream().map(this::toDto).toList();
+        return communityService.listRequests(permissionType, scopeType, targetId).stream().map(this::toDto).toList();
     }
 
     @Operation(
@@ -361,7 +374,7 @@ public class CommunityApiController {
         Long reviewerUserId = userService.getUserByUsername(auth.getName()).getId();
         AccreditationRequest request = communityService.getRequest(requestId);
 
-        if (!canReview(request.getScopeType(), request.getScenarioId(), auth)) {
+        if (!canManage(request.getScopeType(), request.getTargetId(), auth)) {
             throw forbidden("Not allowed to review this request");
         }
 
@@ -373,7 +386,7 @@ public class CommunityApiController {
             summary = "List granted accreditations",
             description = """
                     Lists granted accreditations for a given scope.
-
+                    
                     Access rules:
                     - GLOBAL scope: admin only
                     - SCENARIO scope: admin or scenario owner
@@ -408,6 +421,13 @@ public class CommunityApiController {
     @GetMapping("/accreditations")
     public List<CommunityAccreditationDto> listAccreditations(
             @Parameter(
+                    description = "Permissions of accreditations to receive",
+                    required = true,
+                    example = "LANGUAGE_EDIT"
+            )
+            @RequestParam(required = false) AccreditationPermissionType permissionType,
+
+            @Parameter(
                     description = "Scope of accreditations to retrieve",
                     required = true,
                     example = "SCENARIO"
@@ -415,25 +435,25 @@ public class CommunityApiController {
             @RequestParam AccreditationScopeType scopeType,
 
             @Parameter(
-                    description = "Scenario identifier when scopeType is SCENARIO",
+                    description = "target identifier for scopeType",
                     example = "12"
             )
-            @RequestParam(required = false) Long scenarioId,
+            @RequestParam(required = false) String targetId,
 
             @Parameter(hidden = true)
             Authentication auth
     ) {
-        if (!canReview(scopeType, scenarioId, auth)) {
+        if (!canManage(scopeType, targetId, auth)) {
             throw forbidden("Not allowed to list accreditations for this scope");
         }
-        return communityService.listAccreditations(scopeType, scenarioId).stream().map(this::toDto).toList();
+        return communityService.listAccreditations(permissionType, scopeType, targetId).stream().map(this::toDto).toList();
     }
 
     @Operation(
             summary = "Grant an accreditation directly",
             description = """
                     Grants an accreditation directly to a user without going through a review request flow.
-
+                    
                     Access rules:
                     - GLOBAL scope: admin only
                     - SCENARIO scope: admin or scenario owner
@@ -490,18 +510,46 @@ public class CommunityApiController {
             @Parameter(hidden = true)
             Authentication auth
     ) {
-        if (!canReview(req.scopeType(), req.scenarioId(), auth)) {
+        if (!canManage(req.scopeType(), req.targetId(), auth)) {
             throw forbidden("Not allowed to grant accreditation for this scope");
         }
         Long granterUserId = userService.getUserByUsername(auth.getName()).getId();
         CommunityAccreditation created = communityService.grantAccreditation(
                 req.userId(),
+                req.permissionType(),
                 req.scopeType(),
-                req.scenarioId(),
+                req.targetId(),
                 granterUserId,
                 req.note()
         );
         return toDto(created);
+    }
+
+    private boolean canManage(AccreditationScopeType scopeType,
+                              String targetId,
+                              Authentication auth) {
+        boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        if (scopeType == AccreditationScopeType.GLOBAL) {
+            return isAdmin;
+        }
+
+        if (scopeType == AccreditationScopeType.SCENARIO) {
+            if (isAdmin) return true;
+            if (targetId == null || targetId.isBlank()) return false;
+            try {
+                Long scenarioId = Long.parseLong(targetId);
+                return communityService.isScenarioOwner(scenarioId, auth.getName());
+            } catch (NumberFormatException e) {
+                return false;
+            }
+        }
+
+        if (scopeType == AccreditationScopeType.LANGUAGE || scopeType == AccreditationScopeType.LANGUAGE_FAMILY) {
+            return isAdmin;
+        }
+
+        return false;
     }
 
     private boolean canReview(AccreditationScopeType scopeType, Long scenarioId, Authentication auth) {
@@ -531,8 +579,9 @@ public class CommunityApiController {
                 request.getId(),
                 request.getRequestedByUserId(),
                 request.getRequester() == null ? "Unknown" : request.getRequester().getUsername(),
+                request.getPermissionType(),
                 request.getScopeType(),
-                request.getScenarioId(),
+                request.getTargetId(),
                 request.getMotivation(),
                 request.getStatus(),
                 request.getReviewedByUserId(),
@@ -547,8 +596,9 @@ public class CommunityApiController {
                 accreditation.getId(),
                 accreditation.getUserId(),
                 accreditation.getUser() == null ? "Unknown" : accreditation.getUser().getUsername(),
+                accreditation.getPermissionType(),
                 accreditation.getScopeType(),
-                accreditation.getScenarioId(),
+                accreditation.getTargetId(),
                 accreditation.getGrantedByUserId(),
                 accreditation.getGrantedAt(),
                 accreditation.getNote()

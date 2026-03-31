@@ -1,9 +1,6 @@
 package org.titiplex.service;
 
 import org.springframework.stereotype.Service;
-import org.titiplex.persistence.repo.AccreditationRequestRepository;
-import org.titiplex.persistence.repo.CommunityAccreditationRepository;
-import org.titiplex.persistence.repo.DiscussionMessageRepository;
 import org.titiplex.persistence.model.*;
 import org.titiplex.persistence.repo.*;
 
@@ -75,39 +72,50 @@ public class CommunityService {
     }
 
     public AccreditationRequest createRequest(Long requesterId,
+                                              AccreditationPermissionType permissionType,
                                               AccreditationScopeType scopeType,
-                                              Long scenarioId,
+                                              String targetId,
                                               String motivation) {
+        if (permissionType == null) throw new IllegalArgumentException("permissionType is required");
         if (motivation == null || motivation.isBlank()) throw new IllegalArgumentException("Motivation is required");
         if (!userRepository.existsById(requesterId)) throw new IllegalArgumentException("Unknown user");
-        validateScope(scopeType, scenarioId);
 
-        boolean pendingExists = requestRepo.existsByRequestedByUserIdAndScopeTypeAndScenarioIdAndStatus(
+        validateAccreditationTarget(scopeType, targetId);
+
+        boolean pendingExists = requestRepo.existsByRequestedByUserIdAndPermissionTypeAndScopeTypeAndTargetIdAndStatus(
                 requesterId,
+                permissionType,
                 scopeType,
-                scenarioId,
+                normalizeTargetId(scopeType, targetId),
                 AccreditationRequestStatus.PENDING
         );
         if (pendingExists) throw new IllegalArgumentException("A pending request already exists");
 
         AccreditationRequest request = new AccreditationRequest();
         request.setRequestedByUserId(requesterId);
+        request.setPermissionType(permissionType);
         request.setScopeType(scopeType);
-        request.setScenarioId(scopeType == AccreditationScopeType.GLOBAL ? null : scenarioId);
+        request.setTargetId(normalizeTargetId(scopeType, targetId));
         request.setMotivation(motivation.trim());
         request.setStatus(AccreditationRequestStatus.PENDING);
         request.setCreatedAt(Instant.now());
         return requestRepo.save(request);
     }
 
-    public List<AccreditationRequest> listRequests(AccreditationScopeType scopeType, Long scenarioId) {
-        validateScope(scopeType, scenarioId);
-        if (scopeType == AccreditationScopeType.GLOBAL) {
-            return requestRepo.findByScopeTypeOrderByCreatedAtDesc(scopeType);
-        }
-        return requestRepo.findByScopeTypeAndScenarioIdOrderByCreatedAtDesc(scopeType, scenarioId);
-    }
+    public List<AccreditationRequest> listRequests(AccreditationPermissionType permissionType,
+                                                   AccreditationScopeType scopeType,
+                                                   String targetId) {
+        if (permissionType == null) throw new IllegalArgumentException("permissionType is required");
+        validateAccreditationTarget(scopeType, targetId);
 
+        String normalizedTargetId = normalizeTargetId(scopeType, targetId);
+        if (scopeType == AccreditationScopeType.GLOBAL) {
+            return requestRepo.findByPermissionTypeAndScopeTypeOrderByCreatedAtDesc(permissionType, scopeType);
+        }
+        return requestRepo.findByPermissionTypeAndScopeTypeAndTargetIdOrderByCreatedAtDesc(
+                permissionType, scopeType, normalizedTargetId
+        );
+    }
 
     public AccreditationRequest getRequest(Long requestId) {
         return requestRepo.findById(requestId).orElseThrow(() -> new IllegalArgumentException("Unknown request"));
@@ -128,43 +136,59 @@ public class CommunityService {
 
         AccreditationRequest saved = requestRepo.save(req);
         if (approved) {
-            grantAccreditation(req.getRequestedByUserId(), req.getScopeType(), req.getScenarioId(), reviewerUserId,
-                    "Granted from request #" + req.getId());
+            grantAccreditation(
+                    req.getRequestedByUserId(),
+                    req.getPermissionType(),
+                    req.getScopeType(),
+                    req.getTargetId(),
+                    reviewerUserId,
+                    "Granted from request #" + req.getId()
+            );
         }
         return saved;
     }
 
     public CommunityAccreditation grantAccreditation(Long userId,
+                                                     AccreditationPermissionType permissionType,
                                                      AccreditationScopeType scopeType,
-                                                     Long scenarioId,
+                                                     String targetId,
                                                      Long grantedByUserId,
                                                      String note) {
-        validateScope(scopeType, scenarioId);
+        if (permissionType == null) throw new IllegalArgumentException("permissionType is required");
+        validateAccreditationTarget(scopeType, targetId);
         if (!userRepository.existsById(userId)) throw new IllegalArgumentException("Unknown user");
 
-        Long normalizedScenarioId = scopeType == AccreditationScopeType.GLOBAL ? null : scenarioId;
+        String normalizedTargetId = normalizeTargetId(scopeType, targetId);
 
         CommunityAccreditation existing = accreditationRepo
-                .findByUserIdAndScopeTypeAndScenarioId(userId, scopeType, normalizedScenarioId)
+                .findByUserIdAndPermissionTypeAndScopeTypeAndTargetId(userId, permissionType, scopeType, normalizedTargetId)
                 .orElse(null);
         if (existing != null) return existing;
 
         CommunityAccreditation grant = new CommunityAccreditation();
         grant.setUserId(userId);
+        grant.setPermissionType(permissionType);
         grant.setScopeType(scopeType);
-        grant.setScenarioId(normalizedScenarioId);
+        grant.setTargetId(normalizedTargetId);
         grant.setGrantedByUserId(grantedByUserId);
         grant.setGrantedAt(Instant.now());
         grant.setNote(note == null ? null : note.trim());
         return accreditationRepo.save(grant);
     }
 
-    public List<CommunityAccreditation> listAccreditations(AccreditationScopeType scopeType, Long scenarioId) {
-        validateScope(scopeType, scenarioId);
+    public List<CommunityAccreditation> listAccreditations(AccreditationPermissionType permissionType,
+                                                           AccreditationScopeType scopeType,
+                                                           String targetId) {
+        if (permissionType == null) throw new IllegalArgumentException("permissionType is required");
+        validateAccreditationTarget(scopeType, targetId);
+
+        String normalizedTargetId = normalizeTargetId(scopeType, targetId);
         if (scopeType == AccreditationScopeType.GLOBAL) {
-            return accreditationRepo.findByScopeTypeOrderByGrantedAtDesc(scopeType);
+            return accreditationRepo.findByPermissionTypeAndScopeTypeOrderByGrantedAtDesc(permissionType, scopeType);
         }
-        return accreditationRepo.findByScopeTypeAndScenarioIdOrderByGrantedAtDesc(scopeType, scenarioId);
+        return accreditationRepo.findByPermissionTypeAndScopeTypeAndTargetIdOrderByGrantedAtDesc(
+                permissionType, scopeType, normalizedTargetId
+        );
     }
 
     public boolean isScenarioOwner(Long scenarioId, String username) {
@@ -191,11 +215,51 @@ public class CommunityService {
         if (!exists) throw new IllegalArgumentException("Unknown target");
     }
 
-    private void validateScope(AccreditationScopeType scopeType, Long scenarioId) {
+    private void validateAccreditationTarget(AccreditationScopeType scopeType, String targetId) {
         if (scopeType == null) throw new IllegalArgumentException("scopeType is required");
-        if (scopeType == AccreditationScopeType.SCENARIO) {
-            if (scenarioId == null) throw new IllegalArgumentException("scenarioId is required for scenario scope");
-            if (!scenarioRepository.existsById(scenarioId)) throw new IllegalArgumentException("Unknown scenario");
+
+        switch (scopeType) {
+            case GLOBAL -> {
+                if (targetId != null && !targetId.isBlank()) {
+                    throw new IllegalArgumentException("targetId must be null for global scope");
+                }
+            }
+            case SCENARIO -> {
+                if (targetId == null || targetId.isBlank()) {
+                    throw new IllegalArgumentException("targetId is required for scenario scope");
+                }
+                long scenarioId;
+                try {
+                    scenarioId = Long.parseLong(targetId);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("scenario targetId must be numeric");
+                }
+                if (!scenarioRepository.existsById(scenarioId)) {
+                    throw new IllegalArgumentException("Unknown scenario");
+                }
+            }
+            case LANGUAGE -> {
+                if (targetId == null || targetId.isBlank()) {
+                    throw new IllegalArgumentException("targetId is required for language scope");
+                }
+                if (!languageRepository.existsById(targetId)) {
+                    throw new IllegalArgumentException("Unknown language");
+                }
+            }
+            case LANGUAGE_FAMILY -> {
+                if (targetId == null || targetId.isBlank()) {
+                    throw new IllegalArgumentException("targetId is required for language family scope");
+                }
+                Language lang = languageRepository.findById(targetId)
+                        .orElseThrow(() -> new IllegalArgumentException("Unknown language family"));
+                if (lang.getLevel() == null || !lang.getLevel().equalsIgnoreCase("family")) {
+                    throw new IllegalArgumentException("targetId must reference a language family");
+                }
+            }
         }
+    }
+
+    private String normalizeTargetId(AccreditationScopeType scopeType, String targetId) {
+        return scopeType == AccreditationScopeType.GLOBAL ? null : targetId.trim();
     }
 }

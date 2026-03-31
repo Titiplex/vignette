@@ -8,6 +8,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.web.server.ResponseStatusException;
+import org.titiplex.api.dto.CreateAccreditationRequestBody;
 import org.titiplex.api.dto.CreateDiscussionMessageRequest;
 import org.titiplex.api.dto.DiscussionMessageDto;
 import org.titiplex.api.dto.GrantAccreditationBody;
@@ -20,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -126,6 +129,58 @@ class CommunityApiControllerTest {
     }
 
     @Test
+    void createAccreditationRequest_usesPermissionScopeAndTargetId() {
+        Authentication auth = auth("alice", "ROLE_USER");
+
+        User requester = new User();
+        requester.setId(12L);
+        requester.setUsername("alice");
+
+        AccreditationRequest created = new AccreditationRequest();
+        created.setId(4L);
+        created.setRequestedByUserId(12L);
+        created.setRequester(requester);
+        created.setPermissionType(AccreditationPermissionType.LANGUAGE_EDIT);
+        created.setScopeType(AccreditationScopeType.LANGUAGE);
+        created.setTargetId("chuj");
+        created.setMotivation("I work on this language.");
+        created.setStatus(AccreditationRequestStatus.PENDING);
+        created.setCreatedAt(Instant.parse("2026-03-21T09:00:00Z"));
+
+        when(userService.getUserByUsername("alice")).thenReturn(requester);
+        when(communityService.createRequest(
+                12L,
+                AccreditationPermissionType.LANGUAGE_EDIT,
+                AccreditationScopeType.LANGUAGE,
+                "chuj",
+                "I work on this language."
+        )).thenReturn(created);
+
+        var dto = controller.createAccreditationRequest(
+                new CreateAccreditationRequestBody(
+                        AccreditationPermissionType.LANGUAGE_EDIT,
+                        AccreditationScopeType.LANGUAGE,
+                        "chuj",
+                        "I work on this language."
+                ),
+                auth
+        );
+
+        assertEquals(4L, dto.id());
+        assertEquals(AccreditationPermissionType.LANGUAGE_EDIT, dto.permissionType());
+        assertEquals(AccreditationScopeType.LANGUAGE, dto.scopeType());
+        assertEquals("chuj", dto.targetId());
+
+        verify(communityService).createRequest(
+                12L,
+                AccreditationPermissionType.LANGUAGE_EDIT,
+                AccreditationScopeType.LANGUAGE,
+                "chuj",
+                "I work on this language."
+        );
+    }
+
+    @Test
     void listAccreditationRequests_allowsScenarioOwner() {
         Authentication auth = auth("owner", "ROLE_USER");
 
@@ -137,25 +192,49 @@ class CommunityApiControllerTest {
         request.setId(4L);
         request.setRequestedByUserId(17L);
         request.setRequester(requester);
+        request.setPermissionType(AccreditationPermissionType.COMMUNITY_REVIEW);
         request.setScopeType(AccreditationScopeType.SCENARIO);
-        request.setScenarioId(9L);
+        request.setTargetId("9");
         request.setMotivation("I can help");
         request.setStatus(AccreditationRequestStatus.PENDING);
         request.setCreatedAt(Instant.parse("2026-03-21T09:00:00Z"));
 
         when(communityService.isScenarioOwner(9L, "owner")).thenReturn(true);
-        when(communityService.listRequests(AccreditationScopeType.SCENARIO, 9L))
-                .thenReturn(List.of(request));
+        when(communityService.listRequests(
+                AccreditationPermissionType.COMMUNITY_REVIEW,
+                AccreditationScopeType.SCENARIO,
+                "9"
+        )).thenReturn(List.of(request));
 
         var result = controller.listAccreditationRequests(
+                AccreditationPermissionType.COMMUNITY_REVIEW,
                 AccreditationScopeType.SCENARIO,
-                9L,
+                "9",
                 auth
         );
 
         assertEquals(1, result.size());
         assertEquals("bob", result.get(0).requestedByUsername());
         assertEquals("I can help", result.get(0).motivation());
+        assertEquals("9", result.get(0).targetId());
+    }
+
+    @Test
+    void listAccreditationRequests_forbidsNonOwnerNonAdmin() {
+        Authentication auth = auth("random-user", "ROLE_USER");
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> controller.listAccreditationRequests(
+                        AccreditationPermissionType.COMMUNITY_REVIEW,
+                        AccreditationScopeType.SCENARIO,
+                        "9",
+                        auth
+                )
+        );
+
+        assertEquals(403, ex.getStatusCode().value());
+        assertEquals("Not allowed to read these accreditation requests", ex.getReason());
     }
 
     @Test
@@ -174,8 +253,9 @@ class CommunityApiControllerTest {
         created.setId(22L);
         created.setUserId(7L);
         created.setUser(accreditedUser);
+        created.setPermissionType(AccreditationPermissionType.LANGUAGE_EDIT);
         created.setScopeType(AccreditationScopeType.GLOBAL);
-        created.setScenarioId(null);
+        created.setTargetId(null);
         created.setGrantedByUserId(1L);
         created.setGrantedAt(Instant.parse("2026-03-22T08:00:00Z"));
         created.setNote("Granted");
@@ -183,6 +263,7 @@ class CommunityApiControllerTest {
         when(userService.getUserByUsername("root")).thenReturn(granter);
         when(communityService.grantAccreditation(
                 7L,
+                AccreditationPermissionType.LANGUAGE_EDIT,
                 AccreditationScopeType.GLOBAL,
                 null,
                 1L,
@@ -192,6 +273,7 @@ class CommunityApiControllerTest {
         var result = controller.grantAccreditation(
                 new GrantAccreditationBody(
                         7L,
+                        AccreditationPermissionType.LANGUAGE_EDIT,
                         AccreditationScopeType.GLOBAL,
                         null,
                         "Granted"
@@ -201,10 +283,12 @@ class CommunityApiControllerTest {
 
         assertEquals(22L, result.id());
         assertEquals("bob", result.username());
+        assertEquals(AccreditationPermissionType.LANGUAGE_EDIT, result.permissionType());
         assertEquals(AccreditationScopeType.GLOBAL, result.scopeType());
 
         verify(communityService).grantAccreditation(
                 7L,
+                AccreditationPermissionType.LANGUAGE_EDIT,
                 AccreditationScopeType.GLOBAL,
                 null,
                 1L,

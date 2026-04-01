@@ -8,8 +8,14 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.titiplex.api.dto.LanguageDto;
 import org.titiplex.api.dto.LanguageOptionDto;
+import org.titiplex.api.dto.UpdateLanguageRequest;
+import org.titiplex.persistence.model.AccreditationPermissionType;
+import org.titiplex.persistence.model.AccreditationScopeType;
 import org.titiplex.persistence.model.Language;
+import org.titiplex.persistence.model.User;
+import org.titiplex.persistence.repo.CommunityAccreditationRepository;
 import org.titiplex.persistence.repo.LanguageRepository;
+import org.titiplex.persistence.repo.UserRepository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,9 +26,17 @@ import java.util.Optional;
 public class LanguageService {
 
     private final LanguageRepository repo;
+    private final UserRepository userRepository;
+    private final CommunityAccreditationRepository accreditationRepository;
 
-    public LanguageService(LanguageRepository repo) {
+    public LanguageService(
+            LanguageRepository repo,
+            UserRepository userRepository,
+            CommunityAccreditationRepository accreditationRepository
+    ) {
         this.repo = repo;
+        this.userRepository = userRepository;
+        this.accreditationRepository = accreditationRepository;
     }
 
     public Page<Language> listLanguages(String query, int page, int size) {
@@ -56,6 +70,8 @@ public class LanguageService {
                 l.getLatitude(),
                 l.getLongitude(),
                 l.getCountryIds(),
+                l.getDescription(),
+                l.getMarkupDescription(),
                 l.getFamilyId(),
                 familyName,
                 l.getParentId(),
@@ -79,6 +95,72 @@ public class LanguageService {
 
     public boolean existsById(String id) {
         return repo.existsById(id);
+    }
+
+    public boolean canEditLanguage(String username, String languageId) {
+        User user = userRepository.findByUsername(username).orElse(null);
+        if (user == null) return false;
+
+        boolean isAdmin = user.getRoles().stream().anyMatch(r -> "ROLE_ADMIN".equals(r.getName()));
+        if (isAdmin) return true;
+
+        Language language = repo.findById(languageId).orElse(null);
+        if (language == null) return false;
+
+        Long userId = user.getId();
+
+        boolean hasGlobalEdit = accreditationRepository.existsByUserIdAndPermissionTypeAndScopeTypeAndTargetId(
+                userId,
+                AccreditationPermissionType.LANGUAGE_EDIT,
+                AccreditationScopeType.GLOBAL,
+                null
+        );
+        if (hasGlobalEdit) return true;
+
+        boolean hasDirectLanguageEdit = accreditationRepository.existsByUserIdAndPermissionTypeAndScopeTypeAndTargetId(
+                userId,
+                AccreditationPermissionType.LANGUAGE_EDIT,
+                AccreditationScopeType.LANGUAGE,
+                languageId
+        );
+        if (hasDirectLanguageEdit) return true;
+
+        String familyId = language.getFamilyId();
+        if (familyId != null && !familyId.isBlank()) {
+            return accreditationRepository.existsByUserIdAndPermissionTypeAndScopeTypeAndTargetId(
+                    userId,
+                    AccreditationPermissionType.LANGUAGE_EDIT,
+                    AccreditationScopeType.LANGUAGE_FAMILY,
+                    familyId
+            );
+        }
+
+        return false;
+    }
+
+    @Transactional
+    public LanguageDto updateLanguage(String id, UpdateLanguageRequest req) {
+        Language language = repo.findById(id).orElseThrow();
+
+        if (req.name() != null) language.setName(req.name().trim());
+        if (req.level() != null) language.setLevel(req.level().trim());
+        if (req.bookkeeping() != null) language.setBookkeeping(req.bookkeeping());
+        if (req.iso639P3code() != null) language.setIso639P3code(blankToNull(req.iso639P3code()));
+        if (req.latitude() != null) language.setLatitude(req.latitude());
+        if (req.longitude() != null) language.setLongitude(req.longitude());
+        if (req.countryIds() != null) language.setCountryIds(blankToNull(req.countryIds()));
+        if (req.familyId() != null) language.setFamilyId(blankToNull(req.familyId()));
+        if (req.parentId() != null) language.setParentId(blankToNull(req.parentId()));
+        if (req.description() != null) language.setDescription(blankToNull(req.description()));
+        if (req.markupDescription() != null) language.setMarkupDescription(blankToNull(req.markupDescription()));
+
+        return toDto(repo.save(language));
+    }
+
+    private String blankToNull(String value) {
+        if (value == null) return null;
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     public Page<LanguageOptionDto> searchOptions(String q, int page, int size) {

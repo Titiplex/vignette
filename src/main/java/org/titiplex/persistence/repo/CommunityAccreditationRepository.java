@@ -26,4 +26,11 @@ public interface CommunityAccreditationRepository extends JpaRepository<Communit
             AccreditationScopeType scopeType,
             String targetId
     );
+
+    boolean existsByUserIdAndPermissionTypeAndScopeTypeAndTargetId(
+            Long userId,
+            AccreditationPermissionType permissionType,
+            AccreditationScopeType scopeType,
+            String targetId
+    );
 }

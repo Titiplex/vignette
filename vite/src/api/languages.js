@@ -15,3 +15,14 @@ export function fetchLanguageScenarios(id) {
 export function fetchLanguageOptions(params) {
     return apiFetch(`/api/languages/options?${params.toString()}`);
 }
+
+export function fetchMyLanguagePermissions(id) {
+    return apiFetch(`/api/languages/${id}/permissions/me`);
+}
+
+export function updateLanguage(id, body) {
+    return apiFetch(`/api/languages/${id}`, {
+        method: "PUT",
+        body,
+    });
+}

@@ -10,9 +10,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Min;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import org.titiplex.api.dto.*;
 import org.titiplex.api.security.PublicOperation;
+import org.titiplex.api.security.UserOperation;
 import org.titiplex.persistence.model.Language;
 import org.titiplex.service.LanguageService;
 import org.titiplex.service.ScenarioService;
@@ -180,6 +184,85 @@ public class LanguageApiController {
             @RequestParam(defaultValue = "50") @Min(1) int size
     ) {
         return languageService.searchOptions(q, page, size);
+    }
+
+    @Operation(
+            summary = "Get current user language permissions",
+            description = "Returns whether the authenticated user can edit the specified language."
+    )
+    @UserOperation
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Permissions resolved successfully",
+                    content = @Content(schema = @Schema(implementation = LanguagePermissionsDto.class))
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Authentication required",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            )
+    })
+    @GetMapping("/{id}/permissions/me")
+    public LanguagePermissionsDto myPermissions(
+            @Parameter(
+                    description = "ID of the language to check permissions for",
+                    required = true
+            )
+            @PathVariable String id,
+
+            @Parameter(hidden = true)
+            Authentication auth
+    ) {
+        return new LanguagePermissionsDto(languageService.canEditLanguage(auth.getName(), id));
+    }
+
+    @Operation(
+            summary = "Update a language",
+            description = """
+                    Updates editable language metadata.
+                    
+                    Requires either:
+                    - ROLE_ADMIN
+                    - or a LANGUAGE_EDIT accreditation matching:
+                      - GLOBAL
+                      - the specific language
+                      - or the language family of the target language
+                    """
+    )
+    @UserOperation
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Language updated successfully",
+                    content = @Content(schema = @Schema(implementation = LanguageDto.class))
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Authentication required",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "User is not allowed to edit this language",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Language not found",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            )
+    })
+    @PutMapping("/{id}")
+    public LanguageDto updateLanguage(
+            @PathVariable String id,
+            @RequestBody UpdateLanguageRequest request,
+            Authentication auth
+    ) {
+        if (!languageService.canEditLanguage(auth.getName(), id)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not allowed to edit this language");
+        }
+        return languageService.updateLanguage(id, request);
     }
 
     /**

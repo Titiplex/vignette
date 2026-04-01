@@ -13,6 +13,8 @@ import org.titiplex.persistence.repo.LanguageRepository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 @Service
 public class LanguageService {
@@ -84,5 +86,26 @@ public class LanguageService {
         int safeSize = Math.min(Math.max(size, 1), 200);
         Pageable pageable = PageRequest.of(safePage, safeSize);
         return repo.listOptions(q, pageable);
+    }
+
+    public List<Language> getLanguagesByFamily(String familyId) {
+        Optional<Language> lang = repo.findById(familyId);
+        if (lang.isEmpty() || !Objects.equals(lang.get().getLevel().toLowerCase(), "family")) {
+            return List.of();
+        }
+        var stack = repo.findAllByFamilyId(familyId);
+        List<Language> result = new ArrayList<>();
+
+        while (!stack.isEmpty()) {
+            var temp = stack.getFirst();
+            stack.removeFirst();
+            if (temp.getLevel().equalsIgnoreCase("family") || temp.getLevel().equalsIgnoreCase("parent")) {
+                stack.addAll(repo.findAllByFamilyId(temp.getId()));
+            } else {
+                result.add(temp);
+            }
+        }
+
+        return result;
     }
 }

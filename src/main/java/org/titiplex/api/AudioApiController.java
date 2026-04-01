@@ -298,4 +298,42 @@ public class AudioApiController {
     ) {
         audioService.deleteAudio(audioId);
     }
+
+    /**
+     * List all audios for a specific language.
+     *
+     * @param langId the glottolog id for the language
+     * @return a {@link List} of {@link AudioRowDto} objects representing the audio records associated with the specified thumbnail
+     */
+    @Operation(
+            summary = "List audio files for a language",
+            description = "Returns all audio files associated with a language."
+    )
+    @PublicOperation
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully retrieved audio list",
+                    content = @Content(
+                            mediaType = "application/json",
+                            array = @ArraySchema(schema = @Schema(implementation = AudioRowDto.class)),
+                            examples = @ExampleObject(
+                                    name = "Example Audio List",
+                                    value = "[{\"id\": 1, \"title\": \"Audio 1\", \"idx\": 1, \"mime\": \"png\"},\n {\"id\": 2, \"title\": \"Audio 2\", \"idx\": 2, \"mime\": \"png\"}]\n"
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Language not found",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            )
+    })
+    @GetMapping("/languages/{langId}/audios")
+    public List<AudioRowDto> listByLanguage(
+            @Parameter(description = "ID of the language to retrieve the audio files for", required = true)
+            @PathVariable String langId
+    ) {
+        return audioService.listForLanguage(langId);
+    }
 }

@@ -33,6 +33,12 @@ public class AudioService {
                 .toList();
     }
 
+    public List<AudioRowDto> listForLanguage(String languageId) {
+        return audios.findAllByLanguageId(languageId).stream()
+                .map(a -> new AudioRowDto(a.getId(), a.getTitle(), a.getIdx(), a.getMime(), a.getMarkerX(), a.getMarkerY(), a.getMarkerLabel()))
+                .toList();
+    }
+
     public Audio getAudioOrThrow(Long audioId) {
         return audios.findById(audioId).orElseThrow();
     }

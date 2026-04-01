@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.titiplex.api.dto.LanguageOptionDto;
 import org.titiplex.persistence.model.Language;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface LanguageRepository extends JpaRepository<Language, String> {
@@ -36,4 +37,6 @@ public interface LanguageRepository extends JpaRepository<Language, String> {
                or lower(coalesce(p.name, '')) like lower(concat('%', :q, '%'))
             """)
     Page<Language> search(@Param("q") String q, Pageable pageable);
+
+    List<Language> findAllByFamilyId(String familyId);
 }

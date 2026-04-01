@@ -14,4 +14,6 @@ public interface AudioRepository extends JpaRepository<Audio, Long> {
 
     @Query("select coalesce(max(a.idx), -1) from Audio a where a.thumbnailId = :thumbId")
     int maxIdx(@Param("thumbId") Long thumbId);
+
+    List<Audio> findAllByLanguageId(String languageId);
 }

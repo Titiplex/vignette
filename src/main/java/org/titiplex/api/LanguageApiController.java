@@ -216,4 +216,39 @@ public class LanguageApiController {
         return languageService.getLanguage(id).getScenarios()
                 .stream().map(ScenarioService::toDto).toList();
     }
+
+    @Operation(
+            summary = "List languages by family",
+            description = "Returns a list of languages in a specific language family."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Languages retrieved successfully.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = LanguageRowDto.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Family not found with the specified ID",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            )
+    })
+    @PublicOperation
+    @GetMapping("/{id}/family")
+    public List<LanguageRowDto> getFamily(
+            @Parameter(description = "ID of the language family to retrieve languages for.", required = true)
+            @PathVariable String id
+    ) {
+        return languageService.getLanguagesByFamily(id).stream()
+                .map(l -> new LanguageRowDto(
+                        l.getId(),
+                        l.getName(),
+                        l.getLevel(),
+                        l.getFamily() != null ? l.getFamily().getName() : l.getFamilyId(),
+                        l.getParent() != null ? l.getParent().getName() : l.getParentId()
+                )).toList();
+    }
 }

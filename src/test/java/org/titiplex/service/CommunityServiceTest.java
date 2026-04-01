@@ -169,11 +169,13 @@ class CommunityServiceTest {
 
     @Test
     void createRequest_rejectsDuplicatePendingRequest() {
-        when(scenarioRepository.existsById(5L)).thenReturn(true);
-        when(requestRepo.existsByRequestedByUserIdAndScopeTypeAndScenarioIdAndStatus(
+        when(userRepository.existsById(12L)).thenReturn(true);
+        when(languageRepository.existsById("chuj")).thenReturn(true);
+        when(requestRepo.existsByRequestedByUserIdAndPermissionTypeAndScopeTypeAndTargetIdAndStatus(
                 12L,
-                AccreditationScopeType.SCENARIO,
-                5L,
+                AccreditationPermissionType.LANGUAGE_EDIT,
+                AccreditationScopeType.LANGUAGE,
+                "chuj",
                 AccreditationRequestStatus.PENDING
         )).thenReturn(true);
 
@@ -181,8 +183,9 @@ class CommunityServiceTest {
                 IllegalArgumentException.class,
                 () -> service.createRequest(
                         12L,
-                        AccreditationScopeType.SCENARIO,
-                        5L,
+                        AccreditationPermissionType.LANGUAGE_EDIT,
+                        AccreditationScopeType.LANGUAGE,
+                        "chuj",
                         "I want to contribute"
                 )
         );
@@ -192,18 +195,102 @@ class CommunityServiceTest {
     }
 
     @Test
-    void createRequest_rejectsMissingScenarioIdForScenarioScope() {
+    void createRequest_rejectsMissingTargetIdForLanguageScope() {
+        when(userRepository.existsById(12L)).thenReturn(true);
+
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> service.createRequest(
                         12L,
-                        AccreditationScopeType.SCENARIO,
+                        AccreditationPermissionType.LANGUAGE_EDIT,
+                        AccreditationScopeType.LANGUAGE,
                         null,
                         "I want to contribute"
                 )
         );
 
-        assertEquals("scenarioId is required for scenario scope", ex.getMessage());
+        assertEquals("targetId is required for language scope", ex.getMessage());
+        verify(requestRepo, never()).save(any());
+    }
+
+    @Test
+    void createRequest_rejectsUnknownLanguageForLanguageScope() {
+        when(userRepository.existsById(12L)).thenReturn(true);
+        when(languageRepository.existsById("unknown-language")).thenReturn(false);
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.createRequest(
+                        12L,
+                        AccreditationPermissionType.LANGUAGE_EDIT,
+                        AccreditationScopeType.LANGUAGE,
+                        "unknown-language",
+                        "I want to contribute"
+                )
+        );
+
+        assertEquals("Unknown language", ex.getMessage());
+        verify(requestRepo, never()).save(any());
+    }
+
+    @Test
+    void createRequest_acceptsLanguageFamilyScopeWhenTargetIsFamily() {
+        when(userRepository.existsById(12L)).thenReturn(true);
+
+        Language family = new Language();
+        family.setId("mayan");
+        family.setLevel("family");
+
+        when(languageRepository.findById("mayan")).thenReturn(Optional.of(family));
+        when(requestRepo.existsByRequestedByUserIdAndPermissionTypeAndScopeTypeAndTargetIdAndStatus(
+                12L,
+                AccreditationPermissionType.LANGUAGE_EDIT,
+                AccreditationScopeType.LANGUAGE_FAMILY,
+                "mayan",
+                AccreditationRequestStatus.PENDING
+        )).thenReturn(false);
+        when(requestRepo.save(any(AccreditationRequest.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        AccreditationRequest created = service.createRequest(
+                12L,
+                AccreditationPermissionType.LANGUAGE_EDIT,
+                AccreditationScopeType.LANGUAGE_FAMILY,
+                "mayan",
+                "I specialize in Mayan languages"
+        );
+
+        assertEquals(12L, created.getRequestedByUserId());
+        assertEquals(AccreditationPermissionType.LANGUAGE_EDIT, created.getPermissionType());
+        assertEquals(AccreditationScopeType.LANGUAGE_FAMILY, created.getScopeType());
+        assertEquals("mayan", created.getTargetId());
+        assertEquals("I specialize in Mayan languages", created.getMotivation());
+        assertEquals(AccreditationRequestStatus.PENDING, created.getStatus());
+        verify(requestRepo).save(any(AccreditationRequest.class));
+    }
+
+    @Test
+    void createRequest_rejectsLanguageFamilyScopeWhenTargetIsNotFamily() {
+        when(userRepository.existsById(12L)).thenReturn(true);
+
+        Language language = new Language();
+        language.setId("chuj");
+        language.setLevel("language");
+
+        when(languageRepository.findById("chuj")).thenReturn(Optional.of(language));
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.createRequest(
+                        12L,
+                        AccreditationPermissionType.LANGUAGE_EDIT,
+                        AccreditationScopeType.LANGUAGE_FAMILY,
+                        "chuj",
+                        "I want to contribute"
+                )
+        );
+
+        assertEquals("targetId must reference a language family", ex.getMessage());
         verify(requestRepo, never()).save(any());
     }
 
@@ -214,16 +301,20 @@ class CommunityServiceTest {
         CommunityAccreditation existing = new CommunityAccreditation();
         existing.setId(101L);
         existing.setUserId(9L);
+        existing.setPermissionType(AccreditationPermissionType.LANGUAGE_EDIT);
         existing.setScopeType(AccreditationScopeType.GLOBAL);
+        existing.setTargetId(null);
 
-        when(accreditationRepo.findByUserIdAndScopeTypeAndScenarioId(
+        when(accreditationRepo.findByUserIdAndPermissionTypeAndScopeTypeAndTargetId(
                 9L,
+                AccreditationPermissionType.LANGUAGE_EDIT,
                 AccreditationScopeType.GLOBAL,
                 null
         )).thenReturn(Optional.of(existing));
 
         CommunityAccreditation result = service.grantAccreditation(
                 9L,
+                AccreditationPermissionType.LANGUAGE_EDIT,
                 AccreditationScopeType.GLOBAL,
                 null,
                 1L,
@@ -232,5 +323,36 @@ class CommunityServiceTest {
 
         assertSame(existing, result);
         verify(accreditationRepo, never()).save(any());
+    }
+
+    @Test
+    void grantAccreditation_savesNewLanguageScopedGrant() {
+        when(userRepository.existsById(9L)).thenReturn(true);
+        when(languageRepository.existsById("chuj")).thenReturn(true);
+        when(accreditationRepo.findByUserIdAndPermissionTypeAndScopeTypeAndTargetId(
+                9L,
+                AccreditationPermissionType.LANGUAGE_EDIT,
+                AccreditationScopeType.LANGUAGE,
+                "chuj"
+        )).thenReturn(Optional.empty());
+        when(accreditationRepo.save(any(CommunityAccreditation.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        CommunityAccreditation result = service.grantAccreditation(
+                9L,
+                AccreditationPermissionType.LANGUAGE_EDIT,
+                AccreditationScopeType.LANGUAGE,
+                "chuj",
+                1L,
+                "Granted"
+        );
+
+        assertEquals(9L, result.getUserId());
+        assertEquals(AccreditationPermissionType.LANGUAGE_EDIT, result.getPermissionType());
+        assertEquals(AccreditationScopeType.LANGUAGE, result.getScopeType());
+        assertEquals("chuj", result.getTargetId());
+        assertEquals(1L, result.getGrantedByUserId());
+        assertEquals("Granted", result.getNote());
+        verify(accreditationRepo).save(any(CommunityAccreditation.class));
     }
 }

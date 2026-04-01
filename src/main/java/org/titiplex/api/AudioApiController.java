@@ -22,9 +22,7 @@ import org.titiplex.api.dto.ApiError;
 import org.titiplex.api.dto.AudioRowDto;
 import org.titiplex.api.dto.CreateAudioResponse;
 import org.titiplex.api.dto.UpdateMarkerRequest;
-import org.titiplex.api.security.ApiAccess;
-import org.titiplex.api.security.ApiAccessLevel;
-import org.titiplex.api.security.PublicOperation;
+import org.titiplex.api.security.*;
 import org.titiplex.service.AudioService;
 import org.titiplex.service.UserService;
 
@@ -153,6 +151,10 @@ public class AudioApiController {
                      - multipart/form-data
                     """
     )
+    @OwnerOrAdminOperation(
+            resource = ProtectedResource.AUDIO,
+            param = "thumbId"
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "201",
@@ -165,13 +167,13 @@ public class AudioApiController {
             @ApiResponse(responseCode = "400", description = "Invalid input"),
             @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @ApiAccess(
-            level = ApiAccessLevel.OWNER_OR_ADMIN,
-            rule = "Requires authentication. Authorization: related resource owner or ADMIN only.",
-            ownerResource = "thumbnail"
-    )
-    @SecurityRequirement(name = "bearerAuth")
-    @PreAuthorize("hasRole('USER') and @scenarioSecurity.isOwnerByThumbnailId(#thumbId, authentication.name)")
+//    @ApiAccess(
+//            level = ApiAccessLevel.OWNER_OR_ADMIN,
+//            rule = "Requires authentication. Authorization: related resource owner or ADMIN only.",
+//            ownerResource = "thumbnail"
+//    )
+//    @SecurityRequirement(name = "bearerAuth")
+//    @PreAuthorize("hasRole('USER') and @scenarioSecurity.isOwnerByThumbnailId(#thumbId, authentication.name)")
     @PostMapping(value = "/thumbnails/{thumbId}/audios", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public CreateAudioResponse upload(
             @Parameter(description = "ID of the thumbnail to associate the audio file with", required = true)
@@ -219,6 +221,10 @@ public class AudioApiController {
                     Updates the marker for an audio, could it be modifying it or creating it for the first time.
                     """
     )
+    @OwnerOrAdminOperation(
+            resource = ProtectedResource.AUDIO,
+            param = "audioId"
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -235,13 +241,13 @@ public class AudioApiController {
                     content = @Content(schema = @Schema(implementation = ApiError.class))
             )
     })
-    @ApiAccess(
-            level = ApiAccessLevel.OWNER_OR_ADMIN,
-            rule = "Requires authentication. Authorization: related resource owner or ADMIN only.",
-            ownerResource = "audio"
-    )
-    @SecurityRequirement(name = "bearerAuth")
-    @PreAuthorize("hasRole('USER') and @scenarioSecurity.isOwnerByAudioId(#audioId, authentication.name, @audioService)")
+//    @ApiAccess(
+//            level = ApiAccessLevel.OWNER_OR_ADMIN,
+//            rule = "Requires authentication. Authorization: related resource owner or ADMIN only.",
+//            ownerResource = "audio"
+//    )
+//    @SecurityRequirement(name = "bearerAuth")
+//    @PreAuthorize("hasRole('USER') and @scenarioSecurity.isOwnerByAudioId(#audioId, authentication.name, @audioService)")
     @PatchMapping("/audios/{audioId}/marker")
     public void updateMarker(
             @Parameter(description = "ID of the audio file whose marker is to be updated", required = true)
@@ -268,6 +274,10 @@ public class AudioApiController {
     @Operation(
             summary = "Deletes an audio file.",
             description = "Deletes the audio file associated to the given ID. One must have the appropriate permissions (owner/manager of the audio or admin)."
+    )
+    @OwnerOrAdminOperation(
+            resource = ProtectedResource.AUDIO,
+            param = "audioId"
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Audio successfully deleted"),

@@ -18,10 +18,7 @@ import org.titiplex.api.dto.ApiError;
 import org.titiplex.api.dto.CreateScenarioRequest;
 import org.titiplex.api.dto.CreateScenarioResponse;
 import org.titiplex.api.dto.ScenarioDto;
-import org.titiplex.api.security.ApiAccess;
-import org.titiplex.api.security.ApiAccessLevel;
-import org.titiplex.api.security.PublicOperation;
-import org.titiplex.api.security.UserOperation;
+import org.titiplex.api.security.*;
 import org.titiplex.persistence.model.Scenario;
 import org.titiplex.service.LanguageService;
 import org.titiplex.service.ScenarioService;
@@ -211,6 +208,9 @@ public class ScenarioApiController {
             summary = "Delete a scenario",
             description = "Deletes a scenario and all its associated data (thumbnails, audios, etc.)."
     )
+    @OwnerOrAdminOperation(
+            resource = ProtectedResource.SCENARIO
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "204",
@@ -232,13 +232,13 @@ public class ScenarioApiController {
                     content = @Content(schema = @Schema(implementation = ApiError.class))
             )
     })
-    @ApiAccess(
-            level = ApiAccessLevel.OWNER_OR_ADMIN,
-            rule = "Requires authentication. Authorization: scenario owner or ADMIN only.",
-            ownerResource = "scenario"
-    )
-    @SecurityRequirement(name = "bearerAuth")
-    @PreAuthorize("hasRole('ADMIN') or @scenarioSecurity.isOwner(#id, authentication.name)")
+//    @ApiAccess(
+//            level = ApiAccessLevel.OWNER_OR_ADMIN,
+//            rule = "Requires authentication. Authorization: scenario owner or ADMIN only.",
+//            ownerResource = "scenario"
+//    )
+//    @SecurityRequirement(name = "bearerAuth")
+//    @PreAuthorize("hasRole('ADMIN') or @scenarioSecurity.isOwner(#id, authentication.name)")
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(

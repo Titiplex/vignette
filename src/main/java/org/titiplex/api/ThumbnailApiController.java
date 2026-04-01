@@ -21,9 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.titiplex.api.dto.ApiError;
 import org.titiplex.api.dto.ThumbnailRowDto;
 import org.titiplex.api.dto.UploadResponse;
-import org.titiplex.api.security.ApiAccess;
-import org.titiplex.api.security.ApiAccessLevel;
-import org.titiplex.api.security.PublicOperation;
+import org.titiplex.api.security.*;
 import org.titiplex.persistence.model.Scenario;
 import org.titiplex.persistence.model.Thumbnail;
 import org.titiplex.persistence.model.User;
@@ -114,6 +112,10 @@ public class ThumbnailApiController {
                      - multipart/form-data
                     """
     )
+    @OwnerOrAdminOperation(
+            resource = ProtectedResource.SCENARIO,
+            param = "scenarioId"
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "201",
@@ -158,13 +160,13 @@ public class ThumbnailApiController {
                     content = @Content(schema = @Schema(implementation = ApiError.class))
             )
     })
-    @ApiAccess(
-            level = ApiAccessLevel.OWNER_OR_ADMIN,
-            rule = "Requires authentication. Authorization: scenario owner or ADMIN only.",
-            ownerResource = "scenario"
-    )
-    @SecurityRequirement(name = "bearerAuth")
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and @scenarioSecurity.isOwner(#scenarioId, authentication.name))")
+//    @ApiAccess(
+//            level = ApiAccessLevel.OWNER_OR_ADMIN,
+//            rule = "Requires authentication. Authorization: scenario owner or ADMIN only.",
+//            ownerResource = "scenario"
+//    )
+//    @SecurityRequirement(name = "bearerAuth")
+//    @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and @scenarioSecurity.isOwner(#scenarioId, authentication.name))")
     @PostMapping(value = "/scenarios/{scenarioId}/thumbnails", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     public UploadResponse upload(

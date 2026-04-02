@@ -30,9 +30,14 @@ import java.util.List;
 public class LanguageApiController {
 
     private final LanguageService languageService;
+    private final ScenarioService scenarioService;
 
-    public LanguageApiController(LanguageService languageService) {
+    public LanguageApiController(
+            LanguageService languageService,
+            ScenarioService scenarioService
+    ) {
         this.languageService = languageService;
+        this.scenarioService = scenarioService;
     }
 
     /**
@@ -297,7 +302,7 @@ public class LanguageApiController {
             @PathVariable String id
     ) {
         return languageService.getLanguage(id).getScenarios()
-                .stream().map(ScenarioService::toDto).toList();
+                .stream().map(scenarioService::toDto).toList();
     }
 
     @Operation(

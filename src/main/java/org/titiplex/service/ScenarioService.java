@@ -121,7 +121,7 @@ public class ScenarioService {
         }
 
         String username = authenticatedUsername(authentication);
-        if (username != null && username.equalsIgnoreCase(scenario.getAuthor().getUsername())) {
+        if (username != null && existsByIdAndAuthorUsername(scenario.getId(), username)) {
             return;
         }
 
@@ -137,7 +137,7 @@ public class ScenarioService {
         }
 
         String username = authenticatedUsername(authentication);
-        if (username != null && username.equalsIgnoreCase(scenario.getAuthor().getUsername())) {
+        if (username != null && existsByIdAndAuthorUsername(scenario.getId(), username)) {
             return;
         }
 
@@ -158,13 +158,15 @@ public class ScenarioService {
         return authentication.getName();
     }
 
-    public static ScenarioDto toDto(Scenario s) {
+    public ScenarioDto toDto(Scenario s) {
+        String authorUsername = userService.getUserById(s.getAuthor_id()).getUsername();
+
         return new ScenarioDto(
                 s.getId(),
                 s.getTitle(),
                 s.getDescription(),
                 s.getLanguage_id(),
-                s.getAuthor().getUsername(),
+                authorUsername,
                 s.getCreatedAt(),
                 s.getVisibilityStatus().name(),
                 s.getPublishedAt(),

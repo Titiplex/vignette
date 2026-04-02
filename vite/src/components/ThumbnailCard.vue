@@ -27,12 +27,17 @@ const markers = computed(() => {
           audio?.markerX !== "" &&
           audio?.markerY !== ""
       )
-      .map((audio) => ({
-        ...audio,
-        _x: Math.max(0, Math.min(100, Number(audio.markerX))),
-        _y: Math.max(0, Math.min(100, Number(audio.markerY))),
-      }))
-      .filter((audio) => Number.isFinite(audio._x) && Number.isFinite(audio._y));
+      .map((audio) => {
+        const x = Number(audio.markerX);
+        const y = Number(audio.markerY);
+
+        return {
+          ...audio,
+          _x: Number.isFinite(x) ? Math.max(0, Math.min(100, x)) : null,
+          _y: Number.isFinite(y) ? Math.max(0, Math.min(100, y)) : null,
+        };
+      })
+      .filter((audio) => audio._x !== null && audio._y !== null);
 });
 
 function markerStyle(marker) {
@@ -57,6 +62,13 @@ function markerStyle(marker) {
           class="storyboard-tile__image"
       />
 
+      <div class="storyboard-tile__overlay">
+        <BaseBadge v-if="selected" variant="success">Selected</BaseBadge>
+        <BaseBadge v-else variant="neutral">
+          {{ thumb.idx ?? thumb.id }}
+        </BaseBadge>
+      </div>
+
       <button
           v-for="marker in markers"
           :key="marker.id"
@@ -69,28 +81,6 @@ function markerStyle(marker) {
         <span class="marker-dot__pulse"></span>
         <span class="marker-dot__core"></span>
       </button>
-    </div>
-
-    <div class="thumb-card__body">
-      <div class="thumb-card__header">
-        <h3 class="thumb-card__title">
-          {{ thumb.title || `Thumbnail #${thumb.idx ?? thumb.id}` }}
-        </h3>
-
-        <BaseBadge :variant="selected ? 'success' : 'neutral'">
-          {{ selected ? "Selected" : "Available" }}
-        </BaseBadge>
-      </div>
-
-      <div class="thumb-card__meta-row">
-        <BaseBadge variant="info">Index {{ thumb.idx ?? "-" }}</BaseBadge>
-        <BaseBadge variant="neutral">{{ audios.length }} audio</BaseBadge>
-        <BaseBadge variant="warning">{{ markers.length }} marker</BaseBadge>
-      </div>
-
-      <p class="thumb-card__hint">
-        Click to open its details, audio actions and layout settings.
-      </p>
     </div>
   </article>
 </template>

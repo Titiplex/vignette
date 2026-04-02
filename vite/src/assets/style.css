@@ -652,13 +652,6 @@ textarea {
     color: var(--text-soft);
 }
 
-.scenario-layout {
-    display: grid;
-    gap: 24px;
-    grid-template-columns: minmax(0, 1.65fr) minmax(300px, 0.95fr);
-    align-items: start;
-}
-
 .scenario-layout__main,
 .scenario-layout__side {
     display: flex;
@@ -950,7 +943,7 @@ textarea {
 
 .marker-image-stage {
     max-width: 100%;
-    min-height: 260px;
+    min-height: 280px;
     aspect-ratio: auto;
 }
 
@@ -1250,4 +1243,82 @@ textarea {
     .storyboard-grid {
         grid-template-columns: 1fr;
     }
+}
+
+.scenario-layout {
+    display: grid;
+    gap: 24px;
+    grid-template-columns: minmax(0, 1.8fr) minmax(320px, 0.9fr);
+    align-items: start;
+}
+
+.storyboard-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--storyboard-columns, 3), minmax(0, 1fr));
+    gap: 18px;
+    align-items: start;
+    grid-auto-flow: dense;
+}
+
+.storyboard-tile {
+    padding: 10px;
+    overflow: hidden;
+}
+
+.storyboard-tile__stage {
+    position: relative;
+    overflow: hidden;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: linear-gradient(180deg, #eef4fb 0%, #f8fbff 100%);
+}
+
+.storyboard-tile__image {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.storyboard-tile__overlay {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 8px;
+    z-index: 3;
+}
+
+.thumb-card__body,
+.thumb-card__meta-row,
+.thumb-card__hint {
+    display: none;
+}
+
+.selected-thumbnail-panel__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.selected-thumbnail-panel__stage {
+    position: relative;
+    width: 100%;
+    min-height: 320px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: linear-gradient(180deg, #eef4fb 0%, #f8fbff 100%);
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+}
+
+.selected-thumbnail-panel__image {
+    width: 100%;
+    height: auto;
+    max-height: 560px;
+    object-fit: contain;
+    padding: 14px;
 }

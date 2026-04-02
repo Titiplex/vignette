@@ -30,7 +30,6 @@ import org.titiplex.service.UserService;
 import java.time.Instant;
 
 @RestController
-@RestControllerAdvice
 @RequestMapping("/api/auth")
 @Tag(name = "Auth", description = "Endpoints for user authentication, identity and registration.")
 public class AuthApiController {

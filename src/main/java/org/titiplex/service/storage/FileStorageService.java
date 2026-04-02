@@ -57,6 +57,7 @@ public class FileStorageService {
             throw new IllegalArgumentException("file is empty");
         }
 
+        Files.createDirectories(root);
         String contentType = normalizeContentType(file.getContentType());
         String extension = EXTENSIONS.get(contentType);
         if (extension == null) {

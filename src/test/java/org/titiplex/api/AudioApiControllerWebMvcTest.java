@@ -14,8 +14,12 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.titiplex.api.dto.AudioRowDto;
 import org.titiplex.config.SecurityConfig;
+import org.titiplex.persistence.model.Scenario;
+import org.titiplex.persistence.model.Thumbnail;
 import org.titiplex.persistence.model.User;
 import org.titiplex.service.AudioService;
+import org.titiplex.service.ScenarioService;
+import org.titiplex.service.ThumbnailService;
 import org.titiplex.service.UserService;
 import org.titiplex.service.storage.MediaContent;
 
@@ -44,6 +48,12 @@ class AudioApiControllerWebMvcTest {
     @MockitoBean
     private JwtDecoder jwtDecoder;
 
+    @MockitoBean
+    private ThumbnailService thumbnailService;
+
+    @MockitoBean
+    private ScenarioService scenarioService;
+
     @TestConfiguration
     static class TestBeans {
         @Bean("scenarioSecurity")
@@ -68,11 +78,19 @@ class AudioApiControllerWebMvcTest {
 
     @Test
     void list_isPublic() throws Exception {
-        when(audioService.listForThumbnail(7L)).thenReturn(List.of(
-                new AudioRowDto(1L, "Audio 1", 1, "audio/webm", 10.0, 20.0, "speaker"),
-                new AudioRowDto(2L, "Audio 2", 2, "audio/webm", null, null, null)
-        ));
-
+        Thumbnail thumbnail = new Thumbnail();
+        thumbnail.setId(7L);
+        thumbnail.setScenarioId(3L);
+        Scenario scenario = new Scenario();
+        scenario.setId(3L);
+        when(thumbnailService.getThumbnailById(7L)).thenReturn(thumbnail);
+        when(scenarioService.getRequiredScenario(3L)).thenReturn(scenario);
+        when(audioService.listForThumbnail(7L)).thenReturn(
+                List.of(
+                        new AudioRowDto(1L, "Audio 1", 1, "audio/webm", 10.0, 20.0, "speaker"),
+                        new AudioRowDto(2L, "Audio 2", 2, "audio/webm", null, null, null)
+                )
+        );
         mvc.perform(get("/api/thumbnails/7/audios"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1))

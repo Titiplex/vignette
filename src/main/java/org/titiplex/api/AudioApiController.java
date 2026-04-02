@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Min;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -29,7 +30,6 @@ import org.titiplex.service.UserService;
 import java.util.List;
 
 @RestController
-@RestControllerAdvice
 @RequestMapping("/api")
 @Tag(
         name = "Audio",
@@ -185,6 +185,7 @@ public class AudioApiController {
 //    @SecurityRequirement(name = "bearerAuth")
 //    @PreAuthorize("hasRole('USER') and @scenarioSecurity.isOwnerByThumbnailId(#thumbId, authentication.name)")
     @PostMapping(value = "/thumbnails/{thumbId}/audios", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
     public CreateAudioResponse upload(
             @Parameter(description = "ID of the thumbnail to associate the audio file with", required = true)
             @PathVariable Long thumbId,

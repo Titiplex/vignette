@@ -25,7 +25,6 @@ import org.titiplex.service.UserService;
 import java.util.List;
 
 @RestController
-@RestControllerAdvice
 @RequestMapping("/api/scenarios")
 @Tag(
         name = "Scenario",

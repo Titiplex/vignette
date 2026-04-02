@@ -44,8 +44,7 @@ export function buildApiUrl(path) {
 }
 
 function isSessionAuthPath(path) {
-    return path === "/api/auth/refresh"
-        || path === "/api/auth/logout";
+    return path.startsWith("/api/auth/");
 }
 
 function shouldAttachBearer(path) {

@@ -106,9 +106,9 @@ class AudioServiceTest {
 
         StoredFile stored = new StoredFile(
                 "audios/10/6/clip.webm",
-                "audio/webm",
-                123L,
                 "abc123",
+                123L,
+                "audio/webm",
                 "clip.webm"
         );
 

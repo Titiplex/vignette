@@ -7,7 +7,6 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -16,7 +15,6 @@ import org.titiplex.api.dto.PublicUserProfileResponse;
 import org.titiplex.api.dto.UpdateUserProfileRequest;
 import org.titiplex.api.dto.UserProfileResponse;
 import org.titiplex.api.security.AuthenticatedOperation;
-import org.titiplex.api.security.PublicOperation;
 import org.titiplex.persistence.model.Role;
 import org.titiplex.persistence.model.User;
 import org.titiplex.service.UserService;
@@ -25,7 +23,6 @@ import java.security.Principal;
 import java.util.stream.Collectors;
 
 @RestController
-@RestControllerAdvice
 @RequestMapping("/api/users")
 @Tag(
         name = "Users",

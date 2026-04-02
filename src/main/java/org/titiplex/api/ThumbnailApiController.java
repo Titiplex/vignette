@@ -33,7 +33,6 @@ import org.titiplex.service.UserService;
 import java.util.List;
 
 @RestController
-@RestControllerAdvice
 @RequestMapping("/api")
 @Tag(
         name = "Thumbnail",

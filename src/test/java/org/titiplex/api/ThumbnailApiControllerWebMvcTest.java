@@ -161,7 +161,7 @@ class ThumbnailApiControllerWebMvcTest {
         saved.setId(55L);
 
         when(userService.getUserByUsername("alice")).thenReturn(user);
-        when(scenarioService.getScenario(9L)).thenReturn(scenario);
+        when(scenarioService.getRequiredScenario(9L)).thenReturn(scenario);
         when(thumbnailService.save("Intro", image, scenario, user)).thenReturn(saved);
 
         mvc.perform(multipart("/api/scenarios/9/thumbnails")

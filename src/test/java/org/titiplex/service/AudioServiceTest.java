@@ -2,6 +2,7 @@ package org.titiplex.service;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -11,22 +12,32 @@ import org.titiplex.persistence.model.Audio;
 import org.titiplex.persistence.model.Scenario;
 import org.titiplex.persistence.model.Thumbnail;
 import org.titiplex.persistence.repo.AudioRepository;
+import org.titiplex.service.storage.FileStorageService;
+import org.titiplex.service.storage.StoredFile;
 
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+@SuppressWarnings("SequencedCollectionMethodCanBeUsed")
 @ExtendWith(MockitoExtension.class)
 class AudioServiceTest {
 
     @Mock
     private AudioRepository audioRepository;
+
     @Mock
     private ThumbnailService thumbnailService;
+
+    @Mock
+    private ScenarioService scenarioService;
+
+    @Mock
+    private FileStorageService storage;
+
     @Mock
     private MultipartFile multipartFile;
 
@@ -51,27 +62,32 @@ class AudioServiceTest {
 
     @Test
     void createAudio_throwsWhenFileIsMissing() {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> audioService.createAudio(1L, "Title", 0, 2L, null, 0.0, 0.0, " "));
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> audioService.createAudio(1L, "Title", 1, 2L, null, 0.0, 0.0, "x")
+        );
         assertEquals("audio is empty", ex.getMessage());
     }
 
     @Test
     void createAudio_throwsWhenIdxAlreadyUsed() throws Exception {
         when(multipartFile.isEmpty()).thenReturn(false);
-        when(multipartFile.getBytes()).thenReturn(new byte[]{1, 2});
-        when(multipartFile.getContentType()).thenReturn("audio/ogg");
         when(audioRepository.existsByThumbnailIdAndIdx(4L, 5)).thenReturn(true);
 
         Thumbnail thumbnail = new Thumbnail();
         thumbnail.setScenarioId(9L);
-        Scenario scenario = new Scenario();
-        scenario.setLanguage_id("fra");
-        thumbnail.setScenario(scenario);
-        when(thumbnailService.getThumbnailById(4L)).thenReturn(thumbnail);
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> audioService.createAudio(4L, "test", 5, 3L, multipartFile, 0.0, 0.0, " "));
+        Scenario scenario = new Scenario();
+        scenario.setId(9L);
+        scenario.setLanguage_id("fra");
+
+        when(thumbnailService.getThumbnailById(4L)).thenReturn(thumbnail);
+        when(scenarioService.getRequiredScenario(9L)).thenReturn(scenario);
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> audioService.createAudio(4L, "test", 5, 3L, multipartFile, 0.0, 0.0, " ")
+        );
 
         assertEquals("idx already used for this thumbnail", ex.getMessage());
     }
@@ -79,16 +95,26 @@ class AudioServiceTest {
     @Test
     void createAudio_savesAudioAndReturnsId() throws Exception {
         when(multipartFile.isEmpty()).thenReturn(false);
-        when(multipartFile.getBytes()).thenReturn(new byte[]{1, 2, 3});
-        when(multipartFile.getContentType()).thenReturn("audio/webm");
         when(audioRepository.existsByThumbnailIdAndIdx(6L, 1)).thenReturn(false);
 
         Thumbnail thumbnail = new Thumbnail();
         thumbnail.setScenarioId(10L);
+
         Scenario scenario = new Scenario();
+        scenario.setId(10L);
         scenario.setLanguage_id("deu");
-        thumbnail.setScenario(scenario);
+
+        StoredFile stored = new StoredFile(
+                "audios/10/6/clip.webm",
+                "audio/webm",
+                123L,
+                "abc123",
+                "clip.webm"
+        );
+
         when(thumbnailService.getThumbnailById(6L)).thenReturn(thumbnail);
+        when(scenarioService.getRequiredScenario(10L)).thenReturn(scenario);
+        when(storage.storeAudio(multipartFile, 10L, 6L)).thenReturn(stored);
 
         doAnswer(invocation -> {
             Audio saved = invocation.getArgument(0);
@@ -99,7 +125,24 @@ class AudioServiceTest {
         Long id = audioService.createAudio(6L, "  ", 1, 4L, multipartFile, 0.0, 0.0, " ");
 
         assertEquals(88L, id);
-        verify(audioRepository).save(any(Audio.class));
+
+        ArgumentCaptor<Audio> captor = ArgumentCaptor.forClass(Audio.class);
+        verify(audioRepository).save(captor.capture());
+
+        Audio saved = captor.getValue();
+        assertEquals(6L, saved.getThumbnailId());
+        assertEquals(10L, saved.getScenarioId());
+        assertEquals("deu", saved.getLanguageId());
+        assertEquals("audio/webm", saved.getMime());
+        assertEquals("abc123", saved.getAudioSha256());
+        assertEquals("audios/10/6/clip.webm", saved.getStoragePath());
+        assertEquals(123L, saved.getSizeBytes());
+        assertEquals("clip.webm", saved.getOriginalFilename());
+        assertEquals("Audio 1", saved.getTitle());
+        assertEquals(1, saved.getIdx());
+        assertEquals(0.0, saved.getMarkerX());
+        assertEquals(0.0, saved.getMarkerY());
+        assertNull(saved.getMarkerLabel());
     }
 
     @Test

@@ -15,8 +15,12 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.titiplex.api.dto.AudioRowDto;
 import org.titiplex.api.dto.CreateAudioResponse;
 import org.titiplex.api.dto.UpdateMarkerRequest;
+import org.titiplex.persistence.model.Scenario;
+import org.titiplex.persistence.model.Thumbnail;
 import org.titiplex.persistence.model.User;
 import org.titiplex.service.AudioService;
+import org.titiplex.service.ScenarioService;
+import org.titiplex.service.ThumbnailService;
 import org.titiplex.service.UserService;
 import org.titiplex.service.storage.MediaContent;
 
@@ -28,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@SuppressWarnings("SameParameterValue")
+@SuppressWarnings({"SameParameterValue", "SequencedCollectionMethodCanBeUsed"})
 @ExtendWith(MockitoExtension.class)
 class AudioApiControllerTest {
 
@@ -38,18 +42,36 @@ class AudioApiControllerTest {
     @Mock
     private UserService userService;
 
+    @Mock
+    private ThumbnailService thumbnailService;
+
+    @Mock
+    private ScenarioService scenarioService;
+
     @InjectMocks
     private AudioApiController controller;
 
     @Test
-    void list_returnsServiceDtos() {
+    void list_checksScenarioVisibilityAndReturnsServiceDtos() {
+        Authentication auth = auth("alice", "ROLE_USER");
+
+        Thumbnail thumbnail = new Thumbnail();
+        thumbnail.setId(7L);
+        thumbnail.setScenarioId(11L);
+
+        Scenario scenario = new Scenario();
+        scenario.setId(11L);
+
+        when(thumbnailService.getThumbnailById(7L)).thenReturn(thumbnail);
+        when(scenarioService.getRequiredScenario(11L)).thenReturn(scenario);
         when(audioService.listForThumbnail(7L)).thenReturn(List.of(
                 new AudioRowDto(1L, "Audio 1", 1, "audio/webm", 10.0, 20.0, "A"),
                 new AudioRowDto(2L, "Audio 2", 2, "audio/webm", null, null, null)
         ));
 
-        List<AudioRowDto> result = controller.list(7L);
+        List<AudioRowDto> result = controller.list(7L, auth);
 
+        verify(scenarioService).assertCanViewScenario(scenario, auth);
         assertEquals(2, result.size());
         assertEquals(1L, result.get(0).id());
         assertEquals("Audio 1", result.get(0).title());
@@ -119,6 +141,19 @@ class AudioApiControllerTest {
     void delete_delegatesToService() {
         controller.delete(6L);
         verify(audioService).deleteAudio(6L);
+    }
+
+    @Test
+    void listByLanguage_delegatesToService() {
+        when(audioService.listForLanguage("chuj")).thenReturn(List.of(
+                new AudioRowDto(1L, "Clip", 1, "audio/webm", null, null, null)
+        ));
+
+        List<AudioRowDto> result = controller.listByLanguage("chuj");
+
+        assertEquals(1, result.size());
+        assertEquals("Clip", result.get(0).title());
+        verify(audioService).listForLanguage("chuj");
     }
 
     private Authentication auth(String username, String... authorities) {

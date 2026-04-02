@@ -27,7 +27,7 @@ public class Audio {
     @Column(name = "audio_sha256", nullable = false, unique = true, length = 64)
     private String audioSha256;
 
-    @Column(name = "title", nullable = false, unique = true)
+    @Column(name = "title", nullable = false)
     private String title;
 
     @Column(name = "idx", nullable = false)

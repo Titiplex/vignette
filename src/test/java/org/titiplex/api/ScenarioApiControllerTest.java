@@ -11,6 +11,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.titiplex.api.dto.CreateScenarioRequest;
 import org.titiplex.api.dto.CreateScenarioResponse;
 import org.titiplex.api.dto.ScenarioDto;
+import org.titiplex.api.dto.UpdateScenarioStoryboardRequest;
 import org.titiplex.persistence.model.Scenario;
 import org.titiplex.persistence.model.User;
 import org.titiplex.service.LanguageService;
@@ -65,64 +66,120 @@ class ScenarioApiControllerTest {
         );
 
         assertEquals(44L, result.id());
-
         verify(scenarioService).createScenario("Story", "A desc", 12L, "chuj");
     }
 
     @Test
-    void getOne_mapsScenarioToDto() {
-        User author = new User();
-        author.setId(12L);
-        author.setUsername("alice");
+    void getOne_usesVisibleScenarioAndMapsToDto() {
+        Authentication auth = auth("alice", "ROLE_USER");
 
         Scenario scenario = new Scenario();
         scenario.setId(9L);
-        scenario.setTitle("Story");
-        scenario.setDescription("Desc");
-        scenario.setLanguage_id("chuj");
-        scenario.setAuthor(author);
-        scenario.setCreatedAt(Instant.parse("2026-03-20T10:15:30Z"));
 
-        when(scenarioService.getScenario(9L)).thenReturn(scenario);
+        ScenarioDto dto = new ScenarioDto(
+                9L,
+                "Story",
+                "Desc",
+                "chuj",
+                "alice",
+                Instant.parse("2026-03-20T10:15:30Z"),
+                "DRAFT",
+                null,
+                "PRESET",
+                "GRID_3",
+                3
+        );
 
-        ScenarioDto dto = controller.getOne(9L);
+        when(scenarioService.getVisibleScenario(9L, auth)).thenReturn(scenario);
+        when(scenarioService.toDto(scenario)).thenReturn(dto);
 
-        assertEquals(9L, dto.id());
-        assertEquals("Story", dto.title());
-        assertEquals("Desc", dto.description());
-        assertEquals("chuj", dto.languageId());
-        assertEquals("alice", dto.authorUsername());
+        ScenarioDto result = controller.getOne(9L, auth);
+
+        assertEquals(9L, result.id());
+        assertEquals("Story", result.title());
+        assertEquals("alice", result.authorUsername());
     }
 
     @Test
-    void listAll_mapsAllScenariosToDtos() {
-        User author = new User();
-        author.setId(5L);
-        author.setUsername("bob");
+    void listAll_mapsVisibleScenariosToDtos() {
+        Authentication auth = auth("bob", "ROLE_USER");
 
         Scenario s1 = new Scenario();
         s1.setId(1L);
-        s1.setTitle("First");
-        s1.setDescription("D1");
-        s1.setLanguage_id("chuj");
-        s1.setAuthor(author);
-        s1.setCreatedAt(Instant.parse("2026-03-20T10:15:30Z"));
 
         Scenario s2 = new Scenario();
         s2.setId(2L);
-        s2.setTitle("Second");
-        s2.setDescription("D2");
-        s2.setLanguage_id("kiche");
-        s2.setAuthor(author);
-        s2.setCreatedAt(Instant.parse("2026-03-21T10:15:30Z"));
 
-        when(scenarioService.listScenarios()).thenReturn(List.of(s1, s2));
+        ScenarioDto dto1 = new ScenarioDto(
+                1L, "First", "D1", "chuj", "bob",
+                Instant.parse("2026-03-20T10:15:30Z"),
+                "DRAFT", null, "PRESET", "GRID_3", 3
+        );
+        ScenarioDto dto2 = new ScenarioDto(
+                2L, "Second", "D2", "kiche", "bob",
+                Instant.parse("2026-03-21T10:15:30Z"),
+                "PUBLISHED", Instant.parse("2026-03-22T10:15:30Z"),
+                "CUSTOM", "MANGA", 4
+        );
 
-        List<ScenarioDto> result = controller.listAll();
+        when(scenarioService.listVisibleScenarios(auth)).thenReturn(List.of(s1, s2));
+        when(scenarioService.toDto(s1)).thenReturn(dto1);
+        when(scenarioService.toDto(s2)).thenReturn(dto2);
+
+        List<ScenarioDto> result = controller.listAll(auth);
 
         assertEquals(2, result.size());
         assertEquals("First", result.get(0).title());
         assertEquals("Second", result.get(1).title());
+    }
+
+    @Test
+    void updateStoryboard_delegatesToServiceAndMapsDto() {
+        Authentication auth = auth("alice", "ROLE_USER");
+
+        Scenario updated = new Scenario();
+        updated.setId(15L);
+
+        ScenarioDto dto = new ScenarioDto(
+                15L, "Story", "Desc", "chuj", "alice",
+                Instant.parse("2026-03-20T10:15:30Z"),
+                "DRAFT", null, "CUSTOM", "MANGA", 4
+        );
+
+        UpdateScenarioStoryboardRequest request = new UpdateScenarioStoryboardRequest("CUSTOM", "MANGA", 4);
+
+        when(scenarioService.updateStoryboard(15L, request, auth)).thenReturn(updated);
+        when(scenarioService.toDto(updated)).thenReturn(dto);
+
+        ScenarioDto result = controller.updateStoryboard(15L, request, auth);
+
+        assertEquals(15L, result.id());
+        assertEquals("CUSTOM", result.storyboardLayoutMode());
+        assertEquals("MANGA", result.storyboardPreset());
+        assertEquals(4, result.storyboardColumns());
+    }
+
+    @Test
+    void publish_delegatesToServiceAndMapsDto() {
+        Authentication auth = auth("alice", "ROLE_USER");
+
+        Scenario published = new Scenario();
+        published.setId(21L);
+
+        ScenarioDto dto = new ScenarioDto(
+                21L, "Story", "Desc", "chuj", "alice",
+                Instant.parse("2026-03-20T10:15:30Z"),
+                "PUBLISHED", Instant.parse("2026-03-22T10:15:30Z"),
+                "PRESET", "GRID_3", 3
+        );
+
+        when(scenarioService.publishScenario(21L, auth)).thenReturn(published);
+        when(scenarioService.toDto(published)).thenReturn(dto);
+
+        ScenarioDto result = controller.publish(21L, auth);
+
+        assertEquals(21L, result.id());
+        assertEquals("PUBLISHED", result.visibilityStatus());
     }
 
     @Test

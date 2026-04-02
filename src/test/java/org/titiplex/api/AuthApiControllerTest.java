@@ -24,8 +24,7 @@ import org.titiplex.service.UserService;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -131,6 +130,17 @@ class AuthApiControllerTest {
         assertEquals(12L, response.id());
         assertEquals("alice", response.username());
         assertEquals(List.of("ROLE_USER", "ROLE_ADMIN"), response.roles());
+    }
+
+    @Test
+    void me_rejectsUnauthenticatedAccess() {
+        Authentication anonymous = new UsernamePasswordAuthenticationToken(
+                "anonymousUser",
+                "N/A",
+                List.of()
+        );
+
+        assertThrows(RuntimeException.class, () -> controller.me(anonymous));
     }
 
     @Test

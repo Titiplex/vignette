@@ -13,6 +13,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.titiplex.api.dto.ThumbnailRowDto;
+import org.titiplex.api.dto.UpdateThumbnailLayoutRequest;
 import org.titiplex.api.dto.UploadResponse;
 import org.titiplex.persistence.model.Scenario;
 import org.titiplex.persistence.model.Thumbnail;
@@ -47,25 +48,45 @@ class ThumbnailApiControllerTest {
     private ThumbnailApiController controller;
 
     @Test
-    void list_mapsThumbnailsToRows() {
+    void list_checksScenarioVisibilityAndMapsThumbnailsToRows() {
+        Authentication auth = auth("alice", "ROLE_USER");
+
+        Scenario scenario = new Scenario();
+        scenario.setId(9L);
+
         Thumbnail t1 = new Thumbnail();
         t1.setId(1L);
         t1.setTitle("Scene 1");
         t1.setIdx(1);
+        t1.setGridColumn(1);
+        t1.setGridRow(1);
+        t1.setGridColumnSpan(1);
+        t1.setGridRowSpan(1);
+        t1.setImageWidth(800);
+        t1.setImageHeight(600);
 
         Thumbnail t2 = new Thumbnail();
         t2.setId(2L);
         t2.setTitle("Scene 2");
         t2.setIdx(2);
+        t2.setGridColumn(2);
+        t2.setGridRow(1);
+        t2.setGridColumnSpan(2);
+        t2.setGridRowSpan(1);
+        t2.setImageWidth(1280);
+        t2.setImageHeight(720);
 
+        when(scenarioService.getRequiredScenario(9L)).thenReturn(scenario);
         when(thumbnailService.listByScenarioId(9L)).thenReturn(List.of(t1, t2));
 
-        List<ThumbnailRowDto> result = controller.list(9L);
+        List<ThumbnailRowDto> result = controller.list(9L, auth);
 
+        verify(scenarioService).assertCanViewScenario(scenario, auth);
         assertEquals(2, result.size());
         assertEquals(1L, result.get(0).id());
         assertEquals("Scene 1", result.get(0).title());
         assertEquals(2, result.get(1).idx());
+        assertEquals(1280, result.get(1).imageWidth());
     }
 
     @Test
@@ -90,11 +111,12 @@ class ThumbnailApiControllerTest {
         );
 
         when(userService.getUserByUsername("alice")).thenReturn(user);
-        when(scenarioService.getScenario(9L)).thenReturn(scenario);
+        when(scenarioService.getRequiredScenario(9L)).thenReturn(scenario);
         when(thumbnailService.save("Intro", image, scenario, user)).thenReturn(saved);
 
         UploadResponse response = controller.upload(9L, "Intro", image, auth);
 
+        verify(scenarioService).assertCanEditScenario(scenario, auth);
         assertEquals(55L, response.id());
         verify(thumbnailService).save("Intro", image, scenario, user);
     }
@@ -114,6 +136,44 @@ class ThumbnailApiControllerTest {
         assertEquals("\"etag-1\"", response.getHeaders().getETag());
         assertEquals("public, max-age=3600", response.getHeaders().getFirst("Cache-Control"));
         assertEquals(resource, response.getBody());
+    }
+
+    @Test
+    void updateLayout_checksEditAccessAndMapsResponse() {
+        Authentication auth = auth("alice", "ROLE_USER");
+
+        Thumbnail existing = new Thumbnail();
+        existing.setId(8L);
+        existing.setScenarioId(9L);
+
+        Scenario scenario = new Scenario();
+        scenario.setId(9L);
+
+        Thumbnail saved = new Thumbnail();
+        saved.setId(8L);
+        saved.setTitle("Scene 1");
+        saved.setIdx(1);
+        saved.setGridColumn(2);
+        saved.setGridRow(3);
+        saved.setGridColumnSpan(2);
+        saved.setGridRowSpan(1);
+        saved.setImageWidth(640);
+        saved.setImageHeight(480);
+
+        UpdateThumbnailLayoutRequest request = new UpdateThumbnailLayoutRequest(2, 3, 2, 1);
+
+        when(thumbnailService.getThumbnailById(8L)).thenReturn(existing);
+        when(scenarioService.getRequiredScenario(9L)).thenReturn(scenario);
+        when(thumbnailService.updateLayout(8L, request)).thenReturn(saved);
+
+        ThumbnailRowDto result = controller.updateLayout(8L, request, auth);
+
+        verify(scenarioService).assertCanEditScenario(scenario, auth);
+        assertEquals(8L, result.id());
+        assertEquals(2, result.gridColumn());
+        assertEquals(3, result.gridRow());
+        assertEquals(2, result.gridColumnSpan());
+        assertEquals(1, result.gridRowSpan());
     }
 
     private Authentication auth(String username, String... authorities) {

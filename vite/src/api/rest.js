@@ -44,8 +44,7 @@ export function buildApiUrl(path) {
 }
 
 function isSessionAuthPath(path) {
-    return path === "/api/auth/me"
-        || path === "/api/auth/refresh"
+    return path === "/api/auth/refresh"
         || path === "/api/auth/logout";
 }
 

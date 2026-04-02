@@ -1,7 +1,7 @@
 package org.titiplex.service;
 
-import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.titiplex.api.dto.UpdateThumbnailLayoutRequest;
 import org.titiplex.persistence.model.Scenario;

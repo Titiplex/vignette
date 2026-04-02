@@ -213,7 +213,8 @@ public class ThumbnailApiController {
         if (image == null || image.isEmpty()) throw new IllegalArgumentException("Image is required");
 
         User user = userService.getUserByUsername(auth.getName());
-        Scenario scenario = scenarioService.getVisibleScenario(scenarioId, auth);
+        Scenario scenario = scenarioService.getRequiredScenario(scenarioId);
+        scenarioService.assertCanEditScenario(scenario, auth);
 
         Thumbnail saved = thumbnailService.save(title, image, scenario, user);
         return new UploadResponse(saved.getId());
@@ -272,7 +273,8 @@ public class ThumbnailApiController {
             Authentication auth
     ) {
         Thumbnail thumbnail = thumbnailService.getThumbnailById(id);
-        scenarioService.assertCanEditScenario(thumbnail.getScenario(), auth);
+        Scenario scenario = scenarioService.getRequiredScenario(thumbnail.getScenarioId());
+        scenarioService.assertCanEditScenario(scenario, auth);
 
         Thumbnail saved = thumbnailService.updateLayout(id, req);
 

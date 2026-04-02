@@ -89,7 +89,8 @@ public class AudioApiController {
             Authentication auth
     ) {
         var thumbnail = thumbnailService.getThumbnailById(thumbId);
-        scenarioService.assertCanViewScenario(thumbnail.getScenario(), auth);
+        var scenario = scenarioService.getRequiredScenario(thumbnail.getScenarioId());
+        scenarioService.assertCanViewScenario(scenario, auth);
         return audioService.listForThumbnail(thumbId);
     }
 

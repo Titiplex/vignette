@@ -350,7 +350,8 @@ async function loadThumbs() {
       thumbnails.value.map(async (t) => {
         try {
           map[t.id] = await fetchThumbnailAudios(t.id);
-        } catch {
+        } catch (e) {
+          console.error(`Failed to load audios for thumbnail ${t.id}`, e);
           map[t.id] = [];
         }
       })
@@ -439,11 +440,15 @@ async function saveStoryboardSettings() {
 
   savingStoryboard.value = true;
   try {
+    const columns = clamp(safeNumber(storyboardForm.value.columns, 3), 1, 8);
+
     scenario.value = await updateScenarioStoryboard(props.id, {
-      layoutMode: storyboardForm.value.layoutMode,
-      preset: storyboardForm.value.preset,
-      columns: Number(storyboardForm.value.columns),
+      layoutMode: String(storyboardForm.value.layoutMode || "PRESET").toUpperCase(),
+      preset: String(storyboardForm.value.preset || "GRID_3").toUpperCase(),
+      columns,
     });
+
+    storyboardForm.value.columns = columns;
     toast.success("Storyboard settings saved.");
   } catch (e) {
     toast.error(e.message || "Failed to save storyboard settings.");
@@ -484,42 +489,44 @@ async function refreshAudios() {
 
 function defaultTileLayout(thumb, index) {
   const columns = storyboardColumns.value;
-  const preset = (scenario.value?.storyboardPreset ?? "GRID_3").toUpperCase();
+  const width = safeNumber(thumb?.imageWidth, 0);
+  const height = safeNumber(thumb?.imageHeight, 0);
 
-  if (preset === "GRID_2") {
+  const portrait = height > width * 1.15;
+  const landscape = width > height * 1.2;
+
+  if (index === 0) {
     return {
       columnStart: null,
-      columnSpan: Math.min(columns, index % 4 === 0 ? 2 : 1),
+      columnSpan: Math.min(columns, 2),
+      rowStart: null,
+      rowSpan: landscape ? 2 : 1,
+    };
+  }
+
+  if (portrait) {
+    return {
+      columnStart: null,
+      columnSpan: 1,
+      rowStart: null,
+      rowSpan: 2,
+    };
+  }
+
+  if (landscape) {
+    return {
+      columnStart: null,
+      columnSpan: Math.min(columns, 2),
       rowStart: null,
       rowSpan: 1,
     };
   }
 
-  if (preset === "CINEMATIC") {
-    return {
-      columnStart: null,
-      columnSpan: Math.min(columns, index === 0 ? 2 : 1),
-      rowStart: null,
-      rowSpan: index === 1 ? 2 : 1,
-    };
-  }
-
-  if (preset === "MANGA") {
-    return {
-      columnStart: null,
-      columnSpan: Math.min(columns, index % 5 === 0 ? 2 : 1),
-      rowStart: null,
-      rowSpan: index % 3 === 1 ? 2 : 1,
-    };
-  }
-
-  const portrait = safeNumber(thumb?.imageHeight, 0) > safeNumber(thumb?.imageWidth, 0);
-
   return {
     columnStart: null,
-    columnSpan: Math.min(columns, index === 0 && columns >= 3 ? 2 : 1),
+    columnSpan: 1,
     rowStart: null,
-    rowSpan: portrait ? 2 : 1,
+    rowSpan: 1,
   };
 }
 
@@ -869,14 +876,29 @@ onMounted(loadAll);
               </div>
             </section>
 
-            <section v-if="selectedThumb" class="card selected-preview selected-preview--premium">
-              <h2>Selected thumbnail</h2>
+            <section v-if="selectedThumb" class="card selected-thumbnail-panel">
+              <div class="selected-thumbnail-panel__header">
+                <div>
+                  <h2>
+                    {{ selectedThumb.title || `Thumbnail #${selectedThumb.idx ?? selectedThumb.id}` }}
+                  </h2>
+                  <p class="muted">
+                    Index {{ selectedThumb.idx ?? "-" }} ·
+                    {{ selectedAudios.length }} audio clip(s) ·
+                    {{ selectedAudioMarkers.length }} marker(s)
+                  </p>
+                </div>
 
-              <div class="selected-preview__stage selected-preview__stage--storyboard">
+                <div class="meta-badges">
+                  <BaseBadge variant="success">Selected</BaseBadge>
+                </div>
+              </div>
+
+              <div class="selected-thumbnail-panel__stage">
                 <img
                     :src="thumbnailContentUrl(selectedThumb)"
                     :alt="selectedThumb.title || 'Selected thumbnail'"
-                    class="selected-preview__image selected-preview__image--storyboard"
+                    class="selected-thumbnail-panel__image"
                 />
 
                 <button
@@ -893,22 +915,6 @@ onMounted(loadAll);
                   <span class="marker-dot__core"></span>
                 </button>
               </div>
-
-              <div class="meta-badges">
-                <BaseBadge variant="info">
-                  #{{ selectedThumb.idx ?? selectedThumb.id }}
-                </BaseBadge>
-                <BaseBadge variant="neutral">
-                  {{ selectedAudios.length }} audio clip(s)
-                </BaseBadge>
-                <BaseBadge variant="warning">
-                  {{ selectedAudioMarkers.length }} marker(s)
-                </BaseBadge>
-              </div>
-
-              <p class="muted selected-preview__title">
-                {{ selectedThumb.title || `Thumbnail #${selectedThumb.idx ?? selectedThumb.id}` }}
-              </p>
             </section>
 
             <section v-if="isOwner && selectedThumb" class="card">
@@ -946,19 +952,19 @@ onMounted(loadAll);
                 In custom mode, these values control the persisted storyboard composition for this thumbnail.
               </p>
             </section>
-
-            <AudioPanel
-                :selected-thumb="selectedThumb"
-                :audios="selectedAudios"
-                :active-audio-id="activeAudioId"
-                :active-audio-title="autoplay.currentItem?.audioTitle ?? ''"
-                :player-state="playerStateLabel"
-                :is-owner="isOwner"
-                @uploaded="refreshAudios"
-                @play-audio="setActiveAudio"
-            />
           </aside>
         </div>
+
+        <AudioPanel
+            :selected-thumb="selectedThumb"
+            :audios="selectedAudios"
+            :active-audio-id="activeAudioId"
+            :active-audio-title="autoplay.currentItem?.audioTitle ?? ''"
+            :player-state="playerStateLabel"
+            :is-owner="isOwner"
+            @uploaded="refreshAudios"
+            @play-audio="setActiveAudio"
+        />
       </section>
     </template>
   </main>

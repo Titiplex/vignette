@@ -12,7 +12,7 @@ public interface AudioRepository extends JpaRepository<Audio, Long> {
 
     boolean existsByThumbnailIdAndIdx(Long thumbnailId, Integer idx);
 
-    @Query("select coalesce(max(a.idx), -1) from Audio a where a.thumbnailId = :thumbId")
+    @Query("select coalesce(max(a.idx), 0) from Audio a where a.thumbnailId = :thumbId")
     int maxIdx(@Param("thumbId") Long thumbId);
 
     List<Audio> findAllByLanguageId(String languageId);

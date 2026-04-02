@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("SequencedCollectionMethodCanBeUsed")
 @ExtendWith(MockitoExtension.class)
 class ScenarioServiceTest {
 
@@ -58,7 +59,7 @@ class ScenarioServiceTest {
     void getScenario_returnsFallbackWhenMissing() {
         when(scenarioRepository.findById(11L)).thenReturn(Optional.empty());
 
-        Scenario result = scenarioService.getScenario(11L);
+        Scenario result = scenarioService.getRequiredScenario(11L);
 
         assertEquals("Scenario not found", result.getTitle());
     }
@@ -69,7 +70,7 @@ class ScenarioServiceTest {
         scenario.setTitle("Latest");
         when(scenarioRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of(scenario));
 
-        List<Scenario> result = scenarioService.listScenarios();
+        List<Scenario> result = scenarioService.listAllScenarios();
 
         assertEquals(1, result.size());
         assertEquals("Latest", result.get(0).getTitle());
@@ -88,7 +89,7 @@ class ScenarioServiceTest {
         scenario.setAuthor(user);
         scenario.setCreatedAt(Instant.parse("2025-01-01T00:00:00Z"));
 
-        ScenarioDto dto = ScenarioService.toDto(scenario);
+        ScenarioDto dto = scenarioService.toDto(scenario);
 
         assertEquals(3L, dto.id());
         assertEquals("My scenario", dto.title());

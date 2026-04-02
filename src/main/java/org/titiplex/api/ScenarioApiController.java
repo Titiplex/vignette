@@ -170,7 +170,7 @@ public class ScenarioApiController {
     ) {
         Scenario s = scenarioService.getVisibleScenario(id, auth);
 
-        return ScenarioService.toDto(s);
+        return scenarioService.toDto(s);
     }
 
     /**
@@ -199,7 +199,7 @@ public class ScenarioApiController {
             @Parameter(hidden = true)
             Authentication auth
     ) {
-        return scenarioService.listVisibleScenarios(auth).stream().map(ScenarioService::toDto).toList();
+        return scenarioService.listVisibleScenarios(auth).stream().map(scenarioService::toDto).toList();
     }
 
     @OwnerOrAdminOperation(
@@ -213,7 +213,7 @@ public class ScenarioApiController {
             @Parameter(hidden = true)
             Authentication auth
     ) {
-        return ScenarioService.toDto(scenarioService.updateStoryboard(id, req, auth));
+        return scenarioService.toDto(scenarioService.updateStoryboard(id, req, auth));
     }
 
     @OwnerOrAdminOperation(
@@ -226,7 +226,7 @@ public class ScenarioApiController {
             @Parameter(hidden = true)
             Authentication auth
     ) {
-        return ScenarioService.toDto(scenarioService.publishScenario(id, auth));
+        return scenarioService.toDto(scenarioService.publishScenario(id, auth));
     }
 
     /**

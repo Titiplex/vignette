@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("SequencedCollectionMethodCanBeUsed")
 @ExtendWith(MockitoExtension.class)
 class ThumbnailServiceTest {
 

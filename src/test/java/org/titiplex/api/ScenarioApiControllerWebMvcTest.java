@@ -62,7 +62,7 @@ class ScenarioApiControllerWebMvcTest {
         scenario.setAuthor(author);
         scenario.setCreatedAt(Instant.parse("2026-03-20T10:15:30Z"));
 
-        when(scenarioService.listScenarios()).thenReturn(List.of(scenario));
+        when(scenarioService.listAllScenarios()).thenReturn(List.of(scenario));
 
         mvc.perform(get("/api/scenarios"))
                 .andExpect(status().isOk())
@@ -86,7 +86,7 @@ class ScenarioApiControllerWebMvcTest {
         scenario.setAuthor(author);
         scenario.setCreatedAt(Instant.parse("2026-03-20T10:15:30Z"));
 
-        when(scenarioService.getScenario(11L)).thenReturn(scenario);
+        when(scenarioService.getRequiredScenario(11L)).thenReturn(scenario);
 
         mvc.perform(get("/api/scenarios/11"))
                 .andExpect(status().isOk())

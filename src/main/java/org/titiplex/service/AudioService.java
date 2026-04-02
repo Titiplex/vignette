@@ -1,7 +1,7 @@
 package org.titiplex.service;
 
-import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.titiplex.api.dto.AudioRowDto;
 import org.titiplex.persistence.model.Audio;
@@ -20,23 +20,46 @@ public class AudioService {
 
     private final AudioRepository audios;
     private final ThumbnailService thumbnailService;
+    private final ScenarioService scenarioService;
     private final FileStorageService storage;
 
-    public AudioService(AudioRepository audios, ThumbnailService thumbnailService, FileStorageService storage) {
+    public AudioService(
+            AudioRepository audios,
+            ThumbnailService thumbnailService,
+            ScenarioService scenarioService,
+            FileStorageService storage
+    ) {
         this.audios = audios;
         this.thumbnailService = thumbnailService;
+        this.scenarioService = scenarioService;
         this.storage = storage;
     }
 
     public List<AudioRowDto> listForThumbnail(Long thumbnailId) {
         return audios.findByThumbnailIdOrderByIdxAsc(thumbnailId).stream()
-                .map(a -> new AudioRowDto(a.getId(), a.getTitle(), a.getIdx(), a.getMime(), a.getMarkerX(), a.getMarkerY(), a.getMarkerLabel()))
+                .map(a -> new AudioRowDto(
+                        a.getId(),
+                        a.getTitle(),
+                        a.getIdx(),
+                        a.getMime(),
+                        a.getMarkerX(),
+                        a.getMarkerY(),
+                        a.getMarkerLabel()
+                ))
                 .toList();
     }
 
     public List<AudioRowDto> listForLanguage(String languageId) {
         return audios.findAllPublishedByLanguageId(languageId).stream()
-                .map(a -> new AudioRowDto(a.getId(), a.getTitle(), a.getIdx(), a.getMime(), a.getMarkerX(), a.getMarkerY(), a.getMarkerLabel()))
+                .map(a -> new AudioRowDto(
+                        a.getId(),
+                        a.getTitle(),
+                        a.getIdx(),
+                        a.getMime(),
+                        a.getMarkerX(),
+                        a.getMarkerY(),
+                        a.getMarkerLabel()
+                ))
                 .toList();
     }
 
@@ -73,14 +96,15 @@ public class AudioService {
         }
 
         Thumbnail t = thumbnailService.getThumbnailById(thumbnailId);
-        Scenario s = t.getScenario();
+        Long scenarioId = t.getScenarioId();
+        Scenario s = scenarioService.getRequiredScenario(scenarioId);
 
         int effectiveIdx = (idx != null) ? idx : (audios.maxIdx(thumbnailId) + 1);
         if (audios.existsByThumbnailIdAndIdx(thumbnailId, effectiveIdx)) {
             throw new IllegalArgumentException("idx already used for this thumbnail");
         }
 
-        StoredFile stored = storage.storeAudio(audioFile, t.getScenarioId(), thumbnailId);
+        StoredFile stored = storage.storeAudio(audioFile, scenarioId, thumbnailId);
 
         Audio a = new Audio();
         a.setThumbnailId(thumbnailId);
@@ -89,14 +113,23 @@ public class AudioService {
         a.setStoragePath(stored.relativePath());
         a.setSizeBytes(stored.sizeBytes());
         a.setOriginalFilename(stored.originalFilename());
-        a.setTitle((title == null || title.isBlank()) ? ("Audio " + effectiveIdx) : title.trim());
+
+        String effectiveTitle;
+        if (title != null && !title.isBlank()) {
+            effectiveTitle = title.trim();
+        } else if (audioFile.getOriginalFilename() != null && !audioFile.getOriginalFilename().isBlank()) {
+            effectiveTitle = audioFile.getOriginalFilename().trim();
+        } else {
+            effectiveTitle = "Audio " + effectiveIdx;
+        }
+        a.setTitle(effectiveTitle);
+
         a.setIdx(effectiveIdx);
         a.setMarkerX(markerX);
         a.setMarkerY(markerY);
         a.setMarkerLabel((markerLabel == null || markerLabel.isBlank()) ? null : markerLabel.trim());
-
         a.setAuthorId(authorId);
-        a.setScenarioId(t.getScenarioId());
+        a.setScenarioId(scenarioId);
         a.setLanguageId(s.getLanguage_id());
 
         audios.save(a);

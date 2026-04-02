@@ -113,7 +113,17 @@ public class AudioService {
         a.setStoragePath(stored.relativePath());
         a.setSizeBytes(stored.sizeBytes());
         a.setOriginalFilename(stored.originalFilename());
-        a.setTitle((title == null || title.isBlank()) ? ("Audio " + effectiveIdx) : title.trim());
+
+        String effectiveTitle;
+        if (title != null && !title.isBlank()) {
+            effectiveTitle = title.trim();
+        } else if (audioFile.getOriginalFilename() != null && !audioFile.getOriginalFilename().isBlank()) {
+            effectiveTitle = audioFile.getOriginalFilename().trim();
+        } else {
+            effectiveTitle = "Audio " + effectiveIdx;
+        }
+        a.setTitle(effectiveTitle);
+
         a.setIdx(effectiveIdx);
         a.setMarkerX(markerX);
         a.setMarkerY(markerY);

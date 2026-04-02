@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.titiplex.api.dto.ApiError;
 
 import java.time.Instant;
+import java.util.NoSuchElementException;
 
 @RestControllerAdvice
 public class GlobalApiExceptionHandler {
@@ -37,6 +38,11 @@ public class GlobalApiExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiError> handleRuntime(RuntimeException ex, HttpServletRequest req) {
         return build(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage(), req);
+    }
+
+    @ExceptionHandler(NoSuchElementException.class)
+    public ResponseEntity<ApiError> handleNotFound(NoSuchElementException ex, HttpServletRequest req) {
+        return build(HttpStatus.NOT_FOUND, ex.getMessage(), req);
     }
 
     private ResponseEntity<ApiError> build(HttpStatus status, String message, HttpServletRequest req) {

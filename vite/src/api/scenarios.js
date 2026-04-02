@@ -15,6 +15,19 @@ export function createScenario(body) {
     });
 }
 
+export function publishScenario(id) {
+    return apiFetch(`/api/scenarios/${id}/publish`, {
+        method: "POST",
+    });
+}
+
+export function updateScenarioStoryboard(id, body) {
+    return apiFetch(`/api/scenarios/${id}/storyboard`, {
+        method: "PATCH",
+        body,
+    });
+}
+
 export function fetchScenarioThumbnails(id) {
     return apiFetch(`/api/scenarios/${id}/thumbnails`);
 }
@@ -23,6 +36,13 @@ export function uploadScenarioThumbnail(id, formData) {
     return apiFetch(`/api/scenarios/${id}/thumbnails`, {
         method: "POST",
         body: formData,
+    });
+}
+
+export function updateThumbnailLayout(id, body) {
+    return apiFetch(`/api/thumbnails/${id}/layout`, {
+        method: "PATCH",
+        body,
     });
 }
 

@@ -8,17 +8,15 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import org.titiplex.api.dto.ApiError;
-import org.titiplex.api.dto.CreateScenarioRequest;
-import org.titiplex.api.dto.CreateScenarioResponse;
-import org.titiplex.api.dto.ScenarioDto;
-import org.titiplex.api.security.*;
+import org.titiplex.api.dto.*;
+import org.titiplex.api.security.OwnerOrAdminOperation;
+import org.titiplex.api.security.ProtectedResource;
+import org.titiplex.api.security.PublicOperation;
+import org.titiplex.api.security.UserOperation;
 import org.titiplex.persistence.model.Scenario;
 import org.titiplex.service.LanguageService;
 import org.titiplex.service.ScenarioService;
@@ -165,9 +163,12 @@ public class ScenarioApiController {
                     description = "ID of the scenario to retrieve",
                     required = true
             )
-            @PathVariable Long id
+            @PathVariable Long id,
+
+            @Parameter(hidden = true)
+            Authentication auth
     ) {
-        Scenario s = scenarioService.getScenario(id);
+        Scenario s = scenarioService.getVisibleScenario(id, auth);
 
         return ScenarioService.toDto(s);
     }
@@ -194,8 +195,38 @@ public class ScenarioApiController {
             )
     })
     @GetMapping
-    public List<ScenarioDto> listAll() {
-        return scenarioService.listScenarios().stream().map(ScenarioService::toDto).toList();
+    public List<ScenarioDto> listAll(
+            @Parameter(hidden = true)
+            Authentication auth
+    ) {
+        return scenarioService.listVisibleScenarios(auth).stream().map(ScenarioService::toDto).toList();
+    }
+
+    @OwnerOrAdminOperation(
+            resource = ProtectedResource.SCENARIO
+    )
+    @PatchMapping("/{id}/storyboard")
+    public ScenarioDto updateStoryboard(
+            @PathVariable Long id,
+            @RequestBody UpdateScenarioStoryboardRequest req,
+
+            @Parameter(hidden = true)
+            Authentication auth
+    ) {
+        return ScenarioService.toDto(scenarioService.updateStoryboard(id, req, auth));
+    }
+
+    @OwnerOrAdminOperation(
+            resource = ProtectedResource.SCENARIO
+    )
+    @PostMapping("/{id}/publish")
+    public ScenarioDto publish(
+            @PathVariable Long id,
+
+            @Parameter(hidden = true)
+            Authentication auth
+    ) {
+        return ScenarioService.toDto(scenarioService.publishScenario(id, auth));
     }
 
     /**

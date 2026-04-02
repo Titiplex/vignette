@@ -21,7 +21,7 @@ public class ScenarioSecurity {
 
     public boolean isOwnerByThumbnailId(Long thumbId, String username) {
         var t = thumbnailService.getThumbnailById(thumbId);
-        var s = scenarioService.getScenario(t.getScenarioId());
+        var s = scenarioService.getRequiredScenario(t.getScenarioId());
         return s.getAuthor().getUsername().equals(username);
     }
 

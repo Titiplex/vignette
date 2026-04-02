@@ -13,6 +13,10 @@ const description = computed(() => {
   if (raw.length <= 150) return raw;
   return raw.slice(0, 147) + "...";
 });
+
+const statusVariant = computed(() => {
+  return props.scenario.visibilityStatus === "PUBLISHED" ? "success" : "warning";
+});
 </script>
 
 <template>
@@ -42,6 +46,9 @@ const description = computed(() => {
           <BaseBadge variant="neutral">
             {{ scenario.authorUsername ?? "Unknown author" }}
           </BaseBadge>
+          <BaseBadge :variant="statusVariant">
+            {{ scenario.visibilityStatus ?? "UNKNOWN" }}
+          </BaseBadge>
         </div>
       </div>
 
@@ -51,7 +58,7 @@ const description = computed(() => {
 
       <div class="scenario-card__footer">
         <RouterLink :to="`/scenarios/${scenario.id}`" class="btn btn--primary">
-          Open scenario
+          Open storyboard
         </RouterLink>
       </div>
     </div>

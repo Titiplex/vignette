@@ -1,7 +1,15 @@
 <script setup>
-import {computed, nextTick, onMounted, ref} from "vue";
+import {computed, nextTick, onMounted, ref, watch} from "vue";
 import {fetchLanguage} from "../api/languages";
-import {fetchScenario, fetchScenarioThumbnails, fetchThumbnailAudios, uploadScenarioThumbnail,} from "../api/scenarios";
+import {
+  fetchScenario,
+  fetchScenarioThumbnails,
+  fetchThumbnailAudios,
+  publishScenario,
+  updateScenarioStoryboard,
+  updateThumbnailLayout,
+  uploadScenarioThumbnail,
+} from "../api/scenarios";
 import {buildApiUrl} from "../api/rest";
 import {useAuth} from "../composables/useAuth";
 import {useToast} from "../composables/useToast";
@@ -32,15 +40,62 @@ const uploadError = ref("");
 const uploadSuccess = ref("");
 const isOwner = ref(false);
 const loading = ref(false);
+const savingStoryboard = ref(false);
+const savingLayout = ref(false);
+const publishing = ref(false);
 
 const uploadTitle = ref("");
 const uploadFile = ref(null);
-
 const highlightedThumbnailId = ref(null);
+
+const storyboardForm = ref({
+  layoutMode: "PRESET",
+  preset: "GRID_3",
+  columns: 3,
+});
+
+const selectedLayoutForm = ref({
+  gridColumn: "",
+  gridRow: "",
+  gridColumnSpan: 1,
+  gridRowSpan: 1,
+});
 
 function safeNumber(value, fallback = 0) {
   const n = Number(value);
   return Number.isFinite(n) ? n : fallback;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function nullableInt(value) {
+  if (value === "" || value === null || value === undefined) return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? Math.trunc(n) : null;
+}
+
+function normalizeMarkers(audios) {
+  return (audios || [])
+      .filter((audio) =>
+          audio?.markerX !== null &&
+          audio?.markerX !== undefined &&
+          audio?.markerY !== null &&
+          audio?.markerY !== undefined &&
+          audio?.markerX !== "" &&
+          audio?.markerY !== ""
+      )
+      .map((audio) => {
+        const x = Number(audio.markerX);
+        const y = Number(audio.markerY);
+        return {
+          ...audio,
+          _x: Number.isFinite(x) ? clamp(x, 0, 100) : null,
+          _y: Number.isFinite(y) ? clamp(y, 0, 100) : null,
+        };
+      })
+      .filter((audio) => audio._x !== null && audio._y !== null);
 }
 
 const sortedThumbnails = computed(() => {
@@ -63,27 +118,7 @@ const selectedAudios = computed(() => {
   });
 });
 
-const selectedAudioMarkers = computed(() => {
-  return selectedAudios.value
-      .filter((audio) =>
-          audio?.markerX !== null &&
-          audio?.markerX !== undefined &&
-          audio?.markerY !== null &&
-          audio?.markerY !== undefined &&
-          audio?.markerX !== "" &&
-          audio?.markerY !== ""
-      )
-      .map((audio) => {
-        const x = Number(audio.markerX);
-        const y = Number(audio.markerY);
-        return {
-          ...audio,
-          _x: Number.isFinite(x) ? Math.max(0, Math.min(100, x)) : null,
-          _y: Number.isFinite(y) ? Math.max(0, Math.min(100, y)) : null,
-        };
-      })
-      .filter((audio) => audio._x !== null && audio._y !== null);
-});
+const selectedAudioMarkers = computed(() => normalizeMarkers(selectedAudios.value));
 
 const playbackQueue = computed(() => {
   return sortedThumbnails.value.flatMap((thumb) => {
@@ -109,12 +144,50 @@ const playbackQueue = computed(() => {
   });
 });
 
+const isPublished = computed(() => scenario.value?.visibilityStatus === "PUBLISHED");
+
 const playerStateLabel = computed(() => {
   if (autoplay.isLoading.value) return "loading";
   if (autoplay.isPlaying.value) return "playing";
   if (autoplay.isPaused.value) return "paused";
   return "idle";
 });
+
+const storyboardColumns = computed(() => {
+  const raw = storyboardForm.value.columns ?? scenario.value?.storyboardColumns ?? 3;
+  return clamp(safeNumber(raw, 3), 1, 8);
+});
+
+watch(
+    () => scenario.value,
+    (value) => {
+      if (!value) return;
+      storyboardForm.value = {
+        layoutMode: value.storyboardLayoutMode ?? "PRESET",
+        preset: value.storyboardPreset ?? "GRID_3",
+        columns: value.storyboardColumns ?? 3,
+      };
+    },
+    {immediate: true}
+);
+
+watch(
+    () => selectedThumb.value,
+    (thumb) => {
+      if (!thumb) {
+        selectedLayoutForm.value = {gridColumn: "", gridRow: "", gridColumnSpan: 1, gridRowSpan: 1};
+        return;
+      }
+
+      selectedLayoutForm.value = {
+        gridColumn: thumb.gridColumn ?? "",
+        gridRow: thumb.gridRow ?? "",
+        gridColumnSpan: thumb.gridColumnSpan ?? 1,
+        gridRowSpan: thumb.gridRowSpan ?? 1,
+      };
+    },
+    {immediate: true}
+);
 
 function markerStyle(audio) {
   return {
@@ -347,8 +420,143 @@ async function uploadImage() {
   }
 }
 
+async function publishCurrentScenario() {
+  if (!scenario.value || publishing.value) return;
+
+  publishing.value = true;
+  try {
+    scenario.value = await publishScenario(props.id);
+    toast.success("Scenario published.");
+  } catch (e) {
+    toast.error(e.message || "Failed to publish scenario.");
+  } finally {
+    publishing.value = false;
+  }
+}
+
+async function saveStoryboardSettings() {
+  if (!scenario.value || savingStoryboard.value) return;
+
+  savingStoryboard.value = true;
+  try {
+    scenario.value = await updateScenarioStoryboard(props.id, {
+      layoutMode: storyboardForm.value.layoutMode,
+      preset: storyboardForm.value.preset,
+      columns: Number(storyboardForm.value.columns),
+    });
+    toast.success("Storyboard settings saved.");
+  } catch (e) {
+    toast.error(e.message || "Failed to save storyboard settings.");
+  } finally {
+    savingStoryboard.value = false;
+  }
+}
+
+async function saveSelectedThumbnailLayout() {
+  if (!selectedThumb.value || savingLayout.value) return;
+
+  savingLayout.value = true;
+  try {
+    await updateThumbnailLayout(selectedThumb.value.id, {
+      gridColumn: nullableInt(selectedLayoutForm.value.gridColumn),
+      gridRow: nullableInt(selectedLayoutForm.value.gridRow),
+      gridColumnSpan: nullableInt(selectedLayoutForm.value.gridColumnSpan) ?? 1,
+      gridRowSpan: nullableInt(selectedLayoutForm.value.gridRowSpan) ?? 1,
+    });
+
+    await loadThumbs();
+    const refreshed = thumbnails.value.find((thumb) => String(thumb.id) === String(selectedThumb.value.id));
+    if (refreshed) {
+      selectedThumb.value = refreshed;
+    }
+
+    toast.success("Thumbnail layout saved.");
+  } catch (e) {
+    toast.error(e.message || "Failed to save thumbnail layout.");
+  } finally {
+    savingLayout.value = false;
+  }
+}
+
 async function refreshAudios() {
   await loadThumbs();
+}
+
+function defaultTileLayout(thumb, index) {
+  const columns = storyboardColumns.value;
+  const preset = (scenario.value?.storyboardPreset ?? "GRID_3").toUpperCase();
+
+  if (preset === "GRID_2") {
+    return {
+      columnStart: null,
+      columnSpan: Math.min(columns, index % 4 === 0 ? 2 : 1),
+      rowStart: null,
+      rowSpan: 1,
+    };
+  }
+
+  if (preset === "CINEMATIC") {
+    return {
+      columnStart: null,
+      columnSpan: Math.min(columns, index === 0 ? 2 : 1),
+      rowStart: null,
+      rowSpan: index === 1 ? 2 : 1,
+    };
+  }
+
+  if (preset === "MANGA") {
+    return {
+      columnStart: null,
+      columnSpan: Math.min(columns, index % 5 === 0 ? 2 : 1),
+      rowStart: null,
+      rowSpan: index % 3 === 1 ? 2 : 1,
+    };
+  }
+
+  const portrait = safeNumber(thumb?.imageHeight, 0) > safeNumber(thumb?.imageWidth, 0);
+
+  return {
+    columnStart: null,
+    columnSpan: Math.min(columns, index === 0 && columns >= 3 ? 2 : 1),
+    rowStart: null,
+    rowSpan: portrait ? 2 : 1,
+  };
+}
+
+const storyboardItems = computed(() => {
+  const layoutMode = (scenario.value?.storyboardLayoutMode ?? "PRESET").toUpperCase();
+
+  return sortedThumbnails.value.map((thumb, index) => {
+    if (layoutMode === "CUSTOM") {
+      return {
+        ...thumb,
+        _layout: {
+          columnStart: thumb.gridColumn ?? null,
+          columnSpan: thumb.gridColumnSpan ?? 1,
+          rowStart: thumb.gridRow ?? null,
+          rowSpan: thumb.gridRowSpan ?? 1,
+        },
+      };
+    }
+
+    return {
+      ...thumb,
+      _layout: defaultTileLayout(thumb, index),
+    };
+  });
+});
+
+function storyboardItemStyle(item) {
+  const layout = item?._layout ?? {columnStart: null, columnSpan: 1, rowStart: null, rowSpan: 1};
+
+  return {
+    gridColumn: layout.columnStart
+        ? `${layout.columnStart} / span ${layout.columnSpan}`
+        : `span ${layout.columnSpan}`,
+    ...(layout.rowStart
+        ? {gridRow: `${layout.rowStart} / span ${layout.rowSpan}`}
+        : (layout.rowSpan > 1 ? {gridRow: `span ${layout.rowSpan}`} : {})),
+  };
 }
 
 onMounted(loadAll);
@@ -356,7 +564,7 @@ onMounted(loadAll);
 
 <template>
   <main class="page">
-    <BaseLoader v-if="loading">Loading scenario workspace...</BaseLoader>
+    <BaseLoader v-if="loading">Loading storyboard...</BaseLoader>
 
     <BaseAlert v-else-if="error" type="error">
       {{ error }}
@@ -366,12 +574,25 @@ onMounted(loadAll);
       <section class="section">
         <BasePageHeader
             :title="scenario.title ?? 'Scenario'"
-            subtitle="Scenario workspace and media management"
+            subtitle="Storyboard workspace with publication, layout and media controls"
         >
           <template #actions>
+            <BaseBadge :variant="isPublished ? 'success' : 'warning'">
+              {{ scenario.visibilityStatus }}
+            </BaseBadge>
+
             <BaseBadge :variant="isOwner ? 'success' : 'neutral'">
               {{ isOwner ? "Owner view" : "Read-only" }}
             </BaseBadge>
+
+            <button
+                v-if="isOwner && !isPublished"
+                class="btn btn--primary"
+                :disabled="publishing"
+                @click="publishCurrentScenario"
+            >
+              {{ publishing ? "Publishing..." : "Publish scenario" }}
+            </button>
           </template>
         </BasePageHeader>
 
@@ -394,11 +615,59 @@ onMounted(loadAll);
                 <h3>Audio clips</h3>
                 <p>{{ playbackQueue.length }}</p>
               </div>
+              <div>
+                <h3>Status</h3>
+                <p>{{ scenario.visibilityStatus }}</p>
+              </div>
             </div>
 
             <section class="card">
               <h2>Description</h2>
               <p class="text">{{ scenario.description ?? "No description available." }}</p>
+            </section>
+
+            <section v-if="isOwner" class="card form-card--premium">
+              <h2>Publication & storyboard</h2>
+
+              <BaseAlert v-if="!isPublished" type="info">
+                This scenario is still private. Public users cannot see it until you publish it.
+              </BaseAlert>
+
+              <div class="storyboard-settings-grid">
+                <label>
+                  Layout mode
+                  <select v-model="storyboardForm.layoutMode">
+                    <option value="PRESET">Preset</option>
+                    <option value="CUSTOM">Custom</option>
+                  </select>
+                </label>
+
+                <label>
+                  Preset
+                  <select v-model="storyboardForm.preset" :disabled="storyboardForm.layoutMode !== 'PRESET'">
+                    <option value="GRID_3">Grid 3</option>
+                    <option value="GRID_2">Grid 2</option>
+                    <option value="CINEMATIC">Cinematic</option>
+                    <option value="MANGA">Manga</option>
+                  </select>
+                </label>
+
+                <label>
+                  Columns
+                  <input v-model="storyboardForm.columns" type="number" min="1" max="8"/>
+                </label>
+              </div>
+
+              <div class="toolbar">
+                <button class="btn btn--primary" :disabled="savingStoryboard" @click="saveStoryboardSettings">
+                  {{ savingStoryboard ? "Saving..." : "Save storyboard settings" }}
+                </button>
+              </div>
+
+              <p class="muted storyboard-help">
+                Preset mode auto-composes the storyboard. Custom mode uses each thumbnail’s saved grid position and
+                spans.
+              </p>
             </section>
 
             <section v-if="isOwner" class="card form-card--premium">
@@ -433,18 +702,23 @@ onMounted(loadAll);
 
             <section class="section">
               <BasePageHeader
-                  title="Thumbnails"
-                  :subtitle="`${thumbnails.length} thumbnail(s) available in this scenario.`"
+                  title="Storyboard"
+                  :subtitle="`${thumbnails.length} thumbnail(s) in this scenario.`"
               />
 
-              <div v-if="sortedThumbnails.length" class="card-grid card-grid--thumbs">
+              <div
+                  v-if="storyboardItems.length"
+                  class="storyboard-grid"
+                  :style="{ '--storyboard-columns': storyboardColumns }"
+              >
                 <ThumbnailCard
-                    v-for="thumb in sortedThumbnails"
-                    :key="thumb.id"
-                    :thumb="thumb"
-                    :audios="audioMap[thumb.id] || []"
-                    :selected="selectedThumb?.id === thumb.id"
-                    :highlighted="highlightedThumbnailId === thumb.id"
+                    v-for="item in storyboardItems"
+                    :key="item.id"
+                    :thumb="item"
+                    :audios="audioMap[item.id] || []"
+                    :selected="selectedThumb?.id === item.id"
+                    :highlighted="highlightedThumbnailId === item.id"
+                    :style="storyboardItemStyle(item)"
                     @select="selectThumb"
                 />
               </div>
@@ -452,7 +726,7 @@ onMounted(loadAll);
               <BaseEmptyState
                   v-else
                   title="No thumbnails yet"
-                  message="Upload an image to start building the scenario."
+                  message="Upload an image to start building the storyboard."
               />
             </section>
           </div>
@@ -490,8 +764,8 @@ onMounted(loadAll);
                       <template v-if="autoplay.currentItem">
                         Thumbnail #{{ autoplay.currentItem.thumbnailIdx ?? autoplay.currentItem.thumbnailId }}
                         <span v-if="autoplay.currentItem.audioIdx != null">
-              · Audio order {{ autoplay.currentItem.audioIdx }}
-            </span>
+                          · Audio order {{ autoplay.currentItem.audioIdx }}
+                        </span>
                         · {{ playerStateLabel }}
                       </template>
                       <template v-else>
@@ -592,27 +866,17 @@ onMounted(loadAll);
                     Stop
                   </button>
                 </div>
-
-                <div class="transport-flags">
-                  <BaseBadge :variant="autoplay.autoContinue ? 'success' : 'neutral'">
-                    Auto-continue {{ autoplay.autoContinue ? "enabled" : "disabled" }}
-                  </BaseBadge>
-
-                  <BaseBadge :variant="autoplay.loopScenario ? 'warning' : 'neutral'">
-                    Loop {{ autoplay.loopScenario ? "enabled" : "disabled" }}
-                  </BaseBadge>
-                </div>
               </div>
             </section>
 
             <section v-if="selectedThumb" class="card selected-preview selected-preview--premium">
               <h2>Selected thumbnail</h2>
 
-              <div class="selected-preview__stage">
+              <div class="selected-preview__stage selected-preview__stage--storyboard">
                 <img
                     :src="thumbnailContentUrl(selectedThumb)"
                     :alt="selectedThumb.title || 'Selected thumbnail'"
-                    class="selected-preview__image"
+                    class="selected-preview__image selected-preview__image--storyboard"
                 />
 
                 <button
@@ -644,6 +908,42 @@ onMounted(loadAll);
 
               <p class="muted selected-preview__title">
                 {{ selectedThumb.title || `Thumbnail #${selectedThumb.idx ?? selectedThumb.id}` }}
+              </p>
+            </section>
+
+            <section v-if="isOwner && selectedThumb" class="card">
+              <h2>Selected thumbnail layout</h2>
+
+              <div class="storyboard-settings-grid">
+                <label>
+                  Column
+                  <input v-model="selectedLayoutForm.gridColumn" type="number" min="1" placeholder="auto"/>
+                </label>
+
+                <label>
+                  Row
+                  <input v-model="selectedLayoutForm.gridRow" type="number" min="1" placeholder="auto"/>
+                </label>
+
+                <label>
+                  Column span
+                  <input v-model="selectedLayoutForm.gridColumnSpan" type="number" min="1"/>
+                </label>
+
+                <label>
+                  Row span
+                  <input v-model="selectedLayoutForm.gridRowSpan" type="number" min="1"/>
+                </label>
+              </div>
+
+              <div class="toolbar">
+                <button class="btn btn--primary" :disabled="savingLayout" @click="saveSelectedThumbnailLayout">
+                  {{ savingLayout ? "Saving..." : "Save thumbnail layout" }}
+                </button>
+              </div>
+
+              <p class="muted">
+                In custom mode, these values control the persisted storyboard composition for this thumbnail.
               </p>
             </section>
 

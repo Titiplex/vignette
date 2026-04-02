@@ -21,22 +21,28 @@ watch(debounced, (value) => {
   effectiveSearch.value = value.trim().toLowerCase();
 });
 
+const statusFilter = ref("ALL");
+
 const filtered = computed(() => {
   const q = effectiveSearch.value;
-  if (!q) return scenarios.value;
 
   return scenarios.value.filter((s) => {
     const title = (s.title ?? "").toLowerCase();
     const language = String(s.languageId ?? "").toLowerCase();
     const author = (s.authorUsername ?? "").toLowerCase();
     const description = (s.description ?? "").toLowerCase();
+    const status = String(s.visibilityStatus ?? "").toUpperCase();
 
-    return (
+    const matchesSearch = !q || (
         title.includes(q) ||
         language.includes(q) ||
         author.includes(q) ||
         description.includes(q)
     );
+
+    const matchesStatus = statusFilter.value === "ALL" || status === statusFilter.value;
+
+    return matchesSearch && matchesStatus;
   });
 });
 
@@ -76,7 +82,7 @@ onMounted(load);
     <section class="section">
       <BasePageHeader
           title="Scenario gallery"
-          subtitle="Browse published scenarios and open them to view thumbnails and audio recordings."
+          subtitle="Browse public scenarios and, when authenticated, your own drafts."
       >
         <template #actions>
           <RouterLink to="/create-scenario" class="btn btn--primary">
@@ -86,7 +92,21 @@ onMounted(load);
       </BasePageHeader>
 
       <div class="card search-panel">
-        <input v-model="search" placeholder="Search scenarios"/>
+        <div class="storyboard-settings-grid">
+          <label>
+            Search
+            <input v-model="search" placeholder="Search scenarios"/>
+          </label>
+
+          <label>
+            Status
+            <select v-model="statusFilter">
+              <option value="ALL">All visible scenarios</option>
+              <option value="PUBLISHED">Published</option>
+              <option value="DRAFT">Drafts</option>
+            </select>
+          </label>
+        </div>
       </div>
 
       <BaseLoader v-if="loading">Loading scenarios...</BaseLoader>

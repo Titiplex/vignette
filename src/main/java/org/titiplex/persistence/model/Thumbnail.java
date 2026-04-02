@@ -61,4 +61,22 @@ public class Thumbnail {
             foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
     )
     private Scenario scenario;
+
+    @Column(name = "grid_column")
+    private Integer gridColumn;
+
+    @Column(name = "grid_row")
+    private Integer gridRow;
+
+    @Column(name = "grid_column_span")
+    private Integer gridColumnSpan;
+
+    @Column(name = "grid_row_span")
+    private Integer gridRowSpan;
+
+    @Column(name = "image_width")
+    private Integer imageWidth;
+
+    @Column(name = "image_height")
+    private Integer imageHeight;
 }

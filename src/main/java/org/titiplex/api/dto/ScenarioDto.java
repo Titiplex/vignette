@@ -17,6 +17,16 @@ public record ScenarioDto(
         @Schema(description = "Username of the author of the scenario.")
         String authorUsername,
         @Schema(description = "Creation date of the scenario.")
-        Instant createdAt
+        Instant createdAt,
+        @Schema(description = "Publication status.", example = "DRAFT")
+        String visibilityStatus,
+        @Schema(description = "Publication timestamp.")
+        Instant publishedAt,
+        @Schema(description = "Storyboard layout mode.", example = "PRESET")
+        String storyboardLayoutMode,
+        @Schema(description = "Storyboard preset.", example = "GRID_3")
+        String storyboardPreset,
+        @Schema(description = "Storyboard columns.", example = "3")
+        Integer storyboardColumns
 ) {
 }

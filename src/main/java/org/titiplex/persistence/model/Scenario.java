@@ -54,4 +54,21 @@ public class Scenario {
 
     @OneToMany(mappedBy = "scenario", fetch = FetchType.EAGER)
     private Set<Thumbnail> thumbnails;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "visibility_status", nullable = false)
+    private ScenarioVisibilityStatus visibilityStatus = ScenarioVisibilityStatus.DRAFT;
+
+    @Column(name = "published_at")
+    private Instant publishedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "storyboard_layout_mode", nullable = false)
+    private StoryboardLayoutMode storyboardLayoutMode = StoryboardLayoutMode.PRESET;
+
+    @Column(name = "storyboard_preset", nullable = false, length = 64)
+    private String storyboardPreset = "GRID_3";
+
+    @Column(name = "storyboard_columns", nullable = false)
+    private Integer storyboardColumns = 3;
 }

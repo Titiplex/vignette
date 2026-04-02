@@ -13,6 +13,7 @@ import org.titiplex.service.storage.MediaContent;
 import org.titiplex.service.storage.StoredFile;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 public class AudioService {
@@ -34,13 +35,17 @@ public class AudioService {
     }
 
     public List<AudioRowDto> listForLanguage(String languageId) {
-        return audios.findAllByLanguageId(languageId).stream()
+        return audios.findAllPublishedByLanguageId(languageId).stream()
                 .map(a -> new AudioRowDto(a.getId(), a.getTitle(), a.getIdx(), a.getMime(), a.getMarkerX(), a.getMarkerY(), a.getMarkerLabel()))
                 .toList();
     }
 
+    public Long getScenarioIdForAudio(Long audioId) {
+        return getAudioOrThrow(audioId).getScenarioId();
+    }
+
     public Audio getAudioOrThrow(Long audioId) {
-        return audios.findById(audioId).orElseThrow();
+        return audios.findById(audioId).orElseThrow(() -> new NoSuchElementException("Audio not found"));
     }
 
     @Transactional

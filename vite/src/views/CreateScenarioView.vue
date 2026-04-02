@@ -113,13 +113,14 @@ onMounted(async () => {
     <section class="section">
       <BasePageHeader
           title="Create a scenario"
-          subtitle="Set up a vignette sequence to collect oral responses in context."
+          subtitle="Set up a vignette sequence. Newly created scenarios start as drafts and stay private until published."
       />
 
       <form @submit.prevent="submit" class="form-card form-card--premium">
         <div class="meta-badges">
           <BaseBadge variant="info">Research workflow</BaseBadge>
           <BaseBadge variant="neutral">Scenario builder</BaseBadge>
+          <BaseBadge variant="warning">Starts as draft</BaseBadge>
         </div>
 
         <label>

@@ -8,20 +8,21 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.titiplex.api.dto.ApiError;
 import org.titiplex.api.dto.ThumbnailRowDto;
+import org.titiplex.api.dto.UpdateThumbnailLayoutRequest;
 import org.titiplex.api.dto.UploadResponse;
-import org.titiplex.api.security.*;
+import org.titiplex.api.security.OwnerOrAdminOperation;
+import org.titiplex.api.security.ProtectedResource;
+import org.titiplex.api.security.PublicOperation;
 import org.titiplex.persistence.model.Scenario;
 import org.titiplex.persistence.model.Thumbnail;
 import org.titiplex.persistence.model.User;
@@ -86,10 +87,26 @@ public class ThumbnailApiController {
                     description = "ID of the scenario to retrieve thumbnails for.",
                     required = true
             )
-            @PathVariable Long scenarioId
+            @PathVariable Long scenarioId,
+
+            @Parameter(hidden = true)
+            Authentication auth
     ) {
+        Scenario scenario = scenarioService.getRequiredScenario(scenarioId);
+        scenarioService.assertCanViewScenario(scenario, auth);
+
         return thumbnailService.listByScenarioId(scenarioId).stream()
-                .map(t -> new ThumbnailRowDto(t.getId(), t.getTitle(), t.getIdx()))
+                .map(t -> new ThumbnailRowDto(
+                        t.getId(),
+                        t.getTitle(),
+                        t.getIdx(),
+                        t.getGridColumn(),
+                        t.getGridRow(),
+                        t.getGridColumnSpan(),
+                        t.getGridRowSpan(),
+                        t.getImageWidth(),
+                        t.getImageHeight()
+                ))
                 .toList();
     }
 
@@ -196,7 +213,7 @@ public class ThumbnailApiController {
         if (image == null || image.isEmpty()) throw new IllegalArgumentException("Image is required");
 
         User user = userService.getUserByUsername(auth.getName());
-        Scenario scenario = scenarioService.getScenario(scenarioId);
+        Scenario scenario = scenarioService.getVisibleScenario(scenarioId, auth);
 
         Thumbnail saved = thumbnailService.save(title, image, scenario, user);
         return new UploadResponse(saved.getId());
@@ -246,5 +263,29 @@ public class ThumbnailApiController {
                 .eTag(media.etag())
                 .header("Cache-Control", "public, max-age=3600")
                 .body(media.resource());
+    }
+
+    @PatchMapping("/thumbnails/{id}/layout")
+    public ThumbnailRowDto updateLayout(
+            @PathVariable Long id,
+            @RequestBody UpdateThumbnailLayoutRequest req,
+            Authentication auth
+    ) {
+        Thumbnail thumbnail = thumbnailService.getThumbnailById(id);
+        scenarioService.assertCanEditScenario(thumbnail.getScenario(), auth);
+
+        Thumbnail saved = thumbnailService.updateLayout(id, req);
+
+        return new ThumbnailRowDto(
+                saved.getId(),
+                saved.getTitle(),
+                saved.getIdx(),
+                saved.getGridColumn(),
+                saved.getGridRow(),
+                saved.getGridColumnSpan(),
+                saved.getGridRowSpan(),
+                saved.getImageWidth(),
+                saved.getImageHeight()
+        );
     }
 }

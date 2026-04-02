@@ -16,4 +16,18 @@ public interface AudioRepository extends JpaRepository<Audio, Long> {
     int maxIdx(@Param("thumbId") Long thumbId);
 
     List<Audio> findAllByLanguageId(String languageId);
+
+    @Query("""
+            select a
+            from Audio a
+            where a.languageId = :languageId
+              and exists (
+                    select 1
+                    from Scenario s
+                    where s.id = a.scenarioId
+                      and s.visibilityStatus = org.titiplex.persistence.model.ScenarioVisibilityStatus.PUBLISHED
+              )
+            order by a.id desc
+            """)
+    List<Audio> findAllPublishedByLanguageId(@Param("languageId") String languageId);
 }

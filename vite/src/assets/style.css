@@ -14,7 +14,8 @@
     --radius: 16px;
     --danger: #b42318;
     --success: #067647;
-    --discussion-depth: 10
+    --discussion-depth: 10;
+    --storyboard-columns: 3
 }
 
 * {
@@ -1202,4 +1203,65 @@ textarea {
             0 0 0 3px rgba(245, 158, 11, 0.22),
             0 0 0 6px rgba(15, 118, 110, 0.12),
             var(--shadow);
+}
+
+.storyboard-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--storyboard-columns, 3), minmax(0, 1fr));
+    gap: 16px;
+    align-items: start;
+    grid-auto-flow: dense;
+}
+
+.storyboard-settings-grid {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.storyboard-help {
+    margin: 0;
+}
+
+.storyboard-tile {
+    height: 100%;
+}
+
+.storyboard-tile__stage {
+    position: relative;
+    overflow: hidden;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: linear-gradient(180deg, #eef4fb 0%, #f8fbff 100%);
+    margin-bottom: 14px;
+}
+
+.storyboard-tile__image {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.storyboard-tile__marker .marker-dot__core {
+    width: 10px;
+    height: 10px;
+}
+
+.selected-preview__stage--storyboard {
+    aspect-ratio: auto;
+    min-height: 220px;
+}
+
+.selected-preview__image--storyboard {
+    width: 100%;
+    height: auto;
+    max-height: 520px;
+    object-fit: contain;
+    padding: 16px;
+}
+
+@media (max-width: 900px) {
+    .storyboard-grid {
+        grid-template-columns: 1fr;
+    }
 }

@@ -8,13 +8,11 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Min;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,6 +22,8 @@ import org.titiplex.api.dto.CreateAudioResponse;
 import org.titiplex.api.dto.UpdateMarkerRequest;
 import org.titiplex.api.security.*;
 import org.titiplex.service.AudioService;
+import org.titiplex.service.ScenarioService;
+import org.titiplex.service.ThumbnailService;
 import org.titiplex.service.UserService;
 
 import java.util.List;
@@ -40,10 +40,14 @@ public class AudioApiController {
 
     private final AudioService audioService;
     private final UserService userService;
+    private final ThumbnailService thumbnailService;
+    private final ScenarioService scenarioService;
 
-    public AudioApiController(AudioService audioService, UserService userService) {
+    public AudioApiController(AudioService audioService, UserService userService, ThumbnailService thumbnailService, ScenarioService scenarioService) {
         this.audioService = audioService;
         this.userService = userService;
+        this.thumbnailService = thumbnailService;
+        this.scenarioService = scenarioService;
     }
 
     /**
@@ -79,8 +83,13 @@ public class AudioApiController {
     @GetMapping("/thumbnails/{thumbId}/audios")
     public List<AudioRowDto> list(
             @Parameter(description = "ID of the thumbnail to retrieve the audio files for", required = true)
-            @PathVariable Long thumbId
+            @PathVariable Long thumbId,
+
+            @Parameter(hidden = true)
+            Authentication auth
     ) {
+        var thumbnail = thumbnailService.getThumbnailById(thumbId);
+        scenarioService.assertCanViewScenario(thumbnail.getScenario(), auth);
         return audioService.listForThumbnail(thumbId);
     }
 
@@ -289,8 +298,8 @@ public class AudioApiController {
             rule = "Requires authentication. Authorization: related resource owner or ADMIN only.",
             ownerResource = "audio"
     )
-    @SecurityRequirement(name = "bearerAuth")
-    @PreAuthorize("hasRole('USER') and @scenarioSecurity.isOwnerByAudioId(#audioId, authentication.name, @audioService)")
+//    @SecurityRequirement(name = "bearerAuth")
+//    @PreAuthorize("hasRole('USER') and @scenarioSecurity.isOwnerByAudioId(#audioId, authentication.name, @audioService)")
     @DeleteMapping("/audios/{audioId}")
     public void delete(
             @Parameter(description = "ID of the audio file to delete", required = true)

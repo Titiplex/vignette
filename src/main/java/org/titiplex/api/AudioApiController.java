@@ -152,7 +152,7 @@ public class AudioApiController {
                     """
     )
     @OwnerOrAdminOperation(
-            resource = ProtectedResource.AUDIO,
+            resource = ProtectedResource.THUMBNAIL,
             param = "thumbId"
     )
     @ApiResponses({

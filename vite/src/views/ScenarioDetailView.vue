@@ -350,9 +350,10 @@ async function loadThumbs() {
       thumbnails.value.map(async (t) => {
         try {
           map[t.id] = await fetchThumbnailAudios(t.id);
-        } catch {
-          map[t.id] = [];
-        }
+        } catch (e) {
+            console.error(`Failed to load audios for thumbnail ${t.id}`, e);
+            map[t.id] = [];
+          }
       })
   );
 
@@ -946,19 +947,19 @@ onMounted(loadAll);
                 In custom mode, these values control the persisted storyboard composition for this thumbnail.
               </p>
             </section>
-
-            <AudioPanel
-                :selected-thumb="selectedThumb"
-                :audios="selectedAudios"
-                :active-audio-id="activeAudioId"
-                :active-audio-title="autoplay.currentItem?.audioTitle ?? ''"
-                :player-state="playerStateLabel"
-                :is-owner="isOwner"
-                @uploaded="refreshAudios"
-                @play-audio="setActiveAudio"
-            />
           </aside>
         </div>
+
+        <AudioPanel
+            :selected-thumb="selectedThumb"
+            :audios="selectedAudios"
+            :active-audio-id="activeAudioId"
+            :active-audio-title="autoplay.currentItem?.audioTitle ?? ''"
+            :player-state="playerStateLabel"
+            :is-owner="isOwner"
+            @uploaded="refreshAudios"
+            @play-audio="setActiveAudio"
+        />
       </section>
     </template>
   </main>

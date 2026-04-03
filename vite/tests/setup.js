@@ -40,3 +40,9 @@ Object.defineProperty(globalThis, "URL", {
     },
     writable: true,
 });
+
+beforeEach(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+    document.cookie = "";
+});

@@ -265,10 +265,83 @@ public class ThumbnailApiController {
                 .body(media.resource());
     }
 
+    @Operation(
+            summary = "Update thumbnail layout",
+            description = """
+                    Updates the persisted layout position of a thumbnail inside a storyboard.
+                    
+                    Editable fields include:
+                    - gridColumn
+                    - gridRow
+                    - gridColumnSpan
+                    - gridRowSpan
+                    
+                    Requires scenario ownership or admin privileges.
+                    """
+    )
+    @OwnerOrAdminOperation(
+            resource = ProtectedResource.THUMBNAIL
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Thumbnail layout updated successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ThumbnailRowDto.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid layout request",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Authentication required",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "User is not allowed to edit this thumbnail layout",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Thumbnail or parent scenario not found",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            )
+    })
     @PatchMapping("/thumbnails/{id}/layout")
     public ThumbnailRowDto updateLayout(
+            @Parameter(
+                    description = "ID of the thumbnail to update",
+                    required = true,
+                    example = "7"
+            )
             @PathVariable Long id,
+
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "New layout values for the thumbnail",
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = UpdateThumbnailLayoutRequest.class),
+                            examples = @ExampleObject(
+                                    name = "Thumbnail layout update",
+                                    value = """
+                                            {
+                                              "gridColumn": 2,
+                                              "gridRow": 1,
+                                              "gridColumnSpan": 1,
+                                              "gridRowSpan": 2
+                                            }
+                                            """
+                            )
+                    )
+            )
             @RequestBody UpdateThumbnailLayoutRequest req,
+
+            @Parameter(hidden = true)
             Authentication auth
     ) {
         Thumbnail thumbnail = thumbnailService.getThumbnailById(id);

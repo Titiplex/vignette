@@ -201,12 +201,78 @@ public class ScenarioApiController {
         return scenarioService.listVisibleScenarios(auth).stream().map(scenarioService::toDto).toList();
     }
 
+    @Operation(
+            summary = "Update storyboard settings",
+            description = """
+                    Updates storyboard display settings for a scenario.
+                    
+                    Editable fields include:
+                    - layoutMode
+                    - preset
+                    - columns
+                    
+                    Requires scenario ownership or admin privileges.
+                    """
+    )
     @OwnerOrAdminOperation(
             resource = ProtectedResource.SCENARIO
     )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Storyboard settings updated successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ScenarioDto.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid storyboard settings",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Authentication required",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "User is not allowed to edit this scenario",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Scenario not found",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            )
+    })
     @PatchMapping("/{id}/storyboard")
     public ScenarioDto updateStoryboard(
+            @Parameter(
+                    description = "ID of the scenario to update",
+                    required = true,
+                    example = "12"
+            )
             @PathVariable Long id,
+
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Storyboard settings to update",
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = UpdateScenarioStoryboardRequest.class),
+                            examples = @ExampleObject(
+                                    name = "Storyboard update",
+                                    value = """
+                                            {
+                                              "layoutMode": "PRESET",
+                                              "preset": "GRID_3",
+                                              "columns": 3
+                                            }
+                                            """
+                            )
+                    )
+            )
             @RequestBody UpdateScenarioStoryboardRequest req,
 
             @Parameter(hidden = true)
@@ -215,11 +281,50 @@ public class ScenarioApiController {
         return scenarioService.toDto(scenarioService.updateStoryboard(id, req, auth));
     }
 
+    @Operation(
+            summary = "Publish a scenario",
+            description = """
+                    Publishes a scenario and makes it visible to public users.
+                    
+                    If the scenario was never published before, the publication timestamp is set.
+                    Requires scenario ownership or admin privileges.
+                    """
+    )
     @OwnerOrAdminOperation(
             resource = ProtectedResource.SCENARIO
     )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Scenario published successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ScenarioDto.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Authentication required",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "User is not allowed to publish this scenario",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Scenario not found",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            )
+    })
     @PostMapping("/{id}/publish")
     public ScenarioDto publish(
+            @Parameter(
+                    description = "ID of the scenario to publish",
+                    required = true,
+                    example = "12"
+            )
             @PathVariable Long id,
 
             @Parameter(hidden = true)

@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/users")
 @Tag(
-        name = "Users",
+        name = "User",
         description = "Endpoints for managing user profiles, including viewing and updating private profiles, and accessing public profiles."
 )
 public class UserApiController {

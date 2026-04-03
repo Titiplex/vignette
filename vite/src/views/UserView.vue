@@ -1,6 +1,11 @@
 <script setup>
-import {onMounted, ref} from "vue";
+import {computed, onMounted, ref} from "vue";
+import {RouterLink} from "vue-router";
 import {fetchMyProfile, updateMyProfile} from "../api/users";
+import {fetchScenarios} from "../api/scenarios";
+import {useAuth} from "../composables/useAuth";
+
+const {currentUser, loadMe} = useAuth();
 
 const profile = ref({
   displayName: "",
@@ -13,9 +18,13 @@ const profile = ref({
 
 const roles = ref([]);
 const affiliations = ref([]);
+const myScenarios = ref([]);
 const error = ref("");
 const success = ref("");
 const loading = ref(false);
+const loadingWorks = ref(false);
+
+const visibleScenarioCount = computed(() => myScenarios.value.length);
 
 async function loadProfile() {
   const data = await fetchMyProfile();
@@ -31,6 +40,21 @@ async function loadProfile() {
 
   roles.value = data.roles ?? [];
   affiliations.value = data.academyAffiliations ?? [];
+}
+
+async function loadMyWorks() {
+  loadingWorks.value = true;
+  try {
+    await loadMe();
+    const allScenarios = await fetchScenarios();
+    const username = currentUser.value?.username ?? null;
+
+    myScenarios.value = username
+        ? allScenarios.filter((scenario) => scenario.authorUsername === username)
+        : [];
+  } finally {
+    loadingWorks.value = false;
+  }
 }
 
 async function save() {
@@ -62,7 +86,10 @@ async function save() {
 
 onMounted(async () => {
   try {
-    await loadProfile();
+    await Promise.all([
+      loadProfile(),
+      loadMyWorks(),
+    ]);
   } catch (e) {
     error.value = e.message;
   }
@@ -75,7 +102,7 @@ onMounted(async () => {
       <div class="section-heading">
         <div>
           <h1>User profile</h1>
-          <p class="muted">Manage your public presence and academic affiliations.</p>
+          <p class="muted">Manage your public presence, affiliations and personal work.</p>
         </div>
       </div>
 
@@ -137,6 +164,51 @@ onMounted(async () => {
           <p v-else class="muted">No affiliations listed.</p>
         </section>
       </div>
+
+      <section class="card">
+        <div class="section-heading">
+          <div>
+            <h2>My work</h2>
+            <p class="muted">
+              Quick access to your visible scenarios.
+            </p>
+          </div>
+          <RouterLink to="/create-scenario" class="btn btn--primary">
+            New scenario
+          </RouterLink>
+        </div>
+
+        <p class="muted">
+          {{ visibleScenarioCount }} scenario(s) currently visible from your account.
+        </p>
+
+        <div v-if="loadingWorks" class="loader-block">
+          <span class="loader-spinner"></span>
+          <span class="muted">Loading your work...</span>
+        </div>
+
+        <div v-else-if="myScenarios.length" class="card-grid">
+          <article v-for="scenario in myScenarios" :key="scenario.id" class="card">
+            <h3>{{ scenario.title || "Untitled scenario" }}</h3>
+            <p class="text">
+              {{ scenario.description || "No description provided." }}
+            </p>
+            <p class="muted">
+              Created: {{ scenario.createdAt || "-" }}
+            </p>
+            <RouterLink :to="`/scenarios/${scenario.id}`">
+              Open scenario
+            </RouterLink>
+          </article>
+        </div>
+
+        <div v-else class="empty-state">
+          <h3>No visible scenario yet</h3>
+          <p class="muted">
+            You have not published or created any visible scenario yet.
+          </p>
+        </div>
+      </section>
     </section>
   </main>
 </template>

@@ -48,6 +48,39 @@ const uploadTitle = ref("");
 const uploadFile = ref(null);
 const highlightedThumbnailId = ref(null);
 
+const infoDialogOpen = ref(false);
+
+function openInfoDialog() {
+  infoDialogOpen.value = true;
+}
+
+function closeInfoDialog() {
+  infoDialogOpen.value = false;
+}
+
+const uploadDialogOpen = ref(false);
+
+function openUploadDialog() {
+  uploadError.value = "";
+  uploadSuccess.value = "";
+  uploadDialogOpen.value = true;
+}
+
+function closeUploadDialog() {
+  uploadDialogOpen.value = false;
+}
+
+const selectedThumbnailPanelOpen = ref(false);
+const selectedLayoutPanelOpen = ref(false);
+
+function toggleSelectedThumbnailPanel() {
+  selectedThumbnailPanelOpen.value = !selectedThumbnailPanelOpen.value;
+}
+
+function toggleSelectedLayoutPanel() {
+  selectedLayoutPanelOpen.value = !selectedLayoutPanelOpen.value;
+}
+
 const storyboardForm = ref({
   layoutMode: "PRESET",
   preset: "GRID_3",
@@ -415,6 +448,7 @@ async function uploadImage() {
     uploadSuccess.value = "Image uploaded successfully.";
     toast.success("Thumbnail uploaded successfully.");
     await loadThumbs();
+    closeUploadDialog();
   } catch (e) {
     uploadError.value = e.message;
     toast.error(e.message || "Upload failed.");
@@ -584,6 +618,21 @@ onMounted(loadAll);
             subtitle="Storyboard workspace with publication, layout and media controls"
         >
           <template #actions>
+            <button
+                type="button"
+                class="icon-button"
+                aria-label="Open scenario information"
+                title="Scenario information"
+                @click="openInfoDialog"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"
+                   stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"></circle>
+                <path d="M12 10v6"></path>
+                <path d="M12 7h.01"></path>
+              </svg>
+            </button>
+
             <BaseBadge :variant="isPublished ? 'success' : 'warning'">
               {{ scenario.visibilityStatus }}
             </BaseBadge>
@@ -600,38 +649,77 @@ onMounted(loadAll);
             >
               {{ publishing ? "Publishing..." : "Publish scenario" }}
             </button>
+
+            <div
+                v-if="infoDialogOpen"
+                class="dialog-backdrop"
+                @click.self="closeInfoDialog"
+            >
+              <section
+                  class="dialog-card"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="scenario-info-title"
+              >
+                <div class="dialog-card__header">
+                  <div>
+                    <h2 id="scenario-info-title">Scenario information</h2>
+                    <p class="muted">General metadata and description.</p>
+                  </div>
+
+                  <button
+                      type="button"
+                      class="icon-button"
+                      aria-label="Close scenario information"
+                      title="Close"
+                      @click="closeInfoDialog"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"
+                         stroke-linejoin="round">
+                      <path d="M18 6 6 18"></path>
+                      <path d="m6 6 12 12"></path>
+                    </svg>
+                  </button>
+                </div>
+
+                <div class="dialog-card__body">
+                  <div class="card info-grid info-grid--premium">
+                    <div>
+                      <h3>Language</h3>
+                      <p>{{ languageName }}</p>
+                    </div>
+                    <div>
+                      <h3>Author</h3>
+                      <p>{{ scenario.authorUsername ?? "-" }}</p>
+                    </div>
+                    <div>
+                      <h3>Thumbnails</h3>
+                      <p>{{ thumbnails.length }}</p>
+                    </div>
+                    <div>
+                      <h3>Audio clips</h3>
+                      <p>{{ playbackQueue.length }}</p>
+                    </div>
+                    <div>
+                      <h3>Status</h3>
+                      <p>{{ scenario.visibilityStatus }}</p>
+                    </div>
+                  </div>
+
+                  <section class="card">
+                    <h3>Description</h3>
+                    <p class="text">
+                      {{ scenario.description ?? "No description available." }}
+                    </p>
+                  </section>
+                </div>
+              </section>
+            </div>
           </template>
         </BasePageHeader>
 
         <div class="scenario-layout">
           <div class="scenario-layout__main">
-            <div class="card info-grid info-grid--premium">
-              <div>
-                <h3>Language</h3>
-                <p>{{ languageName }}</p>
-              </div>
-              <div>
-                <h3>Author</h3>
-                <p>{{ scenario.authorUsername ?? "-" }}</p>
-              </div>
-              <div>
-                <h3>Thumbnails</h3>
-                <p>{{ thumbnails.length }}</p>
-              </div>
-              <div>
-                <h3>Audio clips</h3>
-                <p>{{ playbackQueue.length }}</p>
-              </div>
-              <div>
-                <h3>Status</h3>
-                <p>{{ scenario.visibilityStatus }}</p>
-              </div>
-            </div>
-
-            <section class="card">
-              <h2>Description</h2>
-              <p class="text">{{ scenario.description ?? "No description available." }}</p>
-            </section>
 
             <section v-if="isOwner" class="card form-card--premium">
               <h2>Publication & storyboard</h2>
@@ -677,41 +765,92 @@ onMounted(loadAll);
               </p>
             </section>
 
-            <section v-if="isOwner" class="card form-card--premium">
-              <h2>Add a thumbnail</h2>
-
-              <div class="form-grid">
-                <label>
-                  Title
-                  <input v-model="uploadTitle" placeholder="Optional image title"/>
-                </label>
-
-                <label>
-                  Image file
-                  <input type="file" accept="image/*" @change="onImageChange"/>
-                </label>
-              </div>
-
-              <div class="toolbar">
-                <button class="btn btn--primary" @click="uploadImage">
-                  Upload image
-                </button>
-              </div>
-
-              <BaseAlert v-if="uploadSuccess" type="success">
-                {{ uploadSuccess }}
-              </BaseAlert>
-
-              <BaseAlert v-if="uploadError" type="error">
-                {{ uploadError }}
-              </BaseAlert>
-            </section>
-
             <section class="section">
               <BasePageHeader
                   title="Storyboard"
                   :subtitle="`${thumbnails.length} thumbnail(s) in this scenario.`"
-              />
+              >
+                <template #actions>
+                  <button
+                      v-if="isOwner"
+                      type="button"
+                      class="icon-button"
+                      aria-label="Add a thumbnail"
+                      title="Add a thumbnail"
+                      @click="openUploadDialog"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"
+                         stroke-linejoin="round">
+                      <path d="M12 5v14"></path>
+                      <path d="M5 12h14"></path>
+                    </svg>
+                  </button>
+                </template>
+              </BasePageHeader>
+
+              <div
+                  v-if="uploadDialogOpen"
+                  class="dialog-backdrop"
+                  @click.self="closeUploadDialog"
+              >
+                <section
+                    class="dialog-card"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="thumbnail-upload-title"
+                >
+                  <div class="dialog-card__header">
+                    <div>
+                      <h2 id="thumbnail-upload-title">Add a thumbnail</h2>
+                      <p class="muted">
+                        Upload a new image to extend the storyboard.
+                      </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="icon-button"
+                        aria-label="Close upload dialog"
+                        title="Close"
+                        @click="closeUploadDialog"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                           stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18"></path>
+                        <path d="m6 6 12 12"></path>
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div class="dialog-card__body">
+                    <div class="form-grid">
+                      <label>
+                        Title
+                        <input v-model="uploadTitle" placeholder="Optional image title"/>
+                      </label>
+
+                      <label>
+                        Image file
+                        <input type="file" accept="image/*" @change="onImageChange"/>
+                      </label>
+                    </div>
+
+                    <div class="toolbar">
+                      <button class="btn btn--primary" @click="uploadImage">
+                        Upload image
+                      </button>
+                    </div>
+
+                    <BaseAlert v-if="uploadSuccess" type="success">
+                      {{ uploadSuccess }}
+                    </BaseAlert>
+
+                    <BaseAlert v-if="uploadError" type="error">
+                      {{ uploadError }}
+                    </BaseAlert>
+                  </div>
+                </section>
+              </div>
 
               <div
                   v-if="storyboardItems.length"
@@ -876,96 +1015,211 @@ onMounted(loadAll);
               </div>
             </section>
 
-            <section v-if="selectedThumb" class="card selected-thumbnail-panel">
-              <div class="selected-thumbnail-panel__header">
-                <div>
-                  <h2>
-                    {{ selectedThumb.title || `Thumbnail #${selectedThumb.idx ?? selectedThumb.id}` }}
+            <section v-if="selectedThumb" class="card selected-thumbnail-panel collapsible-card">
+              <button
+                  type="button"
+                  class="collapsible-card__header"
+                  @click="toggleSelectedThumbnailPanel"
+              >
+                <div class="collapsible-card__title-block">
+                  <h2 class="collapsible-card__title">
+                    Selected thumbnail
                   </h2>
-                  <p class="muted">
-                    Index {{ selectedThumb.idx ?? "-" }} ·
-                    {{ selectedAudios.length }} audio clip(s) ·
-                    {{ selectedAudioMarkers.length }} marker(s)
+                  <p class="muted collapsible-card__summary">
+                    {{ selectedThumb.title || `Thumbnail #${selectedThumb.idx ?? selectedThumb.id}` }}
+                    · {{ selectedAudios.length }} audio clip(s)
+                    · {{ selectedAudioMarkers.length }} marker(s)
                   </p>
                 </div>
 
-                <div class="meta-badges">
+                <div class="collapsible-card__header-right">
                   <BaseBadge variant="success">Selected</BaseBadge>
+                  <span class="collapsible-card__chevron" :class="{ 'is-open': selectedThumbnailPanelOpen }">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"
+                         stroke-linejoin="round">
+                      <path d="m6 9 6 6 6-6"></path>
+                    </svg>
+                  </span>
+                </div>
+              </button>
+
+              <div v-if="selectedThumbnailPanelOpen" class="collapsible-card__body">
+                <div class="selected-thumbnail-panel__header">
+                  <div>
+                    <h3>
+                      {{ selectedThumb.title || `Thumbnail #${selectedThumb.idx ?? selectedThumb.id}` }}
+                    </h3>
+                    <p class="muted">
+                      Index {{ selectedThumb.idx ?? "-" }} ·
+                      {{ selectedAudios.length }} audio clip(s) ·
+                      {{ selectedAudioMarkers.length }} marker(s)
+                    </p>
+                  </div>
+                </div>
+
+                <div class="selected-thumbnail-panel__stage">
+                  <img
+                      :src="thumbnailContentUrl(selectedThumb)"
+                      :alt="selectedThumb.title || 'Selected thumbnail'"
+                      class="selected-thumbnail-panel__image"
+                  />
+
+                  <button
+                      v-for="audio in selectedAudioMarkers"
+                      :key="audio.id"
+                      type="button"
+                      class="marker-dot"
+                      :class="{ 'marker-dot--active': isMarkerActive(audio) }"
+                      :style="markerStyle(audio)"
+                      :title="audio.markerLabel || audio.title || `Audio #${audio.id}`"
+                      @click="playAudioFromMarker(audio)"
+                  >
+                    <span class="marker-dot__pulse"></span>
+                    <span class="marker-dot__core"></span>
+                  </button>
                 </div>
               </div>
+            </section>
 
-              <div class="selected-thumbnail-panel__stage">
-                <img
-                    :src="thumbnailContentUrl(selectedThumb)"
-                    :alt="selectedThumb.title || 'Selected thumbnail'"
-                    class="selected-thumbnail-panel__image"
-                />
+            <section v-if="isOwner && selectedThumb" class="card collapsible-card">
+              <button
+                  type="button"
+                  class="collapsible-card__header"
+                  @click="toggleSelectedLayoutPanel"
+              >
+                <div class="collapsible-card__title-block">
+                  <h2 class="collapsible-card__title">Selected thumbnail layout</h2>
+                  <p class="muted collapsible-card__summary">
+                    Custom grid placement and span settings
+                  </p>
+                </div>
 
-                <button
-                    v-for="audio in selectedAudioMarkers"
-                    :key="audio.id"
-                    type="button"
-                    class="marker-dot"
-                    :class="{ 'marker-dot--active': isMarkerActive(audio) }"
-                    :style="markerStyle(audio)"
-                    :title="audio.markerLabel || audio.title || `Audio #${audio.id}`"
-                    @click="playAudioFromMarker(audio)"
-                >
-                  <span class="marker-dot__pulse"></span>
-                  <span class="marker-dot__core"></span>
-                </button>
+                <span class="collapsible-card__chevron" :class="{ 'is-open': selectedLayoutPanelOpen }">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"
+                       stroke-linejoin="round">
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </span>
+              </button>
+
+              <div v-if="selectedLayoutPanelOpen" class="collapsible-card__body">
+                <div class="storyboard-settings-grid">
+                  <label>
+                    Column
+                    <input v-model="selectedLayoutForm.gridColumn" type="number" min="1" placeholder="auto"/>
+                  </label>
+
+                  <label>
+                    Row
+                    <input v-model="selectedLayoutForm.gridRow" type="number" min="1" placeholder="auto"/>
+                  </label>
+
+                  <label>
+                    Column span
+                    <input v-model="selectedLayoutForm.gridColumnSpan" type="number" min="1"/>
+                  </label>
+
+                  <label>
+                    Row span
+                    <input v-model="selectedLayoutForm.gridRowSpan" type="number" min="1"/>
+                  </label>
+                </div>
+
+                <div class="toolbar">
+                  <button class="btn btn--primary" :disabled="savingLayout" @click="saveSelectedThumbnailLayout">
+                    {{ savingLayout ? "Saving..." : "Save thumbnail layout" }}
+                  </button>
+                </div>
+
+                <p class="muted">
+                  In custom mode, these values control the persisted storyboard composition for this thumbnail.
+                </p>
               </div>
             </section>
 
-            <section v-if="isOwner && selectedThumb" class="card">
-              <h2>Selected thumbnail layout</h2>
-
-              <div class="storyboard-settings-grid">
-                <label>
-                  Column
-                  <input v-model="selectedLayoutForm.gridColumn" type="number" min="1" placeholder="auto"/>
-                </label>
-
-                <label>
-                  Row
-                  <input v-model="selectedLayoutForm.gridRow" type="number" min="1" placeholder="auto"/>
-                </label>
-
-                <label>
-                  Column span
-                  <input v-model="selectedLayoutForm.gridColumnSpan" type="number" min="1"/>
-                </label>
-
-                <label>
-                  Row span
-                  <input v-model="selectedLayoutForm.gridRowSpan" type="number" min="1"/>
-                </label>
-              </div>
-
-              <div class="toolbar">
-                <button class="btn btn--primary" :disabled="savingLayout" @click="saveSelectedThumbnailLayout">
-                  {{ savingLayout ? "Saving..." : "Save thumbnail layout" }}
-                </button>
-              </div>
-
-              <p class="muted">
-                In custom mode, these values control the persisted storyboard composition for this thumbnail.
-              </p>
-            </section>
+            <AudioPanel
+                :selected-thumb="selectedThumb"
+                :audios="selectedAudios"
+                :active-audio-id="activeAudioId"
+                :active-audio-title="autoplay.currentItem?.audioTitle ?? ''"
+                :player-state="playerStateLabel"
+                :is-owner="isOwner"
+                @uploaded="refreshAudios"
+                @play-audio="setActiveAudio"
+            />
           </aside>
         </div>
-
-        <AudioPanel
-            :selected-thumb="selectedThumb"
-            :audios="selectedAudios"
-            :active-audio-id="activeAudioId"
-            :active-audio-title="autoplay.currentItem?.audioTitle ?? ''"
-            :player-state="playerStateLabel"
-            :is-owner="isOwner"
-            @uploaded="refreshAudios"
-            @play-audio="setActiveAudio"
-        />
       </section>
     </template>
   </main>
 </template>
+
+<style scoped>
+.icon-button {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: 160ms ease;
+  box-shadow: var(--shadow);
+}
+
+.icon-button:hover {
+  background: #f7fbff;
+  color: var(--primary);
+  border-color: rgba(15, 118, 110, 0.28);
+}
+
+.icon-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  background: rgba(15, 23, 42, 0.38);
+  backdrop-filter: blur(4px);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.dialog-card {
+  width: min(760px, 100%);
+  max-height: min(88vh, 900px);
+  overflow: auto;
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+  box-shadow: 0 18px 60px rgba(15, 23, 42, 0.22);
+  padding: 20px;
+}
+
+.dialog-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.dialog-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .dialog-card {
+    padding: 16px;
+    border-radius: 18px;
+  }
+}
+</style>

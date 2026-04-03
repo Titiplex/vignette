@@ -1423,3 +1423,74 @@ textarea {
         grid-template-columns: 1fr;
     }
 }
+
+.collapsible-card {
+    padding: 0;
+    overflow: hidden;
+}
+
+.collapsible-card__header {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    text-align: left;
+    padding: 16px 18px;
+    cursor: pointer;
+}
+
+.collapsible-card__header:hover {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.collapsible-card__title-block {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.collapsible-card__title {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.collapsible-card__summary {
+    margin: 0;
+}
+
+.collapsible-card__header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.collapsible-card__chevron {
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-soft);
+    transition: transform 160ms ease;
+}
+
+.collapsible-card__chevron svg {
+    width: 18px;
+    height: 18px;
+}
+
+.collapsible-card__chevron.is-open {
+    transform: rotate(180deg);
+}
+
+.collapsible-card__body {
+    padding: 0 18px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}

@@ -32,6 +32,12 @@ const markerLabel = ref("");
 const isRecording = ref(false);
 const focusedDiscussionAudioId = ref(null);
 
+const panelOpen = ref(false);
+
+function togglePanel() {
+  panelOpen.value = !panelOpen.value;
+}
+
 let mediaRecorder = null;
 let chunks = [];
 let recordedBlob = null;
@@ -257,225 +263,244 @@ watch(
 </script>
 
 <template>
-  <section v-if="selectedThumb" class="card audio-panel">
-    <div class="section-heading">
-      <div>
-        <h2>Audio workspace</h2>
-        <p class="muted">
-          Selected thumbnail #{{ selectedThumb.idx ?? selectedThumb.id }}
-        </p>
-      </div>
-
-      <BaseBadge variant="info">
-        {{ audios.length }} clip(s)
-      </BaseBadge>
-    </div>
-
-    <section class="audio-panel__section">
-      <h3>Scenario player</h3>
-
-      <div class="scenario-player-card">
-        <p class="muted scenario-player-card__text">
+  <section v-if="selectedThumb" class="card audio-panel collapsible-card">
+    <button
+        type="button"
+        class="collapsible-card__header"
+        @click="togglePanel"
+    >
+      <div class="collapsible-card__title-block">
+        <h2 class="collapsible-card__title">Audio workspace</h2>
+        <p class="muted collapsible-card__summary">
+          Thumbnail #{{ selectedThumb.idx ?? selectedThumb.id }}
+          · {{ audios.length }} clip(s)
           <template v-if="activeAudioId">
-            Current audio:
-            <strong>{{ activeAudioTitle || `Audio #${activeAudioId}` }}</strong>
-            ·
-            <strong>{{ playerState }}</strong>
-          </template>
-          <template v-else>
-            No audio currently selected.
+            · current: {{ activeAudioTitle || `Audio #${activeAudioId}` }}
           </template>
         </p>
       </div>
-    </section>
 
-    <section class="audio-panel__section">
-      <h3>Existing audio clips</h3>
-      <p class="muted">
-        Click on a clip to play it through the single scenario player.
-      </p>
+      <div class="collapsible-card__header-right">
+        <BaseBadge variant="info">
+          {{ audios.length }} clip(s)
+        </BaseBadge>
 
-      <div v-if="audios.length" class="audio-list">
-        <article
-            v-for="audio in audios"
-            :key="audio.id"
-            class="audio-item"
-            :class="{ 'audio-item--active': isAudioActive(audio) }"
-        >
-          <div class="audio-item__header">
-            <div>
-              <h4 class="audio-item__title">
-                {{ audio.title || `Audio #${audio.id}` }}
-              </h4>
+        <span class="collapsible-card__chevron" :class="{ 'is-open': panelOpen }">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"
+               stroke-linejoin="round">
+            <path d="m6 9 6 6 6-6"></path>
+          </svg>
+        </span>
+      </div>
+    </button>
 
-              <p class="muted audio-item__meta">
-                <span v-if="audio.idx != null">
-                  Order: <strong>{{ audio.idx }}</strong>
-                </span>
+    <div v-if="panelOpen" class="collapsible-card__body">
+      <section class="audio-panel__section">
+        <h3>Scenario player</h3>
 
-                <template v-if="audio.markerLabel">
-                  <span v-if="audio.idx != null"> · </span>
-                  Marker label: <strong>{{ audio.markerLabel }}</strong>
-                </template>
+        <div class="scenario-player-card">
+          <p class="muted scenario-player-card__text">
+            <template v-if="activeAudioId">
+              Current audio:
+              <strong>{{ activeAudioTitle || `Audio #${activeAudioId}` }}</strong>
+              ·
+              <strong>{{ playerState }}</strong>
+            </template>
+            <template v-else>
+              No audio currently selected.
+            </template>
+          </p>
+        </div>
+      </section>
 
-                <template v-if="hasMarker(audio)">
-                  <span v-if="audio.idx != null || audio.markerLabel"> · </span>
-                  Marker:
-                  <strong>{{ formatMarker(audio.markerX) }}%</strong>,
-                  <strong>{{ formatMarker(audio.markerY) }}%</strong>
-                </template>
-              </p>
+      <section class="audio-panel__section">
+        <h3>Existing audio clips</h3>
+        <p class="muted">
+          Click on a clip to play it through the single scenario player.
+        </p>
+
+        <div v-if="audios.length" class="audio-list">
+          <article
+              v-for="audio in audios"
+              :key="audio.id"
+              class="audio-item"
+              :class="{ 'audio-item--active': isAudioActive(audio) }"
+          >
+            <div class="audio-item__header">
+              <div>
+                <h4 class="audio-item__title">
+                  {{ audio.title || `Audio #${audio.id}` }}
+                </h4>
+
+                <p class="muted audio-item__meta">
+                  <span v-if="audio.idx != null">
+                    Order: <strong>{{ audio.idx }}</strong>
+                  </span>
+
+                  <template v-if="audio.markerLabel">
+                    <span v-if="audio.idx != null"> · </span>
+                    Marker label: <strong>{{ audio.markerLabel }}</strong>
+                  </template>
+
+                  <template v-if="hasMarker(audio)">
+                    <span v-if="audio.idx != null || audio.markerLabel"> · </span>
+                    Marker:
+                    <strong>{{ formatMarker(audio.markerX) }}%</strong>,
+                    <strong>{{ formatMarker(audio.markerY) }}%</strong>
+                  </template>
+                </p>
+              </div>
+
+              <div class="audio-item__actions">
+                <BaseBadge v-if="isAudioActive(audio)" variant="warning">
+                  Active
+                </BaseBadge>
+
+                <button
+                    type="button"
+                    class="btn btn--ghost"
+                    @click="openDiscussion(audio)"
+                >
+                  Discuss
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn--primary"
+                    @click="playAudio(audio)"
+                >
+                  Play
+                </button>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <p v-else class="muted">
+          No audio clips are attached to this thumbnail yet.
+        </p>
+      </section>
+
+      <section v-if="discussionAudio" class="audio-panel__section">
+        <DiscussionThread
+            title="Audio discussion"
+            :subtitle="`Comments and annotation debate for ${discussionAudio.title || `Audio #${discussionAudio.id}`}.`"
+            target-type="AUDIO"
+            :target-id="discussionAudio.id"
+            empty-title="No comments on this clip yet"
+            empty-message="Use this space for transcription, translation, gloss or interpretation notes."
+        />
+      </section>
+
+      <template v-if="isOwner">
+        <div class="audio-panel__grid">
+          <section class="audio-panel__section">
+            <h3>1. Marker placement</h3>
+            <p class="muted">
+              Click on the image to place the audio marker.
+            </p>
+
+            <div class="marker-picker">
+              <div class="marker-image-stage">
+                <img
+                    :src="thumbnailContentUrl()"
+                    alt="Marker picker"
+                    class="marker-image"
+                    @click="onImageClick"
+                />
+
+                <div
+                    v-if="markerPreviewStyle"
+                    class="marker-dot marker-dot--draft"
+                    :style="markerPreviewStyle"
+                    title="Selected marker position"
+                ></div>
+              </div>
             </div>
 
-            <div class="audio-item__actions">
-              <BaseBadge v-if="isAudioActive(audio)" variant="warning">
-                Active
-              </BaseBadge>
+            <p class="muted">
+              Marker:
+              <strong>{{ markerX || "-" }}%</strong>,
+              <strong>{{ markerY || "-" }}%</strong>
+            </p>
+
+            <label>
+              Marker label
+              <input v-model="markerLabel" placeholder="Optional marker label"/>
+            </label>
+
+            <button type="button" class="btn btn--ghost" @click="clearMarker">
+              Clear marker
+            </button>
+          </section>
+
+          <section class="audio-panel__section">
+            <h3>2. Audio upload</h3>
+
+            <label>
+              Audio title
+              <input v-model="audioTitle" placeholder="Optional title"/>
+            </label>
+
+            <div class="audio-panel__actions">
+              <button
+                  type="button"
+                  class="btn btn--primary"
+                  :disabled="isRecording"
+                  @click="startRecording"
+              >
+                Start recording
+              </button>
 
               <button
                   type="button"
                   class="btn btn--ghost"
-                  @click="openDiscussion(audio)"
+                  :disabled="!isRecording"
+                  @click="stopRecording"
               >
-                Discuss
+                Stop
               </button>
 
               <button
                   type="button"
                   class="btn btn--primary"
-                  @click="playAudio(audio)"
+                  @click="uploadRecording"
               >
-                Play
+                Upload recording
               </button>
             </div>
-          </div>
-        </article>
-      </div>
 
-      <p v-else class="muted">
-        No audio clips are attached to this thumbnail yet.
-      </p>
-    </section>
+            <p class="muted">
+              Status:
+              <strong>{{ isRecording ? "Recording..." : "Idle" }}</strong>
+            </p>
 
-    <section v-if="discussionAudio" class="audio-panel__section">
-      <DiscussionThread
-          title="Audio discussion"
-          :subtitle="`Comments and annotation debate for ${discussionAudio.title || `Audio #${discussionAudio.id}`}.`"
-          target-type="AUDIO"
-          :target-id="discussionAudio.id"
-          empty-title="No comments on this clip yet"
-          empty-message="Use this space for transcription, translation, gloss or interpretation notes."
-      />
-    </section>
+            <div class="audio-panel__divider"></div>
 
-    <template v-if="isOwner">
-      <div class="audio-panel__grid">
-        <section class="audio-panel__section">
-          <h3>1. Marker placement</h3>
-          <p class="muted">
-            Click on the image to place the audio marker.
-          </p>
-
-          <div class="marker-picker">
-            <div class="marker-image-stage">
-              <img
-                  :src="thumbnailContentUrl()"
-                  alt="Marker picker"
-                  class="marker-image"
-                  @click="onImageClick"
-              />
-
-              <div
-                  v-if="markerPreviewStyle"
-                  class="marker-dot marker-dot--draft"
-                  :style="markerPreviewStyle"
-                  title="Selected marker position"
-              ></div>
-            </div>
-          </div>
-
-          <p class="muted">
-            Marker:
-            <strong>{{ markerX || "-" }}%</strong>,
-            <strong>{{ markerY || "-" }}%</strong>
-          </p>
-
-          <label>
-            Marker label
-            <input v-model="markerLabel" placeholder="Optional marker label"/>
-          </label>
-
-          <button type="button" class="btn btn--ghost" @click="clearMarker">
-            Clear marker
-          </button>
-        </section>
-
-        <section class="audio-panel__section">
-          <h3>2. Audio upload</h3>
-
-          <label>
-            Audio title
-            <input v-model="audioTitle" placeholder="Optional title"/>
-          </label>
-
-          <div class="audio-panel__actions">
-            <button
-                type="button"
-                class="btn btn--primary"
-                :disabled="isRecording"
-                @click="startRecording"
-            >
-              Start recording
-            </button>
-
-            <button
-                type="button"
-                class="btn btn--ghost"
-                :disabled="!isRecording"
-                @click="stopRecording"
-            >
-              Stop
-            </button>
+            <label>
+              Upload existing audio
+              <input type="file" accept="audio/*" @change="onFileChange"/>
+            </label>
 
             <button
                 type="button"
                 class="btn btn--primary"
-                @click="uploadRecording"
+                @click="uploadExistingAudio"
             >
-              Upload recording
+              Upload audio file
             </button>
-          </div>
 
-          <p class="muted">
-            Status:
-            <strong>{{ isRecording ? "Recording..." : "Idle" }}</strong>
-          </p>
+            <p v-if="audioSuccess" class="success">{{ audioSuccess }}</p>
+            <p v-if="audioErr" class="error">{{ audioErr }}</p>
+          </section>
+        </div>
+      </template>
 
-          <div class="audio-panel__divider"></div>
-
-          <label>
-            Upload existing audio
-            <input type="file" accept="audio/*" @change="onFileChange"/>
-          </label>
-
-          <button
-              type="button"
-              class="btn btn--primary"
-              @click="uploadExistingAudio"
-          >
-            Upload audio file
-          </button>
-
-          <p v-if="audioSuccess" class="success">{{ audioSuccess }}</p>
-          <p v-if="audioErr" class="error">{{ audioErr }}</p>
-        </section>
-      </div>
-    </template>
-
-    <template v-else>
-      <p class="muted">
-        You can view this scenario, but only the owner can upload audio and place markers.
-      </p>
-    </template>
+      <template v-else>
+        <p class="muted">
+          You can view this scenario, but only the owner can upload audio and place markers.
+        </p>
+      </template>
+    </div>
   </section>
 </template>

@@ -41,6 +41,7 @@ public class ScenarioService {
         scenario.setDescription(description);
         scenario.setAuthor_id(authorId);
         scenario.setLanguage_id(languageId);
+        scenario.setCreatedAt(Instant.now());
         scenario.setAuthor(userService.getUserById(authorId));
         scenario.setLanguage(languageService.getLanguage(languageId));
         scenario.setVisibilityStatus(ScenarioVisibilityStatus.DRAFT);

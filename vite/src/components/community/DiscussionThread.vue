@@ -31,6 +31,20 @@ const replyTo = ref(null);
 
 const normalizedTargetId = computed(() => String(props.targetId ?? ""));
 
+const contextualContributionTypes = computed(() => {
+  if (props.targetType === "LANGUAGE") {
+    return [
+      {value: "GENERAL", label: "General note"},
+      {value: "TRANSCRIPTION", label: "Transcription note"},
+      {value: "TRANSLATION", label: "Translation note"},
+      {value: "GLOSS", label: "Glossing note"},
+      {value: "INTERPRETATION", label: "Interpretation / analysis"},
+    ];
+  }
+
+  return CONTRIBUTION_TYPES;
+});
+
 const messagesById = computed(() => {
   const map = new Map();
   for (const message of messages.value) {
@@ -74,7 +88,7 @@ const threadedMessages = computed(() => {
 });
 
 function contributionLabel(value) {
-  return CONTRIBUTION_TYPES.find((item) => item.value === value)?.label ?? value ?? "General";
+  return contextualContributionTypes.value.find((item) => item.value === value)?.label ?? value ?? "General";
 }
 
 function formatDate(value) {
@@ -142,6 +156,7 @@ watch(
     () => [props.targetType, normalizedTargetId.value],
     () => {
       replyTo.value = null;
+      contributionType.value = "GENERAL";
       loadThread();
     },
     {immediate: true}
@@ -235,7 +250,7 @@ onMounted(() => {
             Contribution type
             <select v-model="contributionType">
               <option
-                  v-for="option in CONTRIBUTION_TYPES"
+                  v-for="option in contextualContributionTypes"
                   :key="option.value"
                   :value="option.value"
               >

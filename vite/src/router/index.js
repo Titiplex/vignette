@@ -11,9 +11,11 @@ import CreateScenarioView from "../views/CreateScenarioView.vue";
 import UserView from "../views/UserView.vue";
 
 import {useAuth} from "../composables/useAuth";
+import AboutProjectView from "../views/AboutProjectView.vue";
 
 const routes = [
     {path: "/", name: "home", component: HomeView},
+    {path: "/about", name: "about", component: AboutProjectView},
     {path: "/languages", name: "languages", component: LanguagesView},
     {
         path: "/languages/:id",

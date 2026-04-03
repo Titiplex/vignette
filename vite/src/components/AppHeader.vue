@@ -24,6 +24,7 @@ const navItems = computed(() => [
   {to: "/", label: "Home"},
   {to: "/languages", label: "Languages"},
   {to: "/scenarios", label: "Scenarios"},
+  {to: "/about", label: "About"},
 ]);
 
 function isActive(path) {
@@ -91,9 +92,21 @@ async function doLogout() {
           <RouterLink
               v-if="isAuthenticated"
               to="/user"
-              class="btn btn--ghost"
+              class="btn btn--ghost btn--profile"
+              :class="{ 'is-active': isActive('/user') }"
+              aria-label="Open my profile"
           >
-            {{ currentUser?.username || "My profile" }}
+            <span class="btn__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                   stroke-linejoin="round">
+                <path d="M20 21a8 8 0 0 0-16 0"/>
+                <circle cx="12" cy="8" r="4"/>
+              </svg>
+            </span>
+            <span class="btn__profile-text">
+              <span class="btn__profile-label">Me</span>
+              <span class="btn__profile-name">{{ currentUser?.username || "My profile" }}</span>
+            </span>
           </RouterLink>
 
           <RouterLink

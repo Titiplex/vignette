@@ -876,6 +876,7 @@ onMounted(loadAll);
                     :highlighted="highlightedThumbnailId === item.id"
                     :style="storyboardItemStyle(item)"
                     @select="selectThumb"
+                    @play="async (thumb) => { selectThumb(thumb); await playAllFromContext(); }"
                 />
               </div>
 

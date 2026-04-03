@@ -10,7 +10,7 @@ const props = defineProps({
   highlighted: {type: Boolean, default: false},
 });
 
-const emit = defineEmits(["select"]);
+const emit = defineEmits(["select", "play"]);
 
 function thumbnailContentUrl(thumb) {
   if (!thumb?.id) return "";
@@ -46,6 +46,11 @@ function markerStyle(marker) {
     top: `${marker._y}%`,
   };
 }
+
+function onPlayClick() {
+  emit("select", props.thumb);
+  emit("play", props.thumb);
+}
 </script>
 
 <template>
@@ -80,6 +85,18 @@ function markerStyle(marker) {
       >
         <span class="marker-dot__pulse"></span>
         <span class="marker-dot__core"></span>
+      </button>
+
+      <button
+          type="button"
+          class="storyboard-tile__play"
+          :title="`Play from ${thumb.title || `thumbnail ${thumb.idx ?? thumb.id}`}`"
+          aria-label="Play thumbnail audio"
+          @click.stop="onPlayClick"
+      >
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M8 6.5v11l9-5.5-9-5.5z"/>
+        </svg>
       </button>
     </div>
   </article>

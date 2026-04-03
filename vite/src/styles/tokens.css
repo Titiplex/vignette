@@ -1,0 +1,19 @@
+:root {
+    --bg: #f4f7fb;
+    --surface: #ffffff;
+    --surface-alt: #f8fbff;
+    --accent-warm: #fff3dd;
+    --accent-cool: #e8f2ff;
+    --accent-green: #e6f7ef;
+    --text: #1f2937;
+    --text-soft: #5b6472;
+    --primary: #0f766e;
+    --primary-strong: #0b5f59;
+    --border: #dbe3ee;
+    --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    --radius: 16px;
+    --danger: #b42318;
+    --success: #067647;
+    --discussion-depth: 10;
+    --storyboard-columns: 3;
+}

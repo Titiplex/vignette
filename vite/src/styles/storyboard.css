@@ -1,0 +1,87 @@
+.storyboard-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--storyboard-columns, 3), minmax(0, 1fr));
+    gap: 18px;
+    align-items: start;
+    grid-auto-flow: dense;
+}
+
+.storyboard-settings-grid {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.storyboard-help {
+    margin: 0;
+}
+
+.storyboard-tile {
+    height: 100%;
+    padding: 10px;
+    overflow: hidden;
+}
+
+.storyboard-tile__stage {
+    position: relative;
+    overflow: hidden;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: linear-gradient(180deg, #eef4fb 0%, #f8fbff 100%);
+}
+
+.storyboard-tile__image {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.storyboard-tile__overlay {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 8px;
+    z-index: 3;
+}
+
+.storyboard-tile__marker .marker-dot__core {
+    width: 10px;
+    height: 10px;
+}
+
+.storyboard-tile__play {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    z-index: 4;
+    width: 42px;
+    height: 42px;
+    border: 1px solid rgba(255, 255, 255, 0.78);
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.72);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.22);
+    transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.storyboard-tile__play:hover {
+    transform: scale(1.06);
+    background: rgba(15, 118, 110, 0.92);
+    border-color: rgba(255, 255, 255, 0.92);
+}
+
+.storyboard-tile__play svg {
+    width: 18px;
+    height: 18px;
+    margin-left: 1px;
+}
+
+.thumb-card__body,
+.thumb-card__meta-row,
+.thumb-card__hint {
+    display: none;
+}

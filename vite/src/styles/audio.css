@@ -1,0 +1,257 @@
+.audio-panel {
+    margin-top: 24px;
+}
+
+.audio-panel__grid {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.audio-panel__section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.audio-panel__actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.audio-panel__divider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 0;
+}
+
+.scenario-player-card {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.82);
+    padding: 14px;
+}
+
+.scenario-player-card__text {
+    margin: 0;
+}
+
+.marker-picker {
+    margin-bottom: 8px;
+}
+
+.marker-image-stage {
+    max-width: 100%;
+    min-height: 280px;
+    aspect-ratio: auto;
+}
+
+.marker-image {
+    width: 100%;
+    height: auto;
+    max-height: 420px;
+    object-fit: contain;
+}
+
+.marker-dot {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    width: 24px;
+    height: 24px;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.marker-dot__pulse {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: rgba(15, 118, 110, 0.22);
+    animation: markerPulse 1.8s ease-out infinite;
+}
+
+.marker-dot__core {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 12px;
+    height: 12px;
+    border-radius: 999px;
+    transform: translate(-50%, -50%);
+    background: var(--primary);
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.22);
+}
+
+.marker-dot--active .marker-dot__pulse {
+    background: rgba(180, 83, 9, 0.25);
+}
+
+.marker-dot--active .marker-dot__core {
+    background: #f59e0b;
+    width: 14px;
+    height: 14px;
+}
+
+.marker-dot--draft .marker-dot__pulse {
+    background: rgba(59, 130, 246, 0.22);
+}
+
+.marker-dot--draft .marker-dot__core {
+    background: #3b82f6;
+}
+
+.audio-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.audio-item {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.78);
+    transition: box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.audio-item--active {
+    border-color: rgba(245, 158, 11, 0.5);
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
+}
+
+.audio-item__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.audio-item__title {
+    margin: 0;
+}
+
+.audio-item__meta {
+    margin: 4px 0 0;
+}
+
+.audio-item__actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.audio-player {
+    width: 100%;
+}
+
+.autoplay-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.autoplay-panel__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.autoplay-panel__actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.autoplay-panel__status {
+    margin: 0;
+}
+
+.transport-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.82);
+}
+
+.transport-card__top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.transport-card__title {
+    margin: 0;
+    font-weight: 800;
+}
+
+.transport-card__subtitle {
+    margin: 4px 0 0;
+}
+
+.transport-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.transport-progress input[type="range"] {
+    padding: 0;
+}
+
+.transport-progress__times {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 0.9rem;
+    color: var(--text-soft);
+}
+
+.transport-controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.transport-toggles {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.transport-flags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+@keyframes markerPulse {
+    0% {
+        transform: scale(0.8);
+        opacity: 0.9;
+    }
+    70% {
+        transform: scale(1.8);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1.8);
+        opacity: 0;
+    }
+}

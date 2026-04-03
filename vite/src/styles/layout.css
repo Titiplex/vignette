@@ -1,0 +1,143 @@
+.app-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.app-shell__body {
+    flex: 1;
+}
+
+.app-container {
+    width: min(1120px, calc(100% - 32px));
+    margin: 0 auto;
+}
+
+.page {
+    width: min(1120px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 32px 0 56px;
+}
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.section-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.page-header__actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.hero {
+    padding: 40px 0 12px;
+}
+
+.hero--enhanced {
+    display: grid;
+    gap: 18px;
+}
+
+.hero__content {
+    background: linear-gradient(120deg, #dff8ef 0%, #eaf1ff 55%, #fff7e8 100%);
+    border: 1px solid #cde4db;
+    border-radius: 24px;
+    box-shadow: var(--shadow);
+    padding: 36px 28px;
+}
+
+.hero__text {
+    max-width: 760px;
+    color: var(--text-soft);
+    line-height: 1.65;
+    font-size: 1.02rem;
+}
+
+.hero__actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+
+.hero-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.eyebrow {
+    display: inline-block;
+    margin-bottom: 12px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid var(--border);
+    color: var(--text-soft);
+    font-size: 0.84rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.search-panel {
+    padding: 16px;
+}
+
+.results-meta {
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    color: var(--text-soft);
+    font-size: 0.95rem;
+}
+
+.auth-page {
+    min-height: calc(100vh - 180px);
+    display: grid;
+    place-items: center;
+}
+
+.auth-card {
+    width: min(100%, 480px);
+}
+
+.auth-card--premium,
+.form-card--premium,
+.selected-preview--premium,
+.info-grid--premium,
+.table-card {
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+.scenario-layout {
+    display: grid;
+    gap: 24px;
+    grid-template-columns: minmax(0, 1.8fr) minmax(320px, 0.9fr);
+    align-items: start;
+}
+
+.scenario-layout__main,
+.scenario-layout__side {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}

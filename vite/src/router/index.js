@@ -14,35 +14,101 @@ import {useAuth} from "../composables/useAuth";
 import AboutProjectView from "../views/AboutProjectView.vue";
 
 const routes = [
-    {path: "/", name: "home", component: HomeView},
-    {path: "/about", name: "about", component: AboutProjectView},
-    {path: "/languages", name: "languages", component: LanguagesView},
+    {
+        path: "/",
+        name: "home",
+        component: HomeView,
+        meta: {
+            title: "Home",
+            description: "Landing page for the Vignette project and platform overview.",
+        },
+    },
+    {
+        path: "/about",
+        name: "about",
+        component: AboutProjectView,
+        meta: {
+            title: "About the project",
+            description: "Origins, goals and design rationale of the Vignette project.",
+        },
+    },
+    {
+        path: "/languages",
+        name: "languages",
+        component: LanguagesView,
+        meta: {
+            title: "Languages",
+            description: "Browse and search language entries.",
+        },
+    },
     {
         path: "/languages/:id",
         name: "language-detail",
         component: LanguageDetailView,
         props: true,
+        meta: {
+            title: "Language details",
+            description: "Detailed language entry with metadata, scenarios and discussion.",
+        },
     },
-    {path: "/login", name: "login", component: LoginView, meta: {guestOnly: true}},
-    {path: "/register", name: "register", component: RegisterView, meta: {guestOnly: true}},
-    {path: "/scenarios", name: "scenarios", component: ScenariosView},
+    {
+        path: "/login",
+        name: "login",
+        component: LoginView,
+        meta: {
+            guestOnly: true,
+            title: "Login",
+            description: "Authenticate to access protected features.",
+        },
+    },
+    {
+        path: "/register",
+        name: "register",
+        component: RegisterView,
+        meta: {
+            guestOnly: true,
+            title: "Register",
+            description: "Create a new Vignette user account.",
+        },
+    },
+    {
+        path: "/scenarios",
+        name: "scenarios",
+        component: ScenariosView,
+        meta: {
+            title: "Scenarios",
+            description: "Browse available scenarios and storyboard resources.",
+        },
+    },
     {
         path: "/scenarios/:id",
         name: "scenario-detail",
         component: ScenarioDetailView,
         props: true,
+        meta: {
+            title: "Scenario workspace",
+            description: "Detailed scenario page with storyboard, playback and media panels.",
+        },
     },
     {
         path: "/create-scenario",
         name: "create-scenario",
         component: CreateScenarioView,
-        meta: {requiresAuth: true},
+        meta: {
+            requiresAuth: true,
+            title: "Create scenario",
+            description: "Create a new scenario and initialize its metadata.",
+        },
     },
     {
         path: "/user",
         name: "user",
         component: UserView,
-        meta: {requiresAuth: true},
+        meta: {
+            requiresAuth: true,
+            title: "My profile",
+            description: "Manage your user profile, affiliations and personal work.",
+        },
     },
 ];
 
@@ -64,6 +130,12 @@ router.beforeEach(async (to) => {
 
     if (to.meta.guestOnly && isAuthenticated.value) {
         return {path: "/"};
+    }
+
+    if (to.meta?.title) {
+        document.title = `Vignette · ${to.meta.title}`;
+    } else {
+        document.title = "Vignette";
     }
 
     return true;

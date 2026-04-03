@@ -222,6 +222,12 @@ watch(
     {immediate: true}
 );
 
+function ensureSelectedThumbnailPanelOpen() {
+  if (selectedThumb.value) {
+    selectedThumbnailPanelOpen.value = true;
+  }
+}
+
 function markerStyle(audio) {
   return {
     left: `${audio._x}%`,
@@ -245,6 +251,7 @@ function thumbnailContentUrl(thumb) {
 function selectThumb(thumb) {
   selectedThumb.value = thumb;
   activeAudioId.value = null;
+  selectedThumbnailPanelOpen.value = true;
 }
 
 function focusPlaybackItem(item) {
@@ -252,6 +259,7 @@ function focusPlaybackItem(item) {
 
   selectedThumb.value = thumb;
   activeAudioId.value = item.audioId ?? null;
+  ensureSelectedThumbnailPanelOpen();
   highlightedThumbnailId.value = item.thumbnailId;
 
   nextTick(() => {
@@ -342,6 +350,7 @@ async function setActiveAudio(audio) {
   );
 
   if (idx >= 0) {
+    ensureSelectedThumbnailPanelOpen();
     await autoplay.playFromIndex(idx);
   } else {
     activeAudioId.value = audio?.id ?? null;
@@ -356,6 +365,7 @@ async function playAudioFromMarker(audio) {
   );
 
   if (idx >= 0) {
+    ensureSelectedThumbnailPanelOpen();
     await autoplay.playFromIndex(idx);
   }
 }

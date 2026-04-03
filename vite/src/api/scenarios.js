@@ -56,3 +56,10 @@ export function uploadThumbnailAudio(id, formData) {
         body: formData,
     });
 }
+
+export function updateAudioMarker(audioId, body) {
+    return apiFetch(`/api/audios/${audioId}/marker`, {
+        method: "PATCH",
+        body,
+    });
+}

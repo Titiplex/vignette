@@ -1,6 +1,6 @@
 <script setup>
 import {computed, ref, watch} from "vue";
-import {uploadThumbnailAudio} from "../api/scenarios";
+import {updateAudioMarker, uploadThumbnailAudio} from "../api/scenarios";
 import {buildApiUrl} from "../api/rest";
 import {useToast} from "../composables/useToast";
 import BaseBadge from "./ui/BaseBadge.vue";
@@ -31,6 +31,8 @@ const markerY = ref("");
 const markerLabel = ref("");
 const isRecording = ref(false);
 const focusedDiscussionAudioId = ref(null);
+const markerEditAudioId = ref(null);
+const markerEditorOpen = ref(false);
 
 const panelOpen = ref(false);
 
@@ -230,6 +232,71 @@ function openDiscussion(audio) {
   focusedDiscussionAudioId.value = audio?.id ?? null;
 }
 
+function beginMarkerEdit(audio) {
+  markerEditAudioId.value = audio.id;
+  markerX.value = audio?.markerX != null ? Number(audio.markerX).toFixed(2) : "";
+  markerY.value = audio?.markerY != null ? Number(audio.markerY).toFixed(2) : "";
+  markerLabel.value = audio?.markerLabel ?? "";
+  markerEditorOpen.value = true;
+}
+
+function cancelMarkerEdit() {
+  markerEditAudioId.value = null;
+  markerEditorOpen.value = false;
+  clearMarker();
+}
+
+async function saveMarkerEdit() {
+  resetFormMessages();
+
+  try {
+    if (!markerEditAudioId.value) {
+      throw new Error("No audio selected for marker editing.");
+    }
+
+    const payload =
+        markerX.value === "" || markerY.value === ""
+            ? {markerX: null, markerY: null, markerLabel: null}
+            : {
+              markerX: Number(markerX.value),
+              markerY: Number(markerY.value),
+              markerLabel: markerLabel.value || null,
+            };
+
+    await updateAudioMarker(markerEditAudioId.value, payload);
+
+    audioSuccess.value = "Marker updated successfully.";
+    toast.success(audioSuccess.value);
+    emit("uploaded");
+    cancelMarkerEdit();
+  } catch (e) {
+    audioErr.value = e.message || "Failed to update marker.";
+    toast.error(audioErr.value);
+  }
+}
+
+async function removeMarker(audio) {
+  resetFormMessages();
+
+  try {
+    await updateAudioMarker(audio.id, {
+      markerX: null,
+      markerY: null,
+      markerLabel: null,
+    });
+
+    audioSuccess.value = "Marker removed successfully.";
+    toast.success(audioSuccess.value);
+    emit("uploaded");
+    if (String(markerEditAudioId.value) === String(audio.id)) {
+      cancelMarkerEdit();
+    }
+  } catch (e) {
+    audioErr.value = e.message || "Failed to remove marker.";
+    toast.error(audioErr.value);
+  }
+}
+
 watch(
     () => props.selectedThumb,
     () => {
@@ -240,6 +307,8 @@ watch(
       recordedBlob = null;
       isRecording.value = false;
       focusedDiscussionAudioId.value = null;
+      markerEditAudioId.value = null;
+      markerEditorOpen.value = false;
     }
 );
 
@@ -371,6 +440,24 @@ watch(
                 >
                   Play
                 </button>
+
+                <button
+                    v-if="isOwner"
+                    type="button"
+                    class="btn btn--ghost"
+                    @click="beginMarkerEdit(audio)"
+                >
+                  Edit marker
+                </button>
+
+                <button
+                    v-if="isOwner && hasMarker(audio)"
+                    type="button"
+                    class="btn btn--ghost"
+                    @click="removeMarker(audio)"
+                >
+                  Remove marker
+                </button>
               </div>
             </div>
           </article>
@@ -395,7 +482,7 @@ watch(
       <template v-if="isOwner">
         <div class="audio-panel__grid">
           <section class="audio-panel__section">
-            <h3>1. Marker placement</h3>
+            <h3>{{ markerEditorOpen ? "Edit marker" : "1. Marker placement" }}</h3>
             <p class="muted">
               Click on the image to place the audio marker.
             </p>
@@ -429,9 +516,29 @@ watch(
               <input v-model="markerLabel" placeholder="Optional marker label"/>
             </label>
 
-            <button type="button" class="btn btn--ghost" @click="clearMarker">
-              Clear marker
-            </button>
+            <div class="audio-panel__actions">
+              <button type="button" class="btn btn--ghost" @click="clearMarker">
+                Clear marker draft
+              </button>
+
+              <button
+                  v-if="markerEditorOpen"
+                  type="button"
+                  class="btn btn--primary"
+                  @click="saveMarkerEdit"
+              >
+                Save marker changes
+              </button>
+
+              <button
+                  v-if="markerEditorOpen"
+                  type="button"
+                  class="btn btn--ghost"
+                  @click="cancelMarkerEdit"
+              >
+                Cancel edit
+              </button>
+            </div>
           </section>
 
           <section class="audio-panel__section">

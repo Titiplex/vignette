@@ -24,7 +24,6 @@ import org.titiplex.service.ScenarioService;
 import java.util.List;
 
 @RestController
-@RestControllerAdvice
 @RequestMapping("/api/languages")
 @Tag(name = "Language", description = "Endpoints for listing and retrieving language data.")
 public class LanguageApiController {

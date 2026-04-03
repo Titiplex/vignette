@@ -64,6 +64,7 @@ public class FileStorageService {
             throw new IllegalArgumentException("unsupported content type: " + contentType);
         }
 
+        Files.createDirectories(root);
         Path tmp = Files.createTempFile(root, "upload-", ".tmp");
 
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -139,6 +140,12 @@ public class FileStorageService {
         if (contentType == null || contentType.isBlank()) {
             return "application/octet-stream";
         }
-        return contentType.toLowerCase();
+
+        String normalized = contentType.toLowerCase().trim();
+        int semicolon = normalized.indexOf(';');
+        if (semicolon >= 0) {
+            normalized = normalized.substring(0, semicolon).trim();
+        }
+        return normalized;
     }
 }

@@ -4,6 +4,10 @@ export function fetchScenarios() {
     return apiFetch("/api/scenarios");
 }
 
+export function fetchMyScenarios() {
+    return apiFetch("/api/scenarios/mine");
+}
+
 export function fetchScenario(id) {
     return apiFetch(`/api/scenarios/${id}`);
 }
@@ -23,6 +27,13 @@ export function publishScenario(id) {
 
 export function updateScenarioStoryboard(id, body) {
     return apiFetch(`/api/scenarios/${id}/storyboard`, {
+        method: "PATCH",
+        body,
+    });
+}
+
+export function updateScenarioMetadata(id, body) {
+    return apiFetch(`/api/scenarios/${id}/metadata`, {
         method: "PATCH",
         body,
     });

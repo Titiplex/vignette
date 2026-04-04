@@ -19,6 +19,7 @@ const grantForm = ref({
   userId: "",
   permissionType: "LANGUAGE_EDIT",
   note: "",
+  targetId: "",
 });
 
 async function loadAll() {

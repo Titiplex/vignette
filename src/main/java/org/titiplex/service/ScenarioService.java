@@ -220,4 +220,25 @@ public class ScenarioService {
                 s.getStoryboardColumns()
         );
     }
+
+    public Scenario adminUpdateVisibility(Long id, String visibilityStatus) {
+        Scenario scenario = getRequiredScenario(id);
+
+        if (visibilityStatus == null || visibilityStatus.isBlank()) {
+            throw new IllegalArgumentException("Visibility status is required");
+        }
+
+        ScenarioVisibilityStatus next = ScenarioVisibilityStatus.valueOf(visibilityStatus.trim().toUpperCase());
+        scenario.setVisibilityStatus(next);
+
+        if (next == ScenarioVisibilityStatus.PUBLISHED && scenario.getPublishedAt() == null) {
+            scenario.setPublishedAt(Instant.now());
+        }
+
+        if (next != ScenarioVisibilityStatus.PUBLISHED) {
+            scenario.setPublishedAt(null);
+        }
+
+        return repo.save(scenario);
+    }
 }

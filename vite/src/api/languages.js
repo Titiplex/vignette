@@ -1,6 +1,19 @@
 import {apiFetch} from "./rest";
 
-export function fetchLanguages(params) {
+function normalizeListParams(input, page = 0, size = 50) {
+    if (input instanceof URLSearchParams) {
+        return input;
+    }
+
+    const params = new URLSearchParams();
+    params.set("q", input ?? "");
+    params.set("page", String(page));
+    params.set("size", String(size));
+    return params;
+}
+
+export function fetchLanguages(input = "", page = 0, size = 50) {
+    const params = normalizeListParams(input, page, size);
     return apiFetch(`/api/languages?${params.toString()}`);
 }
 

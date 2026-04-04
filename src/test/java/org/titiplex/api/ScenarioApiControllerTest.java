@@ -8,10 +8,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.titiplex.api.dto.CreateScenarioRequest;
-import org.titiplex.api.dto.CreateScenarioResponse;
-import org.titiplex.api.dto.ScenarioDto;
-import org.titiplex.api.dto.UpdateScenarioStoryboardRequest;
+import org.titiplex.api.dto.*;
 import org.titiplex.persistence.model.Scenario;
 import org.titiplex.persistence.model.User;
 import org.titiplex.service.LanguageService;
@@ -26,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@SuppressWarnings("SameParameterValue")
+@SuppressWarnings({"SameParameterValue", "SequencedCollectionMethodCanBeUsed"})
 @ExtendWith(MockitoExtension.class)
 class ScenarioApiControllerTest {
 
@@ -196,5 +193,53 @@ class ScenarioApiControllerTest {
                         .map(SimpleGrantedAuthority::new)
                         .toList()
         );
+    }
+
+    @Test
+    void listMine_returnsCurrentUserScenarios() {
+        Authentication auth = new UsernamePasswordAuthenticationToken(
+                "alice",
+                "password",
+                List.of(new SimpleGrantedAuthority("ROLE_USER"))
+        );
+
+        Scenario scenario = new Scenario();
+        scenario.setId(1L);
+        scenario.setTitle("Mine");
+
+        when(scenarioService.listMyScenarios(auth)).thenReturn(List.of(scenario));
+        when(scenarioService.toDto(scenario)).thenReturn(new ScenarioDto(
+                1L, "Mine", null, "fra", "alice", null, "DRAFT", null, "PRESET", "GRID_3", 3
+        ));
+
+        List<ScenarioDto> result = controller.listMine(auth);
+
+        assertEquals(1, result.size());
+        assertEquals("Mine", result.get(0).title());
+    }
+
+    @Test
+    void updateMetadata_returnsUpdatedScenario() {
+        Authentication auth = new UsernamePasswordAuthenticationToken(
+                "alice",
+                "password",
+                List.of(new SimpleGrantedAuthority("ROLE_USER"))
+        );
+
+        UpdateScenarioMetadataRequest req = new UpdateScenarioMetadataRequest("New title", "New description");
+
+        Scenario updated = new Scenario();
+        updated.setId(5L);
+        updated.setTitle("New title");
+
+        when(scenarioService.updateScenarioMetadata(5L, req, auth)).thenReturn(updated);
+        when(scenarioService.toDto(updated)).thenReturn(new ScenarioDto(
+                5L, "New title", "New description", "fra", "alice", null, "DRAFT", null, "PRESET", "GRID_3", 3
+        ));
+
+        ScenarioDto result = controller.updateMetadata(5L, req, auth);
+
+        assertEquals(5L, result.id());
+        assertEquals("New title", result.title());
     }
 }

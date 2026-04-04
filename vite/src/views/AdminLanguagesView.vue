@@ -24,7 +24,12 @@ async function searchLanguages() {
   error.value = "";
 
   try {
-    const page = await fetchLanguages(query.value || "", 0, 25);
+    const params = new URLSearchParams({
+      q: query.value || "",
+      page: "0",
+      size: "25",
+    });
+    const page = await fetchLanguages(params);
     results.value = page.content ?? [];
   } catch (e) {
     error.value = e.message || "Failed to search languages.";

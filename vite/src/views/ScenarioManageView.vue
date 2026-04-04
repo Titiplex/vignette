@@ -6,6 +6,7 @@ import {
   fetchScenarioThumbnails,
   fetchThumbnailAudios,
   publishScenario,
+  updateScenarioMetadata,
   updateScenarioStoryboard,
 } from "../api/scenarios";
 import {
@@ -38,6 +39,13 @@ const isOwner = computed(() =>
 
 const canManage = computed(() => isOwner.value || isAdmin.value);
 
+const metadataForm = ref({
+  title: "",
+  description: "",
+});
+
+const savingMetadata = ref(false);
+
 const storyboardForm = ref({
   layoutMode: "PRESET",
   preset: "GRID_3",
@@ -65,6 +73,11 @@ const totalAudioCount = computed(() =>
 async function loadScenarioData() {
   scenario.value = await fetchScenario(props.id);
 
+  metadataForm.value = {
+    title: scenario.value.title ?? "",
+    description: scenario.value.description ?? "",
+  };
+
   storyboardForm.value = {
     layoutMode: scenario.value.storyboardLayoutMode ?? "PRESET",
     preset: scenario.value.storyboardPreset ?? "GRID_3",
@@ -84,6 +97,26 @@ async function loadScenarioData() {
       })
   );
   audioMap.value = map;
+}
+
+async function saveMetadata() {
+  if (!canManage.value) return;
+
+  savingMetadata.value = true;
+  error.value = "";
+  success.value = "";
+
+  try {
+    scenario.value = await updateScenarioMetadata(props.id, {
+      title: metadataForm.value.title,
+      description: metadataForm.value.description,
+    });
+    success.value = "Scenario metadata saved.";
+  } catch (e) {
+    error.value = e.message || "Failed to save scenario metadata.";
+  } finally {
+    savingMetadata.value = false;
+  }
 }
 
 async function loadGovernance() {
@@ -262,6 +295,28 @@ onMounted(loadAll);
                   <h3>Audios</h3>
                   <p>{{ totalAudioCount }}</p>
                 </div>
+              </div>
+            </section>
+
+            <section v-if="canManage" class="card">
+              <h2>Scenario metadata</h2>
+
+              <div class="form-grid">
+                <label>
+                  Title
+                  <input v-model="metadataForm.title"/>
+                </label>
+
+                <label class="field--full">
+                  Description
+                  <textarea v-model="metadataForm.description" rows="4"/>
+                </label>
+              </div>
+
+              <div class="toolbar">
+                <button class="btn btn--primary" :disabled="savingMetadata" @click="saveMetadata">
+                  {{ savingMetadata ? "Saving..." : "Save metadata" }}
+                </button>
               </div>
             </section>
 

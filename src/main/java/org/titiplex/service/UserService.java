@@ -93,4 +93,20 @@ public class UserService {
     public boolean existsByEmail(String email) {
         return users.existsByEmail(email);
     }
+
+    public User updateRoles(Long userId, Set<String> roleNames) {
+        User user = users.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        if (roleNames == null || roleNames.isEmpty()) {
+            throw new IllegalArgumentException("At least one role is required");
+        }
+
+        Set<Role> resolvedRoles = roleNames.stream()
+                .map(roles::getRequiredRoleByName)
+                .collect(Collectors.toSet());
+
+        user.setRoles(resolvedRoles);
+        return users.save(user);
+    }
 }

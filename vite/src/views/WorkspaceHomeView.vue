@@ -1,10 +1,10 @@
 <script setup>
 import {computed, onMounted, ref} from "vue";
 import {RouterLink} from "vue-router";
-import {fetchScenarios} from "../api/scenarios";
+import {fetchMyScenarios} from "../api/scenarios";
 import {useAuth} from "../composables/useAuth";
 
-const {currentUser, loadMe, isAdmin} = useAuth();
+const {loadMe, isAdmin} = useAuth();
 
 const loading = ref(false);
 const error = ref("");
@@ -24,12 +24,7 @@ async function loadWorkspace() {
 
   try {
     await loadMe();
-    const scenarios = await fetchScenarios();
-    const username = currentUser.value?.username ?? null;
-
-    myScenarios.value = username
-        ? scenarios.filter((scenario) => scenario.authorUsername === username)
-        : [];
+    myScenarios.value = await fetchMyScenarios();
   } catch (e) {
     error.value = e.message || "Failed to load workspace.";
   } finally {

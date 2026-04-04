@@ -9,9 +9,16 @@ import ScenariosView from "../views/ScenariosView.vue";
 import ScenarioDetailView from "../views/ScenarioDetailView.vue";
 import CreateScenarioView from "../views/CreateScenarioView.vue";
 import UserView from "../views/UserView.vue";
+import WorkspaceHomeView from "../views/WorkspaceHomeView.vue";
+import ScenarioManageView from "../views/ScenarioManageView.vue";
+import AdminDashboardView from "../views/AdminDashboardView.vue";
+import AdminCommunityView from "../views/AdminCommunityView.vue";
+import AdminLanguagesView from "../views/AdminLanguagesView.vue";
 
 import {useAuth} from "../composables/useAuth";
 import AboutProjectView from "../views/AboutProjectView.vue";
+import AdminScenariosView from "@/views/AdminScenariosView.vue";
+import AdminUsersView from "@/views/AdminUsersView.vue";
 
 const routes = [
     {
@@ -164,6 +171,28 @@ const routes = [
             description: "Language-level editing and moderation tools.",
         },
     },
+    {
+        path: "/admin/users",
+        name: "admin-users",
+        component: AdminUsersView,
+        meta: {
+            requiresAuth: true,
+            requiresAdmin: true,
+            title: "User administration",
+            description: "Manage users and roles.",
+        },
+    },
+    {
+        path: "/admin/scenarios",
+        name: "admin-scenarios",
+        component: AdminScenariosView,
+        meta: {
+            requiresAuth: true,
+            requiresAdmin: true,
+            title: "Scenario administration",
+            description: "Manage scenario visibility and moderation.",
+        },
+    },
 ];
 
 const router = createRouter({
@@ -183,7 +212,7 @@ router.beforeEach(async (to) => {
     }
 
     if (to.meta.requiresAdmin && !hasRole("ROLE_ADMIN")) {
-        return { path: "/" };
+        return {path: "/"};
     }
 
     if (to.meta.guestOnly && isAuthenticated.value) {

@@ -9,13 +9,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.titiplex.api.dto.AdminOverviewDto;
-import org.titiplex.api.dto.AdminUserRowDto;
-import org.titiplex.api.dto.ApiError;
-import org.titiplex.api.dto.ScenarioDto;
+import org.springframework.web.bind.annotation.*;
+import org.titiplex.api.dto.*;
 import org.titiplex.persistence.model.Role;
 import org.titiplex.service.ScenarioService;
 import org.titiplex.service.UserService;
@@ -130,6 +125,78 @@ public class AdminApiController {
         return scenarios.listAllScenarios().stream()
                 .map(scenarios::toDto)
                 .toList();
+    }
+
+    @Operation(
+            summary = "Update user roles",
+            description = "Replaces the roles of a given user. Admin only."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "User roles updated successfully",
+                    content = @Content(schema = @Schema(implementation = AdminUserRowDto.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid request",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Admin privileges required",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            )
+    })
+    @PatchMapping("/users/{id}/roles")
+    public AdminUserRowDto updateUserRoles(
+            @PathVariable Long id,
+            @RequestBody UpdateUserRolesRequest req,
+            Authentication auth
+    ) {
+        assertAdmin(auth);
+
+        var user = users.updateRoles(id, req.roles());
+
+        return new AdminUserRowDto(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getDisplayName(),
+                user.getRoles().stream().map(Role::getName).collect(Collectors.toSet()),
+                user.isProfilePublic()
+        );
+    }
+
+    @Operation(
+            summary = "Update scenario visibility",
+            description = "Updates scenario visibility for administration purposes. Admin only."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Scenario visibility updated successfully",
+                    content = @Content(schema = @Schema(implementation = ScenarioDto.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid request",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Admin privileges required",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            )
+    })
+    @PatchMapping("/scenarios/{id}/visibility")
+    public ScenarioDto updateScenarioVisibility(
+            @PathVariable Long id,
+            @RequestBody UpdateScenarioVisibilityRequest req,
+            Authentication auth
+    ) {
+        assertAdmin(auth);
+        return scenarios.toDto(scenarios.adminUpdateVisibility(id, req.visibilityStatus()));
     }
 
     private void assertAdmin(Authentication auth) {

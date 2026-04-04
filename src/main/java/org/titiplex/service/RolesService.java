@@ -39,4 +39,9 @@ public class RolesService {
         r.setName(name);
         return r;
     }
+
+    public Role getRequiredRoleByName(String roleName) {
+        return roleRepository.findByName(roleName)
+                .orElseThrow(() -> new IllegalArgumentException("Unknown role: " + roleName));
+    }
 }

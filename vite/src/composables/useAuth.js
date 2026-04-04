@@ -9,6 +9,12 @@ let loadPromise = null;
 
 export function useAuth() {
     const isAuthenticated = computed(() => !!currentUser.value);
+    const roles = computed(() => currentUser.value?.roles ?? []);
+    const isAdmin = computed(() => roles.value.includes("ROLE_ADMIN"));
+
+    function hasRole(role) {
+        return roles.value.includes(role);
+    }
 
     async function loadMe(force = false) {
         if (loadPromise) return loadPromise;
@@ -51,6 +57,9 @@ export function useAuth() {
         authLoaded,
         authLoading,
         isAuthenticated,
+        roles,
+        isAdmin,
+        hasRole,
         loadMe,
         login,
         logout,

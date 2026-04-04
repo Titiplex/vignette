@@ -110,6 +110,60 @@ const routes = [
             description: "Manage your user profile, affiliations and personal work.",
         },
     },
+    {
+        path: "/workspace",
+        name: "workspace",
+        component: WorkspaceHomeView,
+        meta: {
+            requiresAuth: true,
+            title: "Workspace",
+            description: "Private workspace for scenario and contribution management.",
+        },
+    },
+    {
+        path: "/scenarios/:id/manage",
+        name: "scenario-manage",
+        component: ScenarioManageView,
+        props: true,
+        meta: {
+            requiresAuth: true,
+            title: "Manage scenario",
+            description: "Private management interface for scenario settings and community governance.",
+        },
+    },
+    {
+        path: "/admin",
+        name: "admin",
+        component: AdminDashboardView,
+        meta: {
+            requiresAuth: true,
+            requiresAdmin: true,
+            title: "Admin dashboard",
+            description: "Global administration and moderation workspace.",
+        },
+    },
+    {
+        path: "/admin/community",
+        name: "admin-community",
+        component: AdminCommunityView,
+        meta: {
+            requiresAuth: true,
+            requiresAdmin: true,
+            title: "Community administration",
+            description: "Global accreditation moderation and grants.",
+        },
+    },
+    {
+        path: "/admin/languages",
+        name: "admin-languages",
+        component: AdminLanguagesView,
+        meta: {
+            requiresAuth: true,
+            requiresAdmin: true,
+            title: "Language administration",
+            description: "Language-level editing and moderation tools.",
+        },
+    },
 ];
 
 const router = createRouter({
@@ -118,7 +172,7 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to) => {
-    const {isAuthenticated, authLoaded, loadMe} = useAuth();
+    const {isAuthenticated, authLoaded, loadMe, hasRole} = useAuth();
 
     if (!authLoaded.value) {
         await loadMe();
@@ -126,6 +180,10 @@ router.beforeEach(async (to) => {
 
     if (to.meta.requiresAuth && !isAuthenticated.value) {
         return {path: "/login", query: {redirect: to.fullPath}};
+    }
+
+    if (to.meta.requiresAdmin && !hasRole("ROLE_ADMIN")) {
+        return { path: "/" };
     }
 
     if (to.meta.guestOnly && isAuthenticated.value) {

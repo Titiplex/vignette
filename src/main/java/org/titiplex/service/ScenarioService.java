@@ -5,6 +5,7 @@ import org.springframework.security.authentication.InsufficientAuthenticationExc
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.titiplex.api.dto.ScenarioDto;
+import org.titiplex.api.dto.UpdateScenarioMetadataRequest;
 import org.titiplex.api.dto.UpdateScenarioStoryboardRequest;
 import org.titiplex.persistence.model.Scenario;
 import org.titiplex.persistence.model.ScenarioVisibilityStatus;
@@ -74,8 +75,28 @@ public class ScenarioService {
         return repo.findVisibleToUsername(username);
     }
 
+    public List<Scenario> listMyScenarios(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new InsufficientAuthenticationException("Authentication required");
+        }
+
+        return repo.findAllByAuthorUsernameOrderByCreatedAtDesc(authentication.getName());
+    }
+
     public List<Scenario> listAllScenarios() {
         return repo.findAllByOrderByCreatedAtDesc();
+    }
+
+    public long countAllScenarios() {
+        return repo.count();
+    }
+
+    public long countPublishedScenarios() {
+        return repo.countByVisibilityStatus(ScenarioVisibilityStatus.PUBLISHED);
+    }
+
+    public long countDraftScenarios() {
+        return repo.countByVisibilityStatus(ScenarioVisibilityStatus.DRAFT);
     }
 
     public Scenario publishScenario(Long id, Authentication authentication) {
@@ -108,6 +129,25 @@ public class ScenarioService {
                 throw new IllegalArgumentException("Storyboard columns must be between 1 and 8");
             }
             scenario.setStoryboardColumns(columns);
+        }
+
+        return repo.save(scenario);
+    }
+
+    public Scenario updateScenarioMetadata(Long id, UpdateScenarioMetadataRequest request, Authentication authentication) {
+        Scenario scenario = getRequiredScenario(id);
+        assertCanEditScenario(scenario, authentication);
+
+        if (request.title() != null) {
+            String title = request.title().trim();
+            if (title.isBlank()) {
+                throw new IllegalArgumentException("Title is required");
+            }
+            scenario.setTitle(title);
+        }
+
+        if (request.description() != null) {
+            scenario.setDescription(request.description().trim());
         }
 
         return repo.save(scenario);

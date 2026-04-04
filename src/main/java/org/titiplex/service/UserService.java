@@ -7,6 +7,7 @@ import org.titiplex.persistence.model.Role;
 import org.titiplex.persistence.model.User;
 import org.titiplex.persistence.repo.UserRepository;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -51,6 +52,14 @@ public class UserService {
 
     public User getExistingUserById(Long id) {
         return users.findById(id).orElse(null);
+    }
+
+    public List<User> listAllUsers() {
+        return users.findAllByOrderByUsernameAsc();
+    }
+
+    public long countUsers() {
+        return users.count();
     }
 
     public User updateProfile(User user,

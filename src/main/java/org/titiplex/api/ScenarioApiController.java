@@ -333,6 +333,87 @@ public class ScenarioApiController {
         return scenarioService.toDto(scenarioService.publishScenario(id, auth));
     }
 
+    @Operation(
+            summary = "List my scenarios",
+            description = "Returns all scenarios authored by the current authenticated user, including drafts."
+    )
+    @UserOperation
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "User scenarios retrieved successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            array = @ArraySchema(schema = @Schema(implementation = ScenarioDto.class))
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Authentication required",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            )
+    })
+    @GetMapping("/mine")
+    public List<ScenarioDto> listMine(
+            @Parameter(hidden = true)
+            Authentication auth
+    ) {
+        return scenarioService.listMyScenarios(auth).stream()
+                .map(scenarioService::toDto)
+                .toList();
+    }
+
+    @Operation(
+            summary = "Update scenario metadata",
+            description = """
+                    Updates editable scenario metadata such as title and description.
+                    
+                    Requires scenario ownership or admin privileges.
+                    """
+    )
+    @OwnerOrAdminOperation(
+            resource = ProtectedResource.SCENARIO
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Scenario metadata updated successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ScenarioDto.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid metadata payload",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Authentication required",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "User is not allowed to edit this scenario",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Scenario not found",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            )
+    })
+    @PatchMapping("/{id}/metadata")
+    public ScenarioDto updateMetadata(
+            @PathVariable Long id,
+            @RequestBody UpdateScenarioMetadataRequest req,
+            @Parameter(hidden = true)
+            Authentication auth
+    ) {
+        return scenarioService.toDto(scenarioService.updateScenarioMetadata(id, req, auth));
+    }
+
     /**
      * Deletes a scenario based on the provided ID. The operation is authorized
      * for users with the 'ADMIN' role or for the owner of the specified scenario.

@@ -5,7 +5,7 @@ import {useAuth} from "../composables/useAuth";
 
 const route = useRoute();
 const router = useRouter();
-const {currentUser, isAuthenticated, loadMe, logout} = useAuth();
+const {currentUser, isAuthenticated, isAdmin, loadMe, logout} = useAuth();
 
 const mobileMenuOpen = ref(false);
 
@@ -20,12 +20,24 @@ watch(
     }
 );
 
-const navItems = computed(() => [
-  {to: "/", label: "Home"},
-  {to: "/languages", label: "Languages"},
-  {to: "/scenarios", label: "Scenarios"},
-  {to: "/about", label: "About"},
-]);
+const navItems = computed(() => {
+  const base = [
+    {to: "/", label: "Home"},
+    {to: "/languages", label: "Languages"},
+    {to: "/scenarios", label: "Scenarios"},
+    {to: "/about", label: "About"},
+  ];
+
+  if (isAuthenticated.value) {
+    base.splice(3, 0, {to: "/workspace", label: "Workspace"});
+  }
+
+  if (isAdmin.value) {
+    base.splice(4, 0, {to: "/admin", label: "Admin"});
+  }
+
+  return base;
+});
 
 function isActive(path) {
   if (path === "/") return route.path === "/";

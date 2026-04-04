@@ -19,6 +19,10 @@ public interface ScenarioRepository extends JpaRepository<Scenario, Long> {
 
     List<Scenario> findAllByVisibilityStatusOrderByCreatedAtDesc(ScenarioVisibilityStatus visibilityStatus);
 
+    List<Scenario> findAllByAuthorUsernameOrderByCreatedAtDesc(String username);
+
+    long countByVisibilityStatus(ScenarioVisibilityStatus visibilityStatus);
+
     @Query("""
             select s
             from Scenario s

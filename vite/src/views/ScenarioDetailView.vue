@@ -21,6 +21,17 @@ import BaseLoader from "../components/ui/BaseLoader.vue";
 import BaseAlert from "../components/ui/BaseAlert.vue";
 import BaseEmptyState from "../components/ui/BaseEmptyState.vue";
 import BaseBadge from "../components/ui/BaseBadge.vue";
+import {
+  buildPlaybackQueue,
+  buildSelectedAudios,
+  buildStoryboardItems,
+  clamp,
+  normalizeMarkers,
+  nullableInt,
+  safeNumber,
+  sortByIdxThenId,
+  storyboardItemStyle,
+} from "@/utils/scenarioStoryboard.js";
 
 const props = defineProps({
   id: {type: String, required: true},
@@ -94,87 +105,20 @@ const selectedLayoutForm = ref({
   gridRowSpan: 1,
 });
 
-function safeNumber(value, fallback = 0) {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : fallback;
-}
-
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, value));
-}
-
-function nullableInt(value) {
-  if (value === "" || value === null || value === undefined) return null;
-  const n = Number(value);
-  return Number.isFinite(n) ? Math.trunc(n) : null;
-}
-
-function normalizeMarkers(audios) {
-  return (audios || [])
-      .filter((audio) =>
-          audio?.markerX !== null &&
-          audio?.markerX !== undefined &&
-          audio?.markerY !== null &&
-          audio?.markerY !== undefined &&
-          audio?.markerX !== "" &&
-          audio?.markerY !== ""
-      )
-      .map((audio) => {
-        const x = Number(audio.markerX);
-        const y = Number(audio.markerY);
-        return {
-          ...audio,
-          _x: Number.isFinite(x) ? clamp(x, 0, 100) : null,
-          _y: Number.isFinite(y) ? clamp(y, 0, 100) : null,
-        };
-      })
-      .filter((audio) => audio._x !== null && audio._y !== null);
-}
-
-const sortedThumbnails = computed(() => {
-  return [...thumbnails.value].sort((a, b) => {
-    const aIdx = safeNumber(a?.idx, Number.MAX_SAFE_INTEGER);
-    const bIdx = safeNumber(b?.idx, Number.MAX_SAFE_INTEGER);
-    if (aIdx !== bIdx) return aIdx - bIdx;
-    return safeNumber(a?.id, 0) - safeNumber(b?.id, 0);
-  });
-});
+const sortedThumbnails = computed(() => sortByIdxThenId(thumbnails.value));
 
 const selectedAudios = computed(() => {
-  if (!selectedThumb.value) return [];
-
-  return [...(audioMap.value[selectedThumb.value.id] || [])].sort((a, b) => {
-    const aIdx = safeNumber(a?.idx, Number.MAX_SAFE_INTEGER);
-    const bIdx = safeNumber(b?.idx, Number.MAX_SAFE_INTEGER);
-    if (aIdx !== bIdx) return aIdx - bIdx;
-    return safeNumber(a?.id, 0) - safeNumber(b?.id, 0);
-  });
+  return buildSelectedAudios(audioMap.value, selectedThumb.value);
 });
 
 const selectedAudioMarkers = computed(() => normalizeMarkers(selectedAudios.value));
 
 const playbackQueue = computed(() => {
-  return sortedThumbnails.value.flatMap((thumb) => {
-    const audios = [...(audioMap.value[thumb.id] || [])].sort((a, b) => {
-      const aIdx = safeNumber(a?.idx, Number.MAX_SAFE_INTEGER);
-      const bIdx = safeNumber(b?.idx, Number.MAX_SAFE_INTEGER);
-      if (aIdx !== bIdx) return aIdx - bIdx;
-      return safeNumber(a?.id, 0) - safeNumber(b?.id, 0);
-    });
-
-    return audios.map((audio) => ({
-      thumbnailId: thumb.id,
-      thumbnailIdx: thumb.idx ?? null,
-      thumbnailTitle: thumb.title ?? "",
-      audioId: audio.id,
-      audioIdx: audio.idx ?? null,
-      audioTitle: audio.title ?? "",
-      audioUrl: buildApiUrl(`/api/audios/${audio.id}/content`),
-      markerX: audio.markerX,
-      markerY: audio.markerY,
-      markerLabel: audio.markerLabel,
-    }));
-  });
+  return buildPlaybackQueue(
+      sortedThumbnails.value,
+      audioMap.value,
+      (audio) => buildApiUrl(`/api/audios/${audio.id}/content`)
+  );
 });
 
 const isPublished = computed(() => scenario.value?.visibilityStatus === "PUBLISHED");
@@ -531,84 +475,13 @@ async function refreshAudios() {
   await loadThumbs();
 }
 
-function defaultTileLayout(thumb, index) {
-  const columns = storyboardColumns.value;
-  const width = safeNumber(thumb?.imageWidth, 0);
-  const height = safeNumber(thumb?.imageHeight, 0);
-
-  const portrait = height > width * 1.15;
-  const landscape = width > height * 1.2;
-
-  if (index === 0) {
-    return {
-      columnStart: null,
-      columnSpan: Math.min(columns, 2),
-      rowStart: null,
-      rowSpan: landscape ? 2 : 1,
-    };
-  }
-
-  if (portrait) {
-    return {
-      columnStart: null,
-      columnSpan: 1,
-      rowStart: null,
-      rowSpan: 2,
-    };
-  }
-
-  if (landscape) {
-    return {
-      columnStart: null,
-      columnSpan: Math.min(columns, 2),
-      rowStart: null,
-      rowSpan: 1,
-    };
-  }
-
-  return {
-    columnStart: null,
-    columnSpan: 1,
-    rowStart: null,
-    rowSpan: 1,
-  };
-}
-
 const storyboardItems = computed(() => {
-  const layoutMode = (scenario.value?.storyboardLayoutMode ?? "PRESET").toUpperCase();
-
-  return sortedThumbnails.value.map((thumb, index) => {
-    if (layoutMode === "CUSTOM") {
-      return {
-        ...thumb,
-        _layout: {
-          columnStart: thumb.gridColumn ?? null,
-          columnSpan: thumb.gridColumnSpan ?? 1,
-          rowStart: thumb.gridRow ?? null,
-          rowSpan: thumb.gridRowSpan ?? 1,
-        },
-      };
-    }
-
-    return {
-      ...thumb,
-      _layout: defaultTileLayout(thumb, index),
-    };
+  return buildStoryboardItems({
+    thumbnails: sortedThumbnails.value,
+    layoutMode: scenario.value?.storyboardLayoutMode ?? "PRESET",
+    columns: storyboardColumns.value,
   });
 });
-
-function storyboardItemStyle(item) {
-  const layout = item?._layout ?? {columnStart: null, columnSpan: 1, rowStart: null, rowSpan: 1};
-
-  return {
-    gridColumn: layout.columnStart
-        ? `${layout.columnStart} / span ${layout.columnSpan}`
-        : `span ${layout.columnSpan}`,
-    ...(layout.rowStart
-        ? {gridRow: `${layout.rowStart} / span ${layout.rowSpan}`}
-        : (layout.rowSpan > 1 ? {gridRow: `span ${layout.rowSpan}`} : {})),
-  };
-}
 
 onMounted(loadAll);
 </script>

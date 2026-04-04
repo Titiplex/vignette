@@ -1,11 +1,5 @@
 import {computed, nextTick, ref} from "vue";
-
-function viewStub(name) {
-    return {
-        name,
-        template: `<div>${name}</div>`,
-    };
-}
+import {simpleComponentStub} from "../../helpers/stubs";
 
 async function loadRouterWithAuthState(
     {
@@ -28,18 +22,18 @@ async function loadRouterWithAuthState(
     state.login = vi.fn();
     state.logout = vi.fn();
 
-    vi.doMock("../views/HomeView.vue", () => ({default: viewStub("HomeView")}));
-    vi.doMock("../views/LanguagesView.vue", () => ({default: viewStub("LanguagesView")}));
-    vi.doMock("../views/LanguageDetailView.vue", () => ({default: viewStub("LanguageDetailView")}));
-    vi.doMock("../views/LoginView.vue", () => ({default: viewStub("LoginView")}));
-    vi.doMock("../views/RegisterView.vue", () => ({default: viewStub("RegisterView")}));
-    vi.doMock("../views/ScenariosView.vue", () => ({default: viewStub("ScenariosView")}));
-    vi.doMock("../views/ScenarioDetailView.vue", () => ({default: viewStub("ScenarioDetailView")}));
-    vi.doMock("../views/CreateScenarioView.vue", () => ({default: viewStub("CreateScenarioView")}));
-    vi.doMock("../views/UserView.vue", () => ({default: viewStub("UserView")}));
-    vi.doMock("../views/AboutProjectView.vue", () => ({default: viewStub("AboutProjectView")}));
+    vi.doMock("@/views/HomeView.vue", () => ({default: simpleComponentStub("HomeView")}));
+    vi.doMock("@/views/LanguagesView.vue", () => ({default: simpleComponentStub("LanguagesView")}));
+    vi.doMock("@/views/LanguageDetailView.vue", () => ({default: simpleComponentStub("LanguageDetailView")}));
+    vi.doMock("@/views/LoginView.vue", () => ({default: simpleComponentStub("LoginView")}));
+    vi.doMock("@/views/RegisterView.vue", () => ({default: simpleComponentStub("RegisterView")}));
+    vi.doMock("@/views/ScenariosView.vue", () => ({default: simpleComponentStub("ScenariosView")}));
+    vi.doMock("@/views/ScenarioDetailView.vue", () => ({default: simpleComponentStub("ScenarioDetailView")}));
+    vi.doMock("@/views/CreateScenarioView.vue", () => ({default: simpleComponentStub("CreateScenarioView")}));
+    vi.doMock("@/views/UserView.vue", () => ({default: simpleComponentStub("UserView")}));
+    vi.doMock("@/views/AboutProjectView.vue", () => ({default: simpleComponentStub("AboutProjectView")}));
 
-    vi.doMock("../composables/useAuth", () => ({
+    vi.doMock("@/composables/useAuth", () => ({
         useAuth: () => state,
     }));
 

@@ -1,21 +1,5 @@
 import {apiFetch, buildApiUrl, getAccessToken, setAccessToken,} from "@/api/rest";
-
-function jsonResponse(body, status = 200, headers = {}) {
-    return new Response(JSON.stringify(body), {
-        status,
-        headers: {
-            "Content-Type": "application/json",
-            ...headers,
-        },
-    });
-}
-
-function textResponse(body, status = 200, headers = {}) {
-    return new Response(body, {
-        status,
-        headers,
-    });
-}
+import {jsonResponse, textResponse} from "../../helpers/response.js";
 
 describe("rest.js", () => {
     beforeEach(() => {

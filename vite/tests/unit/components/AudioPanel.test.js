@@ -1,6 +1,7 @@
 import {mount} from "@vue/test-utils";
 import {nextTick} from "vue";
 import AudioPanel from "@/components/AudioPanel.vue";
+import {mockElementRect} from "../../helpers/dom.js";
 
 const uploadThumbnailAudio = vi.fn();
 const updateAudioMarker = vi.fn();
@@ -109,13 +110,11 @@ describe("AudioPanel", () => {
         await wrapper.find(".collapsible-card__header").trigger("click");
 
         const image = wrapper.find(".marker-image");
-        image.element.getBoundingClientRect = () => ({
+        mockElementRect(image.element, {
             left: 0,
             top: 0,
             width: 200,
             height: 100,
-            right: 200,
-            bottom: 100,
         });
 
         await image.trigger("click", {

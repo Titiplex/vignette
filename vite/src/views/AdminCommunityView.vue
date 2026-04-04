@@ -1,5 +1,5 @@
 <script setup>
-import {onMounted, ref} from "vue";
+import {computed, onMounted, ref} from "vue";
 import {
   fetchAccreditationRequests,
   fetchAccreditations,
@@ -11,16 +11,32 @@ const loading = ref(false);
 const error = ref("");
 const success = ref("");
 
-const permissionType = ref("LANGUAGE_EDIT");
+const permissionType = ref("COMMUNITY_REVIEW");
 const requests = ref([]);
 const accreditations = ref([]);
 
+const availablePermissions = [
+  "COMMUNITY_REVIEW",
+  "LANGUAGE_EDIT",
+  "SCENARIO_EDIT",
+  "SCENARIO_MODERATE",
+];
+
 const grantForm = ref({
   userId: "",
-  permissionType: "LANGUAGE_EDIT",
+  permissionType: "COMMUNITY_REVIEW",
   note: "",
-  targetId: "",
 });
+
+const pendingCount = computed(() =>
+    requests.value.filter((req) => req.status === "PENDING").length
+);
+
+function statusTone(status) {
+  if (status === "APPROVED") return "badge--success";
+  if (status === "REJECTED") return "badge--danger";
+  return "badge--info";
+}
 
 async function loadAll() {
   loading.value = true;
@@ -94,19 +110,20 @@ onMounted(loadAll);
         <div>
           <h1>Admin community</h1>
           <p class="muted">
-            Global accreditation moderation and direct grants.
+            Global moderation for accreditation requests and direct grants.
           </p>
         </div>
 
-        <label>
-          Permission filter
-          <select v-model="permissionType" @change="loadAll">
-            <option value="COMMUNITY_REVIEW">COMMUNITY_REVIEW</option>
-            <option value="LANGUAGE_EDIT">LANGUAGE_EDIT</option>
-            <option value="SCENARIO_EDIT">SCENARIO_EDIT</option>
-            <option value="SCENARIO_MODERATE">SCENARIO_MODERATE</option>
-          </select>
-        </label>
+        <div class="toolbar admin-toolbar">
+          <label class="field-group field-group--compact">
+            <span class="field-group__label">Permission filter</span>
+            <select v-model="permissionType" @change="loadAll">
+              <option v-for="permission in availablePermissions" :key="permission" :value="permission">
+                {{ permission }}
+              </option>
+            </select>
+          </label>
+        </div>
       </div>
 
       <p v-if="error" class="error">{{ error }}</p>
@@ -118,46 +135,112 @@ onMounted(loadAll);
       </div>
 
       <template v-else>
-        <div class="admin-grid">
+        <div class="card-grid admin-community-stats">
           <section class="card">
-            <h2>Accreditation requests</h2>
+            <h2>Filtered requests</h2>
+            <p class="text">{{ requests.length }}</p>
+          </section>
 
-            <div v-if="requests.length" class="stack-list">
-              <article v-for="req in requests" :key="req.id" class="card card--nested">
-                <p><strong>#{{ req.id }}</strong> · {{ req.requesterUsername }}</p>
+          <section class="card">
+            <h2>Pending</h2>
+            <p class="text">{{ pendingCount }}</p>
+          </section>
+
+          <section class="card">
+            <h2>Granted</h2>
+            <p class="text">{{ accreditations.length }}</p>
+          </section>
+        </div>
+
+        <div class="admin-community-layout">
+          <section class="card admin-community-panel">
+            <div class="admin-community-panel__header">
+              <div>
+                <h2>Accreditation requests</h2>
                 <p class="muted">
-                  {{ req.permissionType }} · {{ req.scopeType }} · {{ req.status }}
+                  Review requests for the currently selected permission.
                 </p>
+              </div>
+            </div>
+
+            <div v-if="requests.length" class="admin-community-list">
+              <article v-for="req in requests" :key="req.id" class="community-item">
+                <div class="community-item__top">
+                  <div>
+                    <h3>#{{ req.id }} · {{ req.requesterUsername }}</h3>
+                    <p class="muted">
+                      {{ req.permissionType }} · {{ req.scopeType }}
+                      <span v-if="req.targetId"> · target {{ req.targetId }}</span>
+                    </p>
+                  </div>
+
+                  <span class="badge" :class="statusTone(req.status)">
+                    {{ req.status }}
+                  </span>
+                </div>
+
                 <p class="text">{{ req.motivation || "No motivation provided." }}</p>
 
                 <div v-if="req.status === 'PENDING'" class="toolbar">
-                  <button class="btn btn--primary" @click="reviewRequest(req.id, true)">Approve</button>
-                  <button class="btn btn--ghost" @click="reviewRequest(req.id, false)">Reject</button>
+                  <button class="btn btn--primary" @click="reviewRequest(req.id, true)">
+                    Approve
+                  </button>
+                  <button class="btn btn--ghost" @click="reviewRequest(req.id, false)">
+                    Reject
+                  </button>
                 </div>
               </article>
             </div>
 
-            <p v-else class="muted">No request found.</p>
+            <div v-else class="empty-state empty-state--embedded">
+              <h3>No request found</h3>
+              <p class="muted">No accreditation request matches this filter.</p>
+            </div>
           </section>
 
-          <section class="card">
-            <h2>Granted accreditations</h2>
-
-            <div v-if="accreditations.length" class="stack-list">
-              <article v-for="acc in accreditations" :key="acc.id" class="card card--nested">
-                <p><strong>#{{ acc.id }}</strong> · {{ acc.username }}</p>
+          <section class="card admin-community-panel">
+            <div class="admin-community-panel__header">
+              <div>
+                <h2>Granted accreditations</h2>
                 <p class="muted">
-                  {{ acc.permissionType }} · {{ acc.scopeType }}
+                  Current grants for the selected permission.
                 </p>
+              </div>
+            </div>
+
+            <div v-if="accreditations.length" class="admin-community-list">
+              <article v-for="acc in accreditations" :key="acc.id" class="community-item">
+                <div class="community-item__top">
+                  <div>
+                    <h3>#{{ acc.id }} · {{ acc.username }}</h3>
+                    <p class="muted">
+                      {{ acc.permissionType }} · {{ acc.scopeType }}
+                      <span v-if="acc.targetId"> · target {{ acc.targetId }}</span>
+                    </p>
+                  </div>
+
+                  <span class="badge badge--success">Granted</span>
+                </div>
+
                 <p class="muted">{{ acc.note || "No note." }}</p>
               </article>
             </div>
 
-            <p v-else class="muted">No accreditation found.</p>
+            <div v-else class="empty-state empty-state--embedded">
+              <h3>No accreditation found</h3>
+              <p class="muted">No grant matches this filter.</p>
+            </div>
 
             <hr class="separator"/>
 
-            <h3>Grant manually</h3>
+            <div class="admin-community-panel__header">
+              <div>
+                <h2>Grant manually</h2>
+                <p class="muted">
+                  Create a direct accreditation without a request flow.
+                </p>
+              </div>
+            </div>
 
             <div class="form-grid">
               <label>
@@ -168,10 +251,9 @@ onMounted(loadAll);
               <label>
                 Permission
                 <select v-model="grantForm.permissionType">
-                  <option value="COMMUNITY_REVIEW">COMMUNITY_REVIEW</option>
-                  <option value="LANGUAGE_EDIT">LANGUAGE_EDIT</option>
-                  <option value="SCENARIO_EDIT">SCENARIO_EDIT</option>
-                  <option value="SCENARIO_MODERATE">SCENARIO_MODERATE</option>
+                  <option v-for="permission in availablePermissions" :key="permission" :value="permission">
+                    {{ permission }}
+                  </option>
                 </select>
               </label>
 
@@ -183,7 +265,7 @@ onMounted(loadAll);
 
             <div class="toolbar">
               <button class="btn btn--primary" @click="submitGrant">
-                Grant
+                Grant accreditation
               </button>
             </div>
           </section>
@@ -194,34 +276,123 @@ onMounted(loadAll);
 </template>
 
 <style scoped>
-.admin-grid,
-.stack-list {
+.admin-toolbar {
+  align-items: center;
+}
+
+.field-group__label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.field-group--compact {
+  min-width: 220px;
+}
+
+.admin-community-stats {
+  margin-bottom: 18px;
+}
+
+.admin-community-layout {
   display: grid;
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
 }
 
-.admin-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.admin-community-panel {
+  border-radius: 22px;
+  padding: 24px 26px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 251, 255, 0.96));
+  box-shadow: var(--shadow);
 }
 
-.card--nested {
-  border-radius: 14px;
+.admin-community-panel__header {
+  margin-bottom: 14px;
+}
+
+.admin-community-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.community-item {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 16px 18px;
+}
+
+.community-item__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
   background: var(--surface-alt);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.badge--success {
+  background: var(--accent-green);
+  border-color: rgba(6, 118, 71, 0.22);
+}
+
+.badge--danger {
+  background: rgba(180, 35, 24, 0.1);
+  border-color: rgba(180, 35, 24, 0.2);
+  color: var(--danger);
+}
+
+.badge--info {
+  background: var(--accent-cool);
+  border-color: rgba(15, 118, 110, 0.18);
 }
 
 .separator {
   border: none;
   border-top: 1px solid var(--border);
-  margin: 12px 0;
+  margin: 18px 0;
+}
+
+.empty-state--embedded {
+  margin-top: 8px;
 }
 
 .field--full {
   grid-column: 1 / -1;
 }
 
-@media (max-width: 900px) {
-  .admin-grid {
+@media (max-width: 980px) {
+  .admin-community-layout {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .admin-community-panel {
+    padding: 18px;
+  }
+
+  .community-item__top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .field-group--compact {
+    min-width: 0;
+    width: 100%;
   }
 }
 </style>

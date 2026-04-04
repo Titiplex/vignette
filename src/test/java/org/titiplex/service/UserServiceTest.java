@@ -92,4 +92,34 @@ class UserServiceTest {
         assertTrue(result.isProfilePublic());
         assertEquals(Set.of("Univ A", "Lab B"), result.getAcademyAffiliations());
     }
+
+    @Test
+    void updateRoles_rejectsExplicitAdminModification() {
+        assertThrows(IllegalArgumentException.class, () ->
+                userService.updateRoles(1L, Set.of("ROLE_USER", "ROLE_ADMIN"))
+        );
+    }
+
+    @Test
+    void updateRoles_preservesAdminWhenTargetUserAlreadyAdmin() {
+        Role admin = new Role();
+        admin.setName("ROLE_ADMIN");
+
+        Role linguist = new Role();
+        linguist.setName("ROLE_LINGUIST");
+
+        User user = new User();
+        user.setId(1L);
+        user.setRoles(new java.util.HashSet<>(Set.of(admin)));
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(rolesService.getRequiredRoleByName("ROLE_LINGUIST")).thenReturn(linguist);
+        when(rolesService.getAdminRole()).thenReturn(admin);
+        when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        User updated = userService.updateRoles(1L, Set.of("ROLE_LINGUIST"));
+
+        assertTrue(updated.getRoles().stream().anyMatch(r -> "ROLE_ADMIN".equals(r.getName())));
+        assertTrue(updated.getRoles().stream().anyMatch(r -> "ROLE_LINGUIST".equals(r.getName())));
+    }
 }

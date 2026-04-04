@@ -98,13 +98,31 @@ public class UserService {
         User user = users.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        if (roleNames == null || roleNames.isEmpty()) {
-            throw new IllegalArgumentException("At least one role is required");
+        if (roleNames == null) {
+            throw new IllegalArgumentException("Roles are required");
+        }
+
+        if (roleNames.contains("ROLE_ADMIN")) {
+            throw new IllegalArgumentException("ROLE_ADMIN cannot be modified from this endpoint");
         }
 
         Set<Role> resolvedRoles = roleNames.stream()
                 .map(roles::getRequiredRoleByName)
                 .collect(Collectors.toSet());
+
+        // Preserve locked/admin role if the target user already has it.
+        boolean alreadyAdmin = user.getRoles().stream()
+                .anyMatch(role -> "ROLE_ADMIN".equals(role.getName()));
+        if (alreadyAdmin) {
+            resolvedRoles.add(roles.getAdminRole());
+        }
+
+        // One non-admin role so the account stays usable.
+        boolean hasNonAdminRole = resolvedRoles.stream()
+                .anyMatch(role -> !"ROLE_ADMIN".equals(role.getName()));
+        if (!hasNonAdminRole) {
+            resolvedRoles.add(roles.getUserRole());
+        }
 
         user.setRoles(resolvedRoles);
         return users.save(user);

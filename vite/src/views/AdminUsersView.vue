@@ -9,9 +9,25 @@ const success = ref("");
 const users = ref([]);
 const query = ref("");
 
-const editableRoles = [
-  "ROLE_USER",
-  "ROLE_ADMIN",
+const visibleRoles = [
+  {
+    value: "ROLE_USER",
+    label: "User",
+    description: "Standard authenticated account",
+    locked: false,
+  },
+  {
+    value: "ROLE_LINGUIST",
+    label: "Linguist",
+    description: "Specialized linguistic contributor",
+    locked: false,
+  },
+  {
+    value: "ROLE_ADMIN",
+    label: "Admin",
+    description: "Global administration privileges",
+    locked: true,
+  },
 ];
 
 const filteredUsers = computed(() => {
@@ -30,6 +46,14 @@ const filteredUsers = computed(() => {
   });
 });
 
+function normalizeDraftRoles(user) {
+  const existing = new Set(user.roles ?? []);
+  if (existing.size === 0) {
+    existing.add("ROLE_USER");
+  }
+  return [...existing];
+}
+
 async function loadUsers() {
   loading.value = true;
   error.value = "";
@@ -39,7 +63,7 @@ async function loadUsers() {
     const rows = await fetchAdminUsers();
     users.value = rows.map((user) => ({
       ...user,
-      draftRoles: [...(user.roles ?? [])],
+      draftRoles: normalizeDraftRoles(user),
     }));
   } catch (e) {
     error.value = e.message || "Failed to load users.";
@@ -48,7 +72,26 @@ async function loadUsers() {
   }
 }
 
+function roleMeta(role) {
+  return visibleRoles.find((item) => item.value === role) ?? {
+    value: role,
+    label: role.replace(/^ROLE_/, ""),
+    description: "",
+    locked: false,
+  };
+}
+
+function hasDraftRole(user, role) {
+  return (user.draftRoles ?? []).includes(role);
+}
+
+function isRoleLocked(role) {
+  return !!roleMeta(role)?.locked;
+}
+
 function toggleRole(user, role) {
+  if (isRoleLocked(role)) return;
+
   const current = new Set(user.draftRoles ?? []);
   if (current.has(role)) {
     current.delete(role);
@@ -56,21 +99,32 @@ function toggleRole(user, role) {
     current.add(role);
   }
 
-  if (current.size === 0) {
+  if (![...current].some((value) => value !== "ROLE_ADMIN")) {
     current.add("ROLE_USER");
   }
 
   user.draftRoles = [...current];
 }
 
-function hasDraftRole(user, role) {
-  return (user.draftRoles ?? []).includes(role);
+function sanitizedRolesForSave(user) {
+  return (user.draftRoles ?? []).filter((role) => !isRoleLocked(role));
+}
+
+function effectiveComparableRoles(user) {
+  return [...(user.roles ?? [])]
+      .filter((role) => !isRoleLocked(role))
+      .sort()
+      .join("|");
+}
+
+function effectiveComparableDraftRoles(user) {
+  return [...sanitizedRolesForSave(user)]
+      .sort()
+      .join("|");
 }
 
 function rolesChanged(user) {
-  const a = [...(user.roles ?? [])].sort().join("|");
-  const b = [...(user.draftRoles ?? [])].sort().join("|");
-  return a !== b;
+  return effectiveComparableRoles(user) !== effectiveComparableDraftRoles(user);
 }
 
 async function saveRoles(user) {
@@ -79,13 +133,17 @@ async function saveRoles(user) {
   success.value = "";
 
   try {
-    const updated = await updateAdminUserRoles(user.id, user.draftRoles);
+    const updated = await updateAdminUserRoles(user.id, sanitizedRolesForSave(user));
+
+    const lockedRolesStillPresent = (user.roles ?? []).filter((role) => isRoleLocked(role));
+    const mergedRoles = [...new Set([...(updated.roles ?? []), ...lockedRolesStillPresent])];
 
     const index = users.value.findIndex((u) => u.id === user.id);
     if (index >= 0) {
       users.value[index] = {
         ...updated,
-        draftRoles: [...(updated.roles ?? [])],
+        roles: mergedRoles,
+        draftRoles: [...mergedRoles],
       };
     }
 
@@ -107,11 +165,11 @@ onMounted(loadUsers);
         <div>
           <h1>Admin users</h1>
           <p class="muted">
-            Review accounts and update granted roles.
+            Review accounts and update editable roles. Sensitive roles remain visible but locked.
           </p>
         </div>
 
-        <div class="toolbar">
+        <div class="toolbar admin-toolbar">
           <input v-model="query" placeholder="Search users..."/>
           <button class="btn btn--ghost" @click="loadUsers">
             Refresh
@@ -127,9 +185,9 @@ onMounted(loadUsers);
         <span class="muted">Loading users...</span>
       </div>
 
-      <div v-else-if="filteredUsers.length" class="stack-list">
-        <article v-for="user in filteredUsers" :key="user.id" class="card">
-          <div class="toolbar toolbar--spread toolbar--top">
+      <div v-else-if="filteredUsers.length" class="admin-users-list">
+        <article v-for="user in filteredUsers" :key="user.id" class="card admin-user-card">
+          <div class="admin-user-card__top">
             <div>
               <h2>{{ user.displayName || user.username }}</h2>
               <p class="muted">
@@ -137,25 +195,40 @@ onMounted(loadUsers);
               </p>
             </div>
 
-            <span class="badge">
-              {{ user.profilePublic ? "Public profile" : "Private profile" }}
-            </span>
+            <div class="admin-user-card__badges">
+              <span class="badge">
+                {{ user.profilePublic ? "Public profile" : "Private profile" }}
+              </span>
+              <span v-if="(user.roles ?? []).includes('ROLE_ADMIN')" class="badge badge--accent">
+                Admin account
+              </span>
+            </div>
           </div>
 
-          <div class="admin-role-group">
-            <label
-                v-for="role in editableRoles"
-                :key="role"
-                class="role-chip"
-                :class="{ 'is-active': hasDraftRole(user, role) }"
+          <div class="admin-user-card__roles">
+            <button
+                v-for="role in visibleRoles"
+                :key="role.value"
+                type="button"
+                class="role-pill"
+                :class="{
+                  'is-active': hasDraftRole(user, role.value),
+                  'is-locked': role.locked,
+                }"
+                :disabled="role.locked"
+                @click="toggleRole(user, role.value)"
             >
-              <input
-                  type="checkbox"
-                  :checked="hasDraftRole(user, role)"
-                  @change="toggleRole(user, role)"
-              />
-              <span>{{ role }}</span>
-            </label>
+              <span class="role-pill__label">{{ role.label }}</span>
+              <span class="role-pill__meta">
+                {{ role.locked ? "Locked" : (hasDraftRole(user, role.value) ? "Enabled" : "Disabled") }}
+              </span>
+            </button>
+          </div>
+
+          <div class="admin-user-card__legend">
+            <p class="muted">
+              <strong>Note:</strong> the Admin role is visible for transparency but cannot be edited from this page.
+            </p>
           </div>
 
           <div class="toolbar">
@@ -179,19 +252,34 @@ onMounted(loadUsers);
 </template>
 
 <style scoped>
-.stack-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.toolbar--spread {
-  justify-content: space-between;
+.admin-toolbar {
   align-items: center;
 }
 
-.toolbar--top {
+.admin-users-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.admin-user-card {
+  border-radius: 22px;
+  padding: 24px 26px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 251, 255, 0.96));
+  box-shadow: var(--shadow);
+}
+
+.admin-user-card__top {
+  display: flex;
+  justify-content: space-between;
   align-items: flex-start;
+  gap: 16px;
+}
+
+.admin-user-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .badge {
@@ -199,35 +287,86 @@ onMounted(loadUsers);
   align-items: center;
   border: 1px solid var(--border);
   border-radius: 999px;
-  padding: 0.25rem 0.7rem;
+  padding: 0.35rem 0.8rem;
   background: var(--surface-alt);
   font-size: 0.82rem;
+  font-weight: 600;
 }
 
-.admin-role-group {
+.badge--accent {
+  background: var(--accent-cool);
+  border-color: rgba(15, 118, 110, 0.18);
+}
+
+.admin-user-card__roles {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 12px;
+  gap: 12px;
+  margin-top: 18px;
 }
 
-.role-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+.role-pill {
+  appearance: none;
   border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 0.45rem 0.85rem;
+  border-radius: 18px;
   background: #fff;
-  cursor: pointer;
+  color: var(--text);
+  padding: 0.8rem 1rem;
+  min-width: 180px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: 160ms ease;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
 }
 
-.role-chip.is-active {
+.role-pill:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(15, 118, 110, 0.28);
+  background: #fbfefe;
+}
+
+.role-pill.is-active {
+  background: linear-gradient(180deg, #effaf7 0%, #e6f7ef 100%);
   border-color: rgba(15, 118, 110, 0.35);
-  background: var(--accent-green);
 }
 
-.role-chip input {
-  margin: 0;
+.role-pill.is-locked {
+  background: #f3f4f6;
+  border-color: #d4d8de;
+  color: var(--text-soft);
+  cursor: not-allowed;
+  opacity: 0.88;
+}
+
+.role-pill__label {
+  font-weight: 700;
+  font-size: 0.98rem;
+}
+
+.role-pill__meta {
+  font-size: 0.78rem;
+  color: var(--text-soft);
+}
+
+.admin-user-card__legend {
+  margin-top: 14px;
+}
+
+@media (max-width: 720px) {
+  .admin-user-card {
+    padding: 18px;
+  }
+
+  .admin-user-card__top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .role-pill {
+    width: 100%;
+    min-width: 0;
+  }
 }
 </style>

@@ -90,7 +90,8 @@ describe("useAuth", () => {
         const auth = useAuth();
 
         await auth.loadMe();
-        await auth.logout();
+
+        await expect(auth.logout()).rejects.toThrow("network");
 
         expect(auth.currentUser.value).toBeNull();
         expect(auth.isAuthenticated.value).toBe(false);

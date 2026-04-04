@@ -1,23 +1,27 @@
 import {mount} from "@vue/test-utils";
 import {nextTick} from "vue";
+import {mockElementRect} from "../../helpers/dom";
 import AudioPanel from "@/components/AudioPanel.vue";
-import {mockElementRect} from "../../helpers/dom.js";
 
-const uploadThumbnailAudio = vi.fn();
-const updateAudioMarker = vi.fn();
+const scenarioApiMocks = vi.hoisted(() => ({
+    uploadThumbnailAudio: vi.fn(),
+    updateAudioMarker: vi.fn(),
+}));
 
-const toastSuccess = vi.fn();
-const toastError = vi.fn();
+const toastMocks = vi.hoisted(() => ({
+    success: vi.fn(),
+    error: vi.fn(),
+}));
 
 vi.mock("@/api/scenarios", () => ({
-    uploadThumbnailAudio,
-    updateAudioMarker,
+    uploadThumbnailAudio: scenarioApiMocks.uploadThumbnailAudio,
+    updateAudioMarker: scenarioApiMocks.updateAudioMarker,
 }));
 
 vi.mock("@/composables/useToast", () => ({
     useToast: () => ({
-        success: toastSuccess,
-        error: toastError,
+        success: toastMocks.success,
+        error: toastMocks.error,
     }),
 }));
 
@@ -54,10 +58,10 @@ describe("AudioPanel", () => {
     ];
 
     beforeEach(() => {
-        uploadThumbnailAudio.mockReset();
-        updateAudioMarker.mockReset();
-        toastSuccess.mockReset();
-        toastError.mockReset();
+        scenarioApiMocks.uploadThumbnailAudio.mockReset();
+        scenarioApiMocks.updateAudioMarker.mockReset();
+        toastMocks.success.mockReset();
+        toastMocks.error.mockReset();
     });
 
     function mountPanel(extraProps = {}) {
@@ -130,7 +134,7 @@ describe("AudioPanel", () => {
     });
 
     it("loads existing marker values into edit mode and saves them", async () => {
-        updateAudioMarker.mockResolvedValueOnce({ok: true});
+        scenarioApiMocks.updateAudioMarker.mockResolvedValueOnce({ok: true});
 
         const wrapper = mountPanel({isOwner: true});
 
@@ -142,13 +146,13 @@ describe("AudioPanel", () => {
         const saveButton = wrapper.findAll("button").find((b) => b.text() === "Save marker changes");
         await saveButton.trigger("click");
 
-        expect(updateAudioMarker).toHaveBeenCalledWith(5, {
+        expect(scenarioApiMocks.updateAudioMarker).toHaveBeenCalledWith(5, {
             markerX: 12.3,
             markerY: 45.6,
             markerLabel: "Bird area",
         });
 
-        expect(toastSuccess).toHaveBeenCalled();
+        expect(toastMocks.success).toHaveBeenCalled();
         expect(wrapper.emitted("uploaded")).toBeTruthy();
     });
 });

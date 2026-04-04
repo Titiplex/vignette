@@ -2,21 +2,24 @@ import {nextTick} from "vue";
 import {mountWithRouter} from "../../helpers/mountWithRouter";
 import ScenarioDetailView from "@/views/ScenarioDetailView.vue";
 
-const loadMe = vi.fn();
-const fetchScenario = vi.fn();
-const fetchScenarioThumbnails = vi.fn();
-const fetchThumbnailAudios = vi.fn();
-const fetchLanguage = vi.fn();
-const publishScenario = vi.fn();
-const updateScenarioStoryboard = vi.fn();
-const updateThumbnailLayout = vi.fn();
-const uploadScenarioThumbnail = vi.fn();
+const apiMocks = vi.hoisted(() => ({
+    loadMe: vi.fn(),
 
-const toastSuccess = vi.fn();
-const toastError = vi.fn();
-const toastInfo = vi.fn();
+    fetchScenario: vi.fn(),
+    fetchScenarioThumbnails: vi.fn(),
+    fetchThumbnailAudios: vi.fn(),
+    fetchLanguage: vi.fn(),
+    publishScenario: vi.fn(),
+    updateScenarioStoryboard: vi.fn(),
+    updateThumbnailLayout: vi.fn(),
+    uploadScenarioThumbnail: vi.fn(),
 
-const autoplayApi = {
+    toastSuccess: vi.fn(),
+    toastError: vi.fn(),
+    toastInfo: vi.fn(),
+}));
+
+const autoplayApi = vi.hoisted(() => ({
     currentIndex: {value: -1},
     currentItem: {value: null},
     currentTime: {value: 0},
@@ -46,20 +49,20 @@ const autoplayApi = {
     toggleLoopScenario: vi.fn(() => {
         autoplayApi.loopScenario.value = !autoplayApi.loopScenario.value;
     }),
-};
+}));
 
 vi.mock("@/api/languages", () => ({
-    fetchLanguage,
+    fetchLanguage: apiMocks.fetchLanguage,
 }));
 
 vi.mock("@/api/scenarios", () => ({
-    fetchScenario,
-    fetchScenarioThumbnails,
-    fetchThumbnailAudios,
-    publishScenario,
-    updateScenarioStoryboard,
-    updateThumbnailLayout,
-    uploadScenarioThumbnail,
+    fetchScenario: apiMocks.fetchScenario,
+    fetchScenarioThumbnails: apiMocks.fetchScenarioThumbnails,
+    fetchThumbnailAudios: apiMocks.fetchThumbnailAudios,
+    publishScenario: apiMocks.publishScenario,
+    updateScenarioStoryboard: apiMocks.updateScenarioStoryboard,
+    updateThumbnailLayout: apiMocks.updateThumbnailLayout,
+    uploadScenarioThumbnail: apiMocks.uploadScenarioThumbnail,
 }));
 
 vi.mock("@/composables/useAuth", () => ({
@@ -70,15 +73,15 @@ vi.mock("@/composables/useAuth", () => ({
                 username: "ownerUser",
             },
         },
-        loadMe,
+        loadMe: apiMocks.loadMe,
     }),
 }));
 
 vi.mock("@/composables/useToast", () => ({
     useToast: () => ({
-        success: toastSuccess,
-        error: toastError,
-        info: toastInfo,
+        success: apiMocks.toastSuccess,
+        error: apiMocks.toastError,
+        info: apiMocks.toastInfo,
     }),
 }));
 
@@ -145,12 +148,14 @@ vi.mock("@/components/ui/BasePageHeader.vue", () => ({
 
 vi.mock("@/components/ui/BaseLoader.vue", () => ({
     default: {
+        name: "BaseLoader",
         template: `<div class="base-loader-stub"><slot /></div>`,
     },
 }));
 
 vi.mock("@/components/ui/BaseAlert.vue", () => ({
     default: {
+        name: "BaseAlert",
         props: ["type"],
         template: `
           <div class="base-alert-stub" :data-type="type">
@@ -161,6 +166,7 @@ vi.mock("@/components/ui/BaseAlert.vue", () => ({
 
 vi.mock("@/components/ui/BaseEmptyState.vue", () => ({
     default: {
+        name: "BaseEmptyState",
         props: ["title", "message"],
         template: `
           <div class="empty-state-stub">{{ title }} - {{ message }}</div>`,
@@ -169,6 +175,7 @@ vi.mock("@/components/ui/BaseEmptyState.vue", () => ({
 
 vi.mock("@/components/ui/BaseBadge.vue", () => ({
     default: {
+        name: "BaseBadge",
         props: ["variant"],
         template: `<span class="base-badge-stub" :data-variant="variant"><slot/></span>`,
     },
@@ -249,10 +256,11 @@ function audioMapByThumb() {
     };
 }
 
-async function flushPromises() {
-    await Promise.resolve();
-    await Promise.resolve();
-    await nextTick();
+async function flushPromises(times = 8) {
+    for (let i = 0; i < times; i += 1) {
+        await Promise.resolve();
+        await nextTick();
+    }
 }
 
 async function mountScenarioView({
@@ -260,22 +268,22 @@ async function mountScenarioView({
                                      thumbnails = baseThumbnails(),
                                      audioMap = audioMapByThumb(),
                                  } = {}) {
-    fetchScenario.mockResolvedValue(scenario);
-    fetchLanguage.mockResolvedValue({id: 42, name: "Chuj"});
-    fetchScenarioThumbnails.mockResolvedValue(thumbnails);
-    fetchThumbnailAudios.mockImplementation(async (thumbId) => audioMap[thumbId] || []);
-    publishScenario.mockResolvedValue({
+    apiMocks.fetchScenario.mockResolvedValue(scenario);
+    apiMocks.fetchLanguage.mockResolvedValue({id: 42, name: "Chuj"});
+    apiMocks.fetchScenarioThumbnails.mockResolvedValue(thumbnails);
+    apiMocks.fetchThumbnailAudios.mockImplementation(async (thumbId) => audioMap[thumbId] || []);
+    apiMocks.publishScenario.mockResolvedValue({
         ...scenario,
         visibilityStatus: "PUBLISHED",
     });
-    updateScenarioStoryboard.mockImplementation(async (_, body) => ({
+    apiMocks.updateScenarioStoryboard.mockImplementation(async (_, body) => ({
         ...scenario,
         storyboardLayoutMode: body.layoutMode,
         storyboardPreset: body.preset,
         storyboardColumns: body.columns,
     }));
-    updateThumbnailLayout.mockResolvedValue({});
-    uploadScenarioThumbnail.mockResolvedValue({});
+    apiMocks.updateThumbnailLayout.mockResolvedValue({});
+    apiMocks.uploadScenarioThumbnail.mockResolvedValue({});
 
     const {wrapper, router} = await mountWithRouter(ScenarioDetailView, {
         routes: [
@@ -293,7 +301,7 @@ async function mountScenarioView({
         },
     });
 
-    await flushPromises();
+    await flushPromises(10);
 
     return {wrapper, router};
 }
@@ -313,11 +321,11 @@ describe("ScenarioDetailView", () => {
     it("loads scenario, language, thumbnails and audios on mount", async () => {
         const {wrapper} = await mountScenarioView();
 
-        expect(loadMe).toHaveBeenCalled();
-        expect(fetchScenario).toHaveBeenCalledWith("77");
-        expect(fetchLanguage).toHaveBeenCalledWith(42);
-        expect(fetchScenarioThumbnails).toHaveBeenCalledWith("77");
-        expect(fetchThumbnailAudios).toHaveBeenCalledTimes(2);
+        expect(apiMocks.loadMe).toHaveBeenCalled();
+        expect(apiMocks.fetchScenario).toHaveBeenCalledWith("77");
+        expect(apiMocks.fetchLanguage).toHaveBeenCalledWith(42);
+        expect(apiMocks.fetchScenarioThumbnails).toHaveBeenCalledWith("77");
+        expect(apiMocks.fetchThumbnailAudios).toHaveBeenCalledTimes(2);
 
         expect(wrapper.text()).toContain("Scenario Alpha");
         expect(wrapper.text()).toContain("Owner view");
@@ -326,20 +334,21 @@ describe("ScenarioDetailView", () => {
     });
 
     it("falls back to Unknown language when language fetch fails", async () => {
-        fetchLanguage.mockRejectedValueOnce(new Error("boom"));
+        apiMocks.fetchLanguage.mockRejectedValueOnce(new Error("boom"));
         const {wrapper} = await mountScenarioView();
 
         expect(wrapper.text()).toContain("Scenario Alpha");
 
         const infoButton = wrapper.find('button[aria-label="Open scenario information"]');
         await infoButton.trigger("click");
+        await flushPromises();
         await nextTick();
 
         expect(wrapper.text()).toContain("Unknown language");
     });
 
     it("shows an error alert when initial loading fails", async () => {
-        fetchScenario.mockRejectedValueOnce(new Error("Load failed"));
+        apiMocks.fetchScenario.mockRejectedValueOnce(new Error("Load failed"));
 
         const {wrapper} = await mountWithRouter(ScenarioDetailView, {
             routes: [
@@ -365,9 +374,10 @@ describe("ScenarioDetailView", () => {
         const {wrapper} = await mountScenarioView();
 
         const buttons = wrapper.findAll(".thumbnail-card-stub");
-        expect(buttons).toHaveLength(2);
+        expect(buttons.map((b) => b.text())).toEqual(["First", "Second"]);
 
         await buttons[1].trigger("click");
+        await flushPromises();
         await nextTick();
 
         expect(wrapper.find(".audio-panel-thumb").text()).toBe("10");
@@ -385,8 +395,8 @@ describe("ScenarioDetailView", () => {
         await publishButton.trigger("click");
         await flushPromises();
 
-        expect(publishScenario).toHaveBeenCalledWith("77");
-        expect(toastSuccess).toHaveBeenCalledWith("Scenario published.");
+        expect(apiMocks.publishScenario).toHaveBeenCalledWith("77");
+        expect(apiMocks.toastSuccess).toHaveBeenCalledWith("Scenario published.");
         expect(wrapper.text()).toContain("PUBLISHED");
     });
 
@@ -403,12 +413,12 @@ describe("ScenarioDetailView", () => {
         await saveButton.trigger("click");
         await flushPromises();
 
-        expect(updateScenarioStoryboard).toHaveBeenCalledWith("77", {
+        expect(apiMocks.updateScenarioStoryboard).toHaveBeenCalledWith("77", {
             layoutMode: "PRESET",
             preset: "GRID_3",
             columns: 8,
         });
-        expect(toastSuccess).toHaveBeenCalledWith("Storyboard settings saved.");
+        expect(apiMocks.toastSuccess).toHaveBeenCalledWith("Storyboard settings saved.");
     });
 
     it("opens selected layout panel and saves selected thumbnail layout", async () => {
@@ -418,6 +428,7 @@ describe("ScenarioDetailView", () => {
             .find((b) => b.text().includes("Selected thumbnail layout"));
 
         await toggleButton.trigger("click");
+        await flushPromises();
         await nextTick();
 
         const numberInputs = wrapper.findAll('input[type="number"]');
@@ -434,13 +445,13 @@ describe("ScenarioDetailView", () => {
         await saveButton.trigger("click");
         await flushPromises();
 
-        expect(updateThumbnailLayout).toHaveBeenCalledWith(5, {
+        expect(apiMocks.updateThumbnailLayout).toHaveBeenCalledWith(5, {
             gridColumn: 4,
             gridRow: null,
             gridColumnSpan: 3,
             gridRowSpan: 2,
         });
-        expect(toastSuccess).toHaveBeenCalledWith("Thumbnail layout saved.");
+        expect(apiMocks.toastSuccess).toHaveBeenCalledWith("Thumbnail layout saved.");
     });
 
     it("opens upload dialog and uploads an image successfully", async () => {
@@ -448,16 +459,18 @@ describe("ScenarioDetailView", () => {
 
         const openUploadButton = wrapper.find('button[aria-label="Add a thumbnail"]');
         await openUploadButton.trigger("click");
+        await flushPromises();
         await nextTick();
 
         const fileInput = wrapper.find('input[type="file"][accept="image/*"]');
         const file = new File(["fake-image"], "thumb.png", {type: "image/png"});
 
-        await fileInput.trigger("change", {
-            target: {
-                files: [file],
-            },
+        Object.defineProperty(fileInput.element, "files", {
+            value: [file],
+            configurable: true,
         });
+
+        await fileInput.trigger("change");
 
         const titleInput = wrapper.find('input[placeholder="Optional image title"]');
         await titleInput.setValue("New thumb");
@@ -468,9 +481,9 @@ describe("ScenarioDetailView", () => {
         await uploadButton.trigger("click");
         await flushPromises();
 
-        expect(uploadScenarioThumbnail).toHaveBeenCalledTimes(1);
-        expect(fetchScenarioThumbnails).toHaveBeenCalledTimes(2);
-        expect(toastSuccess).toHaveBeenCalledWith("Thumbnail uploaded successfully.");
+        expect(apiMocks.uploadScenarioThumbnail).toHaveBeenCalledTimes(1);
+        expect(apiMocks.fetchScenarioThumbnails).toHaveBeenCalledTimes(2);
+        expect(apiMocks.toastSuccess).toHaveBeenCalledWith("Thumbnail uploaded successfully.");
     });
 
     it("shows upload error if no image is selected", async () => {
@@ -478,6 +491,7 @@ describe("ScenarioDetailView", () => {
 
         const openUploadButton = wrapper.find('button[aria-label="Add a thumbnail"]');
         await openUploadButton.trigger("click");
+        await flushPromises();
         await nextTick();
 
         const uploadButton = wrapper.findAll("button")
@@ -486,20 +500,20 @@ describe("ScenarioDetailView", () => {
         await uploadButton.trigger("click");
         await flushPromises();
 
-        expect(uploadScenarioThumbnail).not.toHaveBeenCalled();
+        expect(apiMocks.uploadScenarioThumbnail).not.toHaveBeenCalled();
         expect(wrapper.text()).toContain("No image selected.");
-        expect(toastError).toHaveBeenCalled();
+        expect(apiMocks.toastError).toHaveBeenCalled();
     });
 
     it("refreshes audios when AudioPanel emits uploaded", async () => {
         const {wrapper} = await mountScenarioView();
 
-        expect(fetchScenarioThumbnails).toHaveBeenCalledTimes(1);
+        expect(apiMocks.fetchScenarioThumbnails).toHaveBeenCalledTimes(1);
 
         await wrapper.find(".audio-panel-uploaded").trigger("click");
         await flushPromises();
 
-        expect(fetchScenarioThumbnails).toHaveBeenCalledTimes(2);
+        expect(apiMocks.fetchScenarioThumbnails).toHaveBeenCalledTimes(2);
     });
 
     it("delegates play-audio from AudioPanel to autoplay starting at the matching item", async () => {
@@ -512,10 +526,10 @@ describe("ScenarioDetailView", () => {
     });
 
     it("handles audio fetch failure for a thumbnail without crashing", async () => {
-        fetchScenario.mockResolvedValue(baseScenario());
-        fetchLanguage.mockResolvedValue({id: 42, name: "Chuj"});
-        fetchScenarioThumbnails.mockResolvedValue(baseThumbnails());
-        fetchThumbnailAudios
+        apiMocks.fetchScenario.mockResolvedValue(baseScenario());
+        apiMocks.fetchLanguage.mockResolvedValue({id: 42, name: "Chuj"});
+        apiMocks.fetchScenarioThumbnails.mockResolvedValue(baseThumbnails());
+        apiMocks.fetchThumbnailAudios
             .mockResolvedValueOnce(audioMapByThumb()[5])
             .mockRejectedValueOnce(new Error("audio load failed"));
 

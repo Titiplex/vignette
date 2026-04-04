@@ -32,17 +32,15 @@ Object.defineProperty(window, "scrollTo", {
     value: vi.fn(),
 });
 
-Object.defineProperty(globalThis, "URL", {
-    value: {
-        ...globalThis.URL,
-        createObjectURL: vi.fn(() => "blob:mock-url"),
-        revokeObjectURL: vi.fn(),
-    },
-    writable: true,
-});
+if (!globalThis.URL.createObjectURL) {
+    globalThis.URL.createObjectURL = vi.fn(() => "blob:mock-url");
+}
+
+if (!globalThis.URL.revokeObjectURL) {
+    globalThis.URL.revokeObjectURL = vi.fn();
+}
 
 beforeEach(() => {
     sessionStorage.clear();
     localStorage.clear();
-    document.cookie = "";
 });

@@ -11,6 +11,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.titiplex.api.dto.*;
+import org.titiplex.api.security.AdminOperation;
 import org.titiplex.persistence.model.Role;
 import org.titiplex.service.ScenarioService;
 import org.titiplex.service.UserService;
@@ -35,6 +36,7 @@ public class AdminApiController {
             summary = "Get admin overview",
             description = "Returns global counters for the administration dashboard."
     )
+    @AdminOperation
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -68,6 +70,7 @@ public class AdminApiController {
             summary = "List users for administration",
             description = "Returns all users for administration purposes."
     )
+    @AdminOperation
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -103,6 +106,7 @@ public class AdminApiController {
             summary = "List scenarios for administration",
             description = "Returns all scenarios for administration purposes, including drafts."
     )
+    @AdminOperation
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -131,6 +135,7 @@ public class AdminApiController {
             summary = "Update user roles",
             description = "Replaces the roles of a given user. Admin only."
     )
+    @AdminOperation
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -172,6 +177,7 @@ public class AdminApiController {
             summary = "Update scenario visibility",
             description = "Updates scenario visibility for administration purposes. Admin only."
     )
+    @AdminOperation
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",

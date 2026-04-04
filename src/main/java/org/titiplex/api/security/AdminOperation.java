@@ -8,7 +8,7 @@ import java.lang.annotation.*;
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("isAuthenticated() && hasRole('ADMIN')")
 @SecurityRequirement(name = "bearerAuth")
 @ApiAccess(level = ApiAccessLevel.ADMIN, rule = "Requires authentication. Required role: ADMIN.")
 public @interface AdminOperation {

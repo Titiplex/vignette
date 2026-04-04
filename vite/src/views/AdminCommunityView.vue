@@ -101,6 +101,7 @@ onMounted(loadAll);
         <label>
           Permission filter
           <select v-model="permissionType" @change="loadAll">
+            <option value="COMMUNITY_REVIEW">COMMUNITY_REVIEW</option>
             <option value="LANGUAGE_EDIT">LANGUAGE_EDIT</option>
             <option value="SCENARIO_EDIT">SCENARIO_EDIT</option>
             <option value="SCENARIO_MODERATE">SCENARIO_MODERATE</option>
@@ -167,6 +168,7 @@ onMounted(loadAll);
               <label>
                 Permission
                 <select v-model="grantForm.permissionType">
+                  <option value="COMMUNITY_REVIEW">COMMUNITY_REVIEW</option>
                   <option value="LANGUAGE_EDIT">LANGUAGE_EDIT</option>
                   <option value="SCENARIO_EDIT">SCENARIO_EDIT</option>
                   <option value="SCENARIO_MODERATE">SCENARIO_MODERATE</option>

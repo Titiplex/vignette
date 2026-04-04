@@ -81,6 +81,7 @@ public class CommunityService {
         if (!userRepository.existsById(requesterId)) throw new IllegalArgumentException("Unknown user");
 
         validateAccreditationTarget(scopeType, targetId);
+        validatePermissionScope(permissionType, scopeType);
 
         boolean pendingExists = requestRepo.existsByRequestedByUserIdAndPermissionTypeAndScopeTypeAndTargetIdAndStatus(
                 requesterId,
@@ -107,6 +108,7 @@ public class CommunityService {
                                                    String targetId) {
         if (permissionType == null) throw new IllegalArgumentException("permissionType is required");
         validateAccreditationTarget(scopeType, targetId);
+        validatePermissionScope(permissionType, scopeType);
 
         String normalizedTargetId = normalizeTargetId(scopeType, targetId);
         if (scopeType == AccreditationScopeType.GLOBAL) {
@@ -155,8 +157,10 @@ public class CommunityService {
                                                      Long grantedByUserId,
                                                      String note) {
         if (permissionType == null) throw new IllegalArgumentException("permissionType is required");
-        validateAccreditationTarget(scopeType, targetId);
         if (!userRepository.existsById(userId)) throw new IllegalArgumentException("Unknown user");
+
+        validateAccreditationTarget(scopeType, targetId);
+        validatePermissionScope(permissionType, scopeType);
 
         String normalizedTargetId = normalizeTargetId(scopeType, targetId);
 
@@ -181,6 +185,7 @@ public class CommunityService {
                                                            String targetId) {
         if (permissionType == null) throw new IllegalArgumentException("permissionType is required");
         validateAccreditationTarget(scopeType, targetId);
+        validatePermissionScope(permissionType, scopeType);
 
         String normalizedTargetId = normalizeTargetId(scopeType, targetId);
         if (scopeType == AccreditationScopeType.GLOBAL) {
@@ -261,5 +266,33 @@ public class CommunityService {
 
     private String normalizeTargetId(AccreditationScopeType scopeType, String targetId) {
         return scopeType == AccreditationScopeType.GLOBAL ? null : targetId.trim();
+    }
+
+    private void validatePermissionScope(AccreditationPermissionType permissionType,
+                                         AccreditationScopeType scopeType) {
+        if (permissionType == null) {
+            throw new IllegalArgumentException("permissionType is required");
+        }
+        if (scopeType == null) {
+            throw new IllegalArgumentException("scopeType is required");
+        }
+
+        switch (permissionType) {
+            case COMMUNITY_REVIEW -> {
+                // allowed on all scopes for now
+            }
+            case LANGUAGE_EDIT -> {
+                if (scopeType != AccreditationScopeType.GLOBAL
+                        && scopeType != AccreditationScopeType.LANGUAGE
+                        && scopeType != AccreditationScopeType.LANGUAGE_FAMILY) {
+                    throw new IllegalArgumentException("LANGUAGE_EDIT is only valid for GLOBAL, LANGUAGE or LANGUAGE_FAMILY scope");
+                }
+            }
+            case SCENARIO_EDIT, SCENARIO_MODERATE -> {
+                if (scopeType != AccreditationScopeType.SCENARIO) {
+                    throw new IllegalArgumentException(permissionType + " is only valid for SCENARIO scope");
+                }
+            }
+        }
     }
 }

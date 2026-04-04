@@ -1,13 +1,17 @@
 package org.titiplex.service;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.titiplex.persistence.model.*;
 import org.titiplex.persistence.repo.*;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,9 +34,6 @@ class CommunityServiceTest {
     private LanguageRepository languageRepository;
 
     @Mock
-    private AudioRepository audioRepository;
-
-    @Mock
     private ScenarioRepository scenarioRepository;
 
     @Mock
@@ -40,6 +41,14 @@ class CommunityServiceTest {
 
     @InjectMocks
     private CommunityService service;
+
+    @BeforeEach
+    void setUp() {
+        when(userRepository.existsById(1L)).thenReturn(true);
+        when(userRepository.existsById(2L)).thenReturn(true);
+        when(scenarioRepository.existsById(12L)).thenReturn(true);
+        when(languageRepository.existsById("fra")).thenReturn(true);
+    }
 
     @Test
     void createMessage_defaultsContributionTypeToGeneral() {
@@ -354,5 +363,263 @@ class CommunityServiceTest {
         assertEquals(1L, result.getGrantedByUserId());
         assertEquals("Granted", result.getNote());
         verify(accreditationRepo).save(any(CommunityAccreditation.class));
+    }
+
+    @Test
+    void createRequest_acceptsScenarioEdit_onScenarioScope() {
+        when(requestRepo.existsByRequestedByUserIdAndPermissionTypeAndScopeTypeAndTargetIdAndStatus(
+                1L,
+                AccreditationPermissionType.SCENARIO_EDIT,
+                AccreditationScopeType.SCENARIO,
+                "12",
+                AccreditationRequestStatus.PENDING
+        )).thenReturn(false);
+
+        AccreditationRequest persisted = new AccreditationRequest();
+        persisted.setId(10L);
+        persisted.setRequestedByUserId(1L);
+        persisted.setPermissionType(AccreditationPermissionType.SCENARIO_EDIT);
+        persisted.setScopeType(AccreditationScopeType.SCENARIO);
+        persisted.setTargetId("12");
+        persisted.setMotivation("I can maintain this scenario.");
+        persisted.setStatus(AccreditationRequestStatus.PENDING);
+        persisted.setCreatedAt(Instant.now());
+
+        when(requestRepo.save(any())).thenReturn(persisted);
+
+        AccreditationRequest result = service.createRequest(
+                1L,
+                AccreditationPermissionType.SCENARIO_EDIT,
+                AccreditationScopeType.SCENARIO,
+                "12",
+                "I can maintain this scenario."
+        );
+
+        assertNotNull(result);
+        assertEquals(AccreditationPermissionType.SCENARIO_EDIT, result.getPermissionType());
+        assertEquals(AccreditationScopeType.SCENARIO, result.getScopeType());
+        assertEquals("12", result.getTargetId());
+    }
+
+    @Test
+    void createRequest_acceptsScenarioModerate_onScenarioScope() {
+        when(requestRepo.existsByRequestedByUserIdAndPermissionTypeAndScopeTypeAndTargetIdAndStatus(
+                1L,
+                AccreditationPermissionType.SCENARIO_MODERATE,
+                AccreditationScopeType.SCENARIO,
+                "12",
+                AccreditationRequestStatus.PENDING
+        )).thenReturn(false);
+
+        AccreditationRequest persisted = new AccreditationRequest();
+        persisted.setId(11L);
+        persisted.setRequestedByUserId(1L);
+        persisted.setPermissionType(AccreditationPermissionType.SCENARIO_MODERATE);
+        persisted.setScopeType(AccreditationScopeType.SCENARIO);
+        persisted.setTargetId("12");
+        persisted.setMotivation("I can moderate this scenario.");
+        persisted.setStatus(AccreditationRequestStatus.PENDING);
+        persisted.setCreatedAt(Instant.now());
+
+        when(requestRepo.save(any())).thenReturn(persisted);
+
+        AccreditationRequest result = service.createRequest(
+                1L,
+                AccreditationPermissionType.SCENARIO_MODERATE,
+                AccreditationScopeType.SCENARIO,
+                "12",
+                "I can moderate this scenario."
+        );
+
+        assertNotNull(result);
+        assertEquals(AccreditationPermissionType.SCENARIO_MODERATE, result.getPermissionType());
+    }
+
+    @Test
+    void createRequest_rejectsScenarioEdit_onGlobalScope() {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.createRequest(
+                        1L,
+                        AccreditationPermissionType.SCENARIO_EDIT,
+                        AccreditationScopeType.GLOBAL,
+                        null,
+                        "Invalid scope"
+                )
+        );
+
+        assertTrue(ex.getMessage().contains("SCENARIO_EDIT"));
+    }
+
+    @Test
+    void createRequest_rejectsScenarioModerate_onLanguageScope() {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.createRequest(
+                        1L,
+                        AccreditationPermissionType.SCENARIO_MODERATE,
+                        AccreditationScopeType.LANGUAGE,
+                        "fra",
+                        "Invalid scope"
+                )
+        );
+
+        assertTrue(ex.getMessage().contains("SCENARIO_MODERATE"));
+    }
+
+    @Test
+    void createRequest_rejectsLanguageEdit_onScenarioScope() {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.createRequest(
+                        1L,
+                        AccreditationPermissionType.LANGUAGE_EDIT,
+                        AccreditationScopeType.SCENARIO,
+                        "12",
+                        "Invalid scope"
+                )
+        );
+
+        assertTrue(ex.getMessage().contains("LANGUAGE_EDIT"));
+    }
+
+    @Test
+    void grantAccreditation_acceptsScenarioEdit_onScenarioScope() {
+        when(accreditationRepo.findByUserIdAndPermissionTypeAndScopeTypeAndTargetId(
+                2L,
+                AccreditationPermissionType.SCENARIO_EDIT,
+                AccreditationScopeType.SCENARIO,
+                "12"
+        )).thenReturn(Optional.empty());
+
+        CommunityAccreditation saved = new CommunityAccreditation();
+        saved.setId(100L);
+        saved.setUserId(2L);
+        saved.setPermissionType(AccreditationPermissionType.SCENARIO_EDIT);
+        saved.setScopeType(AccreditationScopeType.SCENARIO);
+        saved.setTargetId("12");
+
+        when(accreditationRepo.save(any())).thenReturn(saved);
+
+        CommunityAccreditation result = service.grantAccreditation(
+                2L,
+                AccreditationPermissionType.SCENARIO_EDIT,
+                AccreditationScopeType.SCENARIO,
+                "12",
+                1L,
+                "Granted by admin"
+        );
+
+        assertEquals(AccreditationPermissionType.SCENARIO_EDIT, result.getPermissionType());
+        assertEquals(AccreditationScopeType.SCENARIO, result.getScopeType());
+    }
+
+    @Test
+    void grantAccreditation_rejectsScenarioModerate_onGlobalScope() {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.grantAccreditation(
+                        2L,
+                        AccreditationPermissionType.SCENARIO_MODERATE,
+                        AccreditationScopeType.GLOBAL,
+                        null,
+                        1L,
+                        "Invalid"
+                )
+        );
+
+        assertTrue(ex.getMessage().contains("SCENARIO_MODERATE"));
+    }
+
+    @Test
+    void listRequests_acceptsScenarioEdit_onScenarioScope() {
+        when(requestRepo.findByPermissionTypeAndScopeTypeAndTargetIdOrderByCreatedAtDesc(
+                AccreditationPermissionType.SCENARIO_EDIT,
+                AccreditationScopeType.SCENARIO,
+                "12"
+        )).thenReturn(List.of());
+
+        List<AccreditationRequest> result = service.listRequests(
+                AccreditationPermissionType.SCENARIO_EDIT,
+                AccreditationScopeType.SCENARIO,
+                "12"
+        );
+
+        assertNotNull(result);
+        verify(requestRepo).findByPermissionTypeAndScopeTypeAndTargetIdOrderByCreatedAtDesc(
+                AccreditationPermissionType.SCENARIO_EDIT,
+                AccreditationScopeType.SCENARIO,
+                "12"
+        );
+    }
+
+    @Test
+    void listRequests_rejectsLanguageEdit_onScenarioScope() {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.listRequests(
+                        AccreditationPermissionType.LANGUAGE_EDIT,
+                        AccreditationScopeType.SCENARIO,
+                        "12"
+                )
+        );
+
+        assertTrue(ex.getMessage().contains("LANGUAGE_EDIT"));
+    }
+
+    @Test
+    void listAccreditations_acceptsScenarioModerate_onScenarioScope() {
+        when(accreditationRepo.findByPermissionTypeAndScopeTypeAndTargetIdOrderByGrantedAtDesc(
+                AccreditationPermissionType.SCENARIO_MODERATE,
+                AccreditationScopeType.SCENARIO,
+                "12"
+        )).thenReturn(List.of());
+
+        List<CommunityAccreditation> result = service.listAccreditations(
+                AccreditationPermissionType.SCENARIO_MODERATE,
+                AccreditationScopeType.SCENARIO,
+                "12"
+        );
+
+        assertNotNull(result);
+        verify(accreditationRepo).findByPermissionTypeAndScopeTypeAndTargetIdOrderByGrantedAtDesc(
+                AccreditationPermissionType.SCENARIO_MODERATE,
+                AccreditationScopeType.SCENARIO,
+                "12"
+        );
+    }
+
+    @Test
+    void reviewRequest_approvedScenarioEdit_createsMatchingAccreditation() {
+        AccreditationRequest pending = new AccreditationRequest();
+        pending.setId(55L);
+        pending.setRequestedByUserId(2L);
+        pending.setPermissionType(AccreditationPermissionType.SCENARIO_EDIT);
+        pending.setScopeType(AccreditationScopeType.SCENARIO);
+        pending.setTargetId("12");
+        pending.setStatus(AccreditationRequestStatus.PENDING);
+
+        when(requestRepo.findById(55L)).thenReturn(Optional.of(pending));
+        when(requestRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(accreditationRepo.findByUserIdAndPermissionTypeAndScopeTypeAndTargetId(
+                2L,
+                AccreditationPermissionType.SCENARIO_EDIT,
+                AccreditationScopeType.SCENARIO,
+                "12"
+        )).thenReturn(Optional.empty());
+        when(accreditationRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        AccreditationRequest reviewed = service.reviewRequest(55L, 1L, true, "Approved");
+
+        assertEquals(AccreditationRequestStatus.APPROVED, reviewed.getStatus());
+
+        ArgumentCaptor<CommunityAccreditation> captor = ArgumentCaptor.forClass(CommunityAccreditation.class);
+        verify(accreditationRepo).save(captor.capture());
+
+        CommunityAccreditation created = captor.getValue();
+        assertEquals(2L, created.getUserId());
+        assertEquals(AccreditationPermissionType.SCENARIO_EDIT, created.getPermissionType());
+        assertEquals(AccreditationScopeType.SCENARIO, created.getScopeType());
+        assertEquals("12", created.getTargetId());
     }
 }

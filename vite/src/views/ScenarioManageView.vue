@@ -386,7 +386,7 @@ onMounted(loadAll);
                   <select v-model="requestPermissionType" @change="loadGovernance">
                     <option value="SCENARIO_EDIT">SCENARIO_EDIT</option>
                     <option value="SCENARIO_MODERATE">SCENARIO_MODERATE</option>
-                    <option value="LANGUAGE_EDIT">LANGUAGE_EDIT</option>
+                    <option value="COMMUNITY_REVIEW">COMMUNITY_REVIEW</option>
                   </select>
                 </label>
               </div>
@@ -438,7 +438,7 @@ onMounted(loadAll);
                     <select v-model="grantForm.permissionType">
                       <option value="SCENARIO_EDIT">SCENARIO_EDIT</option>
                       <option value="SCENARIO_MODERATE">SCENARIO_MODERATE</option>
-                      <option value="LANGUAGE_EDIT">LANGUAGE_EDIT</option>
+                      <option value="COMMUNITY_REVIEW">COMMUNITY_REVIEW</option>
                     </select>
                   </label>
 

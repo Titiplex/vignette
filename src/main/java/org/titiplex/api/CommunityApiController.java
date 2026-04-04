@@ -213,9 +213,10 @@ public class CommunityApiController {
                                     name = "Scenario accreditation request",
                                     value = """
                                             {
+                                              "permissionType": "SCENARIO_EDIT",
                                               "scopeType": "SCENARIO",
-                                              "scenarioId": 12,
-                                              "motivation": "I can help validate transcriptions for this scenario."
+                                              "targetId": "12",
+                                              "motivation": "I can help organize and maintain this scenario."
                                             }
                                             """
                             )
@@ -496,11 +497,12 @@ public class CommunityApiController {
                                     name = "Grant scenario accreditation",
                                     value = """
                                             {
-                                              "userId": 15,
-                                              "scopeType": "SCENARIO",
-                                              "scenarioId": 12,
-                                              "note": "Trusted reviewer for this scenario."
-                                            }
+                                               "userId": 15,
+                                               "permissionType": "SCENARIO_MODERATE",
+                                               "scopeType": "SCENARIO",
+                                               "targetId": "12",
+                                               "note": "Trusted moderator for this scenario."
+                                             }
                                             """
                             )
                     )

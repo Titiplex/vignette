@@ -1,6 +1,5 @@
 package org.titiplex.service;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -41,14 +40,6 @@ class CommunityServiceTest {
 
     @InjectMocks
     private CommunityService service;
-
-    @BeforeEach
-    void setUp() {
-        when(userRepository.existsById(1L)).thenReturn(true);
-        when(userRepository.existsById(2L)).thenReturn(true);
-        when(scenarioRepository.existsById(12L)).thenReturn(true);
-        when(languageRepository.existsById("fra")).thenReturn(true);
-    }
 
     @Test
     void createMessage_defaultsContributionTypeToGeneral() {
@@ -386,6 +377,8 @@ class CommunityServiceTest {
         persisted.setCreatedAt(Instant.now());
 
         when(requestRepo.save(any())).thenReturn(persisted);
+        when(userRepository.existsById(1L)).thenReturn(true);
+        when(scenarioRepository.existsById(12L)).thenReturn(true);
 
         AccreditationRequest result = service.createRequest(
                 1L,
@@ -422,6 +415,8 @@ class CommunityServiceTest {
         persisted.setCreatedAt(Instant.now());
 
         when(requestRepo.save(any())).thenReturn(persisted);
+        when(userRepository.existsById(1L)).thenReturn(true);
+        when(scenarioRepository.existsById(12L)).thenReturn(true);
 
         AccreditationRequest result = service.createRequest(
                 1L,
@@ -500,6 +495,8 @@ class CommunityServiceTest {
         saved.setTargetId("12");
 
         when(accreditationRepo.save(any())).thenReturn(saved);
+        when(userRepository.existsById(2L)).thenReturn(true);
+        when(scenarioRepository.existsById(12L)).thenReturn(true);
 
         CommunityAccreditation result = service.grantAccreditation(
                 2L,
@@ -608,6 +605,8 @@ class CommunityServiceTest {
                 "12"
         )).thenReturn(Optional.empty());
         when(accreditationRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(userRepository.existsById(2L)).thenReturn(true);
+        when(scenarioRepository.existsById(12L)).thenReturn(true);
 
         AccreditationRequest reviewed = service.reviewRequest(55L, 1L, true, "Approved");
 

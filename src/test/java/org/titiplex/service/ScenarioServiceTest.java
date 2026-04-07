@@ -2,7 +2,6 @@ package org.titiplex.service;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.function.Executable;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -62,9 +61,7 @@ class ScenarioServiceTest {
     void getRequiredScenario_throwsWhenMissing() {
         when(scenarioRepository.findById(11L)).thenReturn(Optional.empty());
 
-        Scenario result = scenarioService.getRequiredScenario(11L);
-
-        assertThrows(NoSuchElementException.class, (Executable) scenarioService.getRequiredScenario(11L), "Scenario not found");
+        assertThrows(NoSuchElementException.class, () -> scenarioService.getRequiredScenario(11L));
     }
 
     @Test
@@ -92,6 +89,7 @@ class ScenarioServiceTest {
         scenario.setTitle("My scenario");
         scenario.setDescription("description");
         scenario.setLanguage_id("fra");
+        scenario.setAuthor_id(7L);
         scenario.setAuthor(author);
         scenario.setCreatedAt(Instant.parse("2025-01-01T00:00:00Z"));
 

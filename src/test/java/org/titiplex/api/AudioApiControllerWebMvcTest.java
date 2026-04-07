@@ -83,6 +83,7 @@ class AudioApiControllerWebMvcTest {
         thumbnail.setScenarioId(3L);
         Scenario scenario = new Scenario();
         scenario.setId(3L);
+
         when(thumbnailService.getThumbnailById(7L)).thenReturn(thumbnail);
         when(scenarioService.getRequiredScenario(3L)).thenReturn(scenario);
         when(audioService.listForThumbnail(7L)).thenReturn(

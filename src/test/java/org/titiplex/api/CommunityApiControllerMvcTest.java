@@ -3,7 +3,6 @@ package org.titiplex.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -23,13 +22,13 @@ import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = CommunityApiController.class)
-@AutoConfigureMockMvc(addFilters = false)
 @Import(org.titiplex.config.SecurityConfig.class)
 class CommunityApiControllerMvcTest {
 
@@ -137,6 +136,7 @@ class CommunityApiControllerMvcTest {
         mockMvc.perform(
                         post("/api/community/discussions")
                                 .with(user("alice").roles("USER"))
+                                .with(csrf())
                                 .contentType("application/json")
                                 .content(objectMapper.writeValueAsString(body))
                 )

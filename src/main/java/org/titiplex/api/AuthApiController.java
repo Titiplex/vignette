@@ -21,6 +21,7 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import org.titiplex.api.dto.*;
 import org.titiplex.api.security.AuthenticatedOperation;
 import org.titiplex.api.security.PublicOperation;
@@ -130,12 +131,17 @@ public class AuthApiController {
             @Parameter(hidden = true)
             HttpServletRequest request) {
 
-        var auth = authManager.authenticate(
-                new UsernamePasswordAuthenticationToken(req.username(), req.password())
-        );
+        final Authentication auth;
+        try {
+            auth = authManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(req.username(), req.password())
+            );
+        } catch (org.springframework.security.core.AuthenticationException ex) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+        }
+
         if (request.getSession() != null) request.changeSessionId();
 
-        // 1) session cookie (JSESSIONID)
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(auth);
         SecurityContextHolder.setContext(context);
@@ -327,7 +333,9 @@ public class AuthApiController {
         Authentication authenticated = requireAuthenticated(auth);
 
         User u = users.getUserByUsername(authenticated.getName());
-        if (u == null) throw new IllegalStateException("user not found");
+        if (u == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required");
+        }
 
         return issueToken(authenticated);
     }

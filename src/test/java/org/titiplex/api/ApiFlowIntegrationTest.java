@@ -188,28 +188,37 @@ class ApiFlowIntegrationTest {
                         .param("markerLabel", "speaker")
                         .session(session)
                         .with(csrf()))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isNumber())
                 .andReturn();
 
         long audioId = readId(uploadAudioResult);
 
-        // 6) Public scenario readback
+        // 6) Publish scenario before public readback
+        mvc.perform(post("/api/scenarios/{id}/publish", scenarioId)
+                        .session(session)
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(scenarioId))
+                .andExpect(jsonPath("$.visibilityStatus").value("PUBLISHED"));
+
+        // 7) Public scenario readback
         mvc.perform(get("/api/scenarios/{id}", scenarioId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(scenarioId))
                 .andExpect(jsonPath("$.title").value("My scenario"))
                 .andExpect(jsonPath("$.languageId").value("chuj"))
-                .andExpect(jsonPath("$.authorUsername").value("alice"));
+                .andExpect(jsonPath("$.authorUsername").value("alice"))
+                .andExpect(jsonPath("$.visibilityStatus").value("PUBLISHED"));
 
-        // 7) Public thumbnail listing
+        // 8) Public thumbnail listing
         mvc.perform(get("/api/scenarios/{scenarioId}/thumbnails", scenarioId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(thumbnailId))
                 .andExpect(jsonPath("$[0].title").value("Intro scene"))
                 .andExpect(jsonPath("$[0].idx").value(0));
 
-        // 8) Public thumbnail content
+        // 9) Public thumbnail content
         mvc.perform(get("/api/thumbnails/{id}/content", thumbnailId))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Type", "image/png"))
@@ -217,7 +226,7 @@ class ApiFlowIntegrationTest {
                 .andExpect(header().string("Cache-Control", "public, max-age=3600"))
                 .andExpect(content().bytes(new byte[]{1, 2, 3, 4, 5}));
 
-        // 9) Public audio listing
+        // 10) Public audio listing
         mvc.perform(get("/api/thumbnails/{thumbId}/audios", thumbnailId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(audioId))
@@ -228,7 +237,7 @@ class ApiFlowIntegrationTest {
                 .andExpect(jsonPath("$[0].markerY").value(20.0))
                 .andExpect(jsonPath("$[0].markerLabel").value("speaker"));
 
-        // 10) Public audio content
+        // 11) Public audio content
         mvc.perform(get("/api/audios/{id}/content", audioId))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Type", "audio/webm"))

@@ -18,6 +18,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,7 +33,7 @@ class LanguageServiceTest {
     @Test
     void listLanguages_sanitizesPagingBounds() {
         Page<Language> page = new PageImpl<>(List.of(new Language()));
-        when(languageRepository.findAll(any(Pageable.class))).thenReturn(page);
+        when(languageRepository.search(isNull(), any(Pageable.class))).thenReturn(page);
 
         Page<Language> result = languageService.listLanguages("", -4, 500);
 

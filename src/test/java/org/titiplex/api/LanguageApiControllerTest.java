@@ -14,6 +14,7 @@ import org.titiplex.persistence.model.Language;
 import org.titiplex.persistence.model.Scenario;
 import org.titiplex.persistence.model.User;
 import org.titiplex.service.LanguageService;
+import org.titiplex.service.ScenarioService;
 
 import java.time.Instant;
 import java.util.List;
@@ -22,11 +23,15 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("SequencedCollectionMethodCanBeUsed")
 @ExtendWith(MockitoExtension.class)
 class LanguageApiControllerTest {
 
     @Mock
     private LanguageService languageService;
+
+    @Mock
+    private ScenarioService scenarioService;
 
     @InjectMocks
     private LanguageApiController controller;
@@ -97,15 +102,30 @@ class LanguageApiControllerTest {
         language.setId("chuj");
         language.setScenarios(Set.of(scenario));
 
+        ScenarioDto dto = new ScenarioDto(
+                15L,
+                "Story 1",
+                "Intro story",
+                "chuj",
+                "alice",
+                Instant.parse("2026-03-20T10:15:30Z"),
+                "DRAFT",
+                null,
+                null,
+                null,
+                null
+        );
+
         when(languageService.getLanguage("chuj")).thenReturn(language);
+        when(scenarioService.toDto(scenario)).thenReturn(dto);
 
         List<ScenarioDto> result = controller.getOneScenarios("chuj");
 
         assertEquals(1, result.size());
-        ScenarioDto dto = result.get(0);
-        assertEquals(15L, dto.id());
-        assertEquals("Story 1", dto.title());
-        assertEquals("chuj", dto.languageId());
-        assertEquals("alice", dto.authorUsername());
+        ScenarioDto mapped = result.get(0);
+        assertEquals(15L, mapped.id());
+        assertEquals("Story 1", mapped.title());
+        assertEquals("chuj", mapped.languageId());
+        assertEquals("alice", mapped.authorUsername());
     }
 }

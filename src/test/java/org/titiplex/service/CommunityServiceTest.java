@@ -1,6 +1,5 @@
 package org.titiplex.service;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -42,14 +41,6 @@ class CommunityServiceTest {
     @InjectMocks
     private CommunityService service;
 
-    @BeforeEach
-    void setUp() {
-        when(userRepository.existsById(1L)).thenReturn(true);
-        when(userRepository.existsById(2L)).thenReturn(true);
-        when(scenarioRepository.existsById(12L)).thenReturn(true);
-        when(languageRepository.existsById("fra")).thenReturn(true);
-    }
-
     @Test
     void createMessage_defaultsContributionTypeToGeneral() {
         when(userRepository.existsById(12L)).thenReturn(true);
@@ -76,9 +67,6 @@ class CommunityServiceTest {
 
     @Test
     void createMessage_rejectsBlankContent() {
-        when(userRepository.existsById(12L)).thenReturn(true);
-        when(languageRepository.existsById("chuj")).thenReturn(true);
-
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> service.createMessage(
@@ -386,6 +374,8 @@ class CommunityServiceTest {
         persisted.setCreatedAt(Instant.now());
 
         when(requestRepo.save(any())).thenReturn(persisted);
+        when(userRepository.existsById(1L)).thenReturn(true);
+        when(scenarioRepository.existsById(12L)).thenReturn(true);
 
         AccreditationRequest result = service.createRequest(
                 1L,
@@ -422,6 +412,8 @@ class CommunityServiceTest {
         persisted.setCreatedAt(Instant.now());
 
         when(requestRepo.save(any())).thenReturn(persisted);
+        when(userRepository.existsById(1L)).thenReturn(true);
+        when(scenarioRepository.existsById(12L)).thenReturn(true);
 
         AccreditationRequest result = service.createRequest(
                 1L,
@@ -437,6 +429,8 @@ class CommunityServiceTest {
 
     @Test
     void createRequest_rejectsScenarioEdit_onGlobalScope() {
+        when(userRepository.existsById(1L)).thenReturn(true);
+
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> service.createRequest(
@@ -448,11 +442,14 @@ class CommunityServiceTest {
                 )
         );
 
-        assertTrue(ex.getMessage().contains("SCENARIO_EDIT"));
+        assertEquals("SCENARIO_EDIT is only valid for SCENARIO scope", ex.getMessage());
     }
 
     @Test
     void createRequest_rejectsScenarioModerate_onLanguageScope() {
+        when(userRepository.existsById(1L)).thenReturn(true);
+        when(languageRepository.existsById("fra")).thenReturn(true);
+
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> service.createRequest(
@@ -464,11 +461,14 @@ class CommunityServiceTest {
                 )
         );
 
-        assertTrue(ex.getMessage().contains("SCENARIO_MODERATE"));
+        assertEquals("SCENARIO_MODERATE is only valid for SCENARIO scope", ex.getMessage());
     }
 
     @Test
     void createRequest_rejectsLanguageEdit_onScenarioScope() {
+        when(userRepository.existsById(1L)).thenReturn(true);
+        when(scenarioRepository.existsById(12L)).thenReturn(true);
+
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> service.createRequest(
@@ -480,7 +480,10 @@ class CommunityServiceTest {
                 )
         );
 
-        assertTrue(ex.getMessage().contains("LANGUAGE_EDIT"));
+        assertEquals(
+                "LANGUAGE_EDIT is only valid for GLOBAL, LANGUAGE or LANGUAGE_FAMILY scope",
+                ex.getMessage()
+        );
     }
 
     @Test
@@ -500,6 +503,8 @@ class CommunityServiceTest {
         saved.setTargetId("12");
 
         when(accreditationRepo.save(any())).thenReturn(saved);
+        when(userRepository.existsById(2L)).thenReturn(true);
+        when(scenarioRepository.existsById(12L)).thenReturn(true);
 
         CommunityAccreditation result = service.grantAccreditation(
                 2L,
@@ -516,6 +521,8 @@ class CommunityServiceTest {
 
     @Test
     void grantAccreditation_rejectsScenarioModerate_onGlobalScope() {
+        when(userRepository.existsById(2L)).thenReturn(true);
+
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> service.grantAccreditation(
@@ -528,7 +535,7 @@ class CommunityServiceTest {
                 )
         );
 
-        assertTrue(ex.getMessage().contains("SCENARIO_MODERATE"));
+        assertEquals("SCENARIO_MODERATE is only valid for SCENARIO scope", ex.getMessage());
     }
 
     @Test
@@ -538,6 +545,7 @@ class CommunityServiceTest {
                 AccreditationScopeType.SCENARIO,
                 "12"
         )).thenReturn(List.of());
+        when(scenarioRepository.existsById(12L)).thenReturn(true);
 
         List<AccreditationRequest> result = service.listRequests(
                 AccreditationPermissionType.SCENARIO_EDIT,
@@ -555,6 +563,8 @@ class CommunityServiceTest {
 
     @Test
     void listRequests_rejectsLanguageEdit_onScenarioScope() {
+        when(scenarioRepository.existsById(12L)).thenReturn(true);
+
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> service.listRequests(
@@ -564,7 +574,10 @@ class CommunityServiceTest {
                 )
         );
 
-        assertTrue(ex.getMessage().contains("LANGUAGE_EDIT"));
+        assertEquals(
+                "LANGUAGE_EDIT is only valid for GLOBAL, LANGUAGE or LANGUAGE_FAMILY scope",
+                ex.getMessage()
+        );
     }
 
     @Test
@@ -574,6 +587,7 @@ class CommunityServiceTest {
                 AccreditationScopeType.SCENARIO,
                 "12"
         )).thenReturn(List.of());
+        when(scenarioRepository.existsById(12L)).thenReturn(true);
 
         List<CommunityAccreditation> result = service.listAccreditations(
                 AccreditationPermissionType.SCENARIO_MODERATE,
@@ -608,6 +622,8 @@ class CommunityServiceTest {
                 "12"
         )).thenReturn(Optional.empty());
         when(accreditationRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(userRepository.existsById(2L)).thenReturn(true);
+        when(scenarioRepository.existsById(12L)).thenReturn(true);
 
         AccreditationRequest reviewed = service.reviewRequest(55L, 1L, true, "Approved");
 

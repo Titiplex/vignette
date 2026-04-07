@@ -7,7 +7,9 @@ import org.springframework.context.annotation.Import;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.titiplex.api.dto.ScenarioDto;
 import org.titiplex.config.SecurityConfig;
+import org.titiplex.config.components.ScenarioSecurity;
 import org.titiplex.persistence.model.Scenario;
 import org.titiplex.persistence.model.User;
 import org.titiplex.service.LanguageService;
@@ -17,6 +19,8 @@ import org.titiplex.service.UserService;
 import java.time.Instant;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -46,7 +50,7 @@ class ScenarioApiControllerWebMvcTest {
     private JwtDecoder jwtDecoder;
 
     @MockitoBean(name = "scenarioSecurity")
-    private Object scenarioSecurity;
+    private ScenarioSecurity scenarioSecurity;
 
     @Test
     void listAll_isPublic() throws Exception {
@@ -59,10 +63,26 @@ class ScenarioApiControllerWebMvcTest {
         scenario.setTitle("Story");
         scenario.setDescription("Desc");
         scenario.setLanguage_id("chuj");
+        scenario.setAuthor_id(7L);
         scenario.setAuthor(author);
         scenario.setCreatedAt(Instant.parse("2026-03-20T10:15:30Z"));
 
-        when(scenarioService.listAllScenarios()).thenReturn(List.of(scenario));
+        ScenarioDto dto = new ScenarioDto(
+                9L,
+                "Story",
+                "Desc",
+                "chuj",
+                "alice",
+                Instant.parse("2026-03-20T10:15:30Z"),
+                "DRAFT",
+                null,
+                "PRESET",
+                "GRID_3",
+                3
+        );
+
+        when(scenarioService.listVisibleScenarios(any())).thenReturn(List.of(scenario));
+        when(scenarioService.toDto(scenario)).thenReturn(dto);
 
         mvc.perform(get("/api/scenarios"))
                 .andExpect(status().isOk())
@@ -83,16 +103,33 @@ class ScenarioApiControllerWebMvcTest {
         scenario.setTitle("Scenario 11");
         scenario.setDescription("Some desc");
         scenario.setLanguage_id("chuj");
+        scenario.setAuthor_id(7L);
         scenario.setAuthor(author);
         scenario.setCreatedAt(Instant.parse("2026-03-20T10:15:30Z"));
 
-        when(scenarioService.getRequiredScenario(11L)).thenReturn(scenario);
+        ScenarioDto dto = new ScenarioDto(
+                11L,
+                "Scenario 11",
+                "Some desc",
+                "chuj",
+                "alice",
+                Instant.parse("2026-03-20T10:15:30Z"),
+                "DRAFT",
+                null,
+                "PRESET",
+                "GRID_3",
+                3
+        );
+
+        when(scenarioService.getVisibleScenario(eq(11L), any())).thenReturn(scenario);
+        when(scenarioService.toDto(scenario)).thenReturn(dto);
 
         mvc.perform(get("/api/scenarios/11"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(11))
                 .andExpect(jsonPath("$.title").value("Scenario 11"))
-                .andExpect(jsonPath("$.languageId").value("chuj"));
+                .andExpect(jsonPath("$.languageId").value("chuj"))
+                .andExpect(jsonPath("$.authorUsername").value("alice"));
     }
 
     @Test

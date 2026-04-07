@@ -188,7 +188,7 @@ class ApiFlowIntegrationTest {
                         .param("markerLabel", "speaker")
                         .session(session)
                         .with(csrf()))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isNumber())
                 .andReturn();
 

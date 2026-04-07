@@ -178,7 +178,7 @@ class AudioApiControllerWebMvcTest {
                         .param("markerLabel", "speaker")
                         .with(user("alice").roles("USER"))
                         .with(csrf()))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(42));
 
         verify(audioService).createAudio(9L, "Greeting", 2, 12L, audio, 10.0, 20.0, "speaker");

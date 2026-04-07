@@ -2,6 +2,7 @@ package org.titiplex.service;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.function.Executable;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -13,9 +14,11 @@ import org.titiplex.persistence.repo.ScenarioRepository;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -56,12 +59,12 @@ class ScenarioServiceTest {
     }
 
     @Test
-    void getScenario_returnsFallbackWhenMissing() {
+    void getRequiredScenario_throwsWhenMissing() {
         when(scenarioRepository.findById(11L)).thenReturn(Optional.empty());
 
         Scenario result = scenarioService.getRequiredScenario(11L);
 
-        assertEquals("Scenario not found", result.getTitle());
+        assertThrows(NoSuchElementException.class, (Executable) scenarioService.getRequiredScenario(11L), "Scenario not found");
     }
 
     @Test
@@ -78,15 +81,18 @@ class ScenarioServiceTest {
 
     @Test
     void toDto_mapsEntityFields() {
-        User user = new User();
-        user.setUsername("alice");
+        User author = new User();
+        author.setId(7L);
+        author.setUsername("alice");
+
+        when(userService.getUserById(7L)).thenReturn(author);
 
         Scenario scenario = new Scenario();
         scenario.setId(3L);
         scenario.setTitle("My scenario");
         scenario.setDescription("description");
         scenario.setLanguage_id("fra");
-        scenario.setAuthor(user);
+        scenario.setAuthor(author);
         scenario.setCreatedAt(Instant.parse("2025-01-01T00:00:00Z"));
 
         ScenarioDto dto = scenarioService.toDto(scenario);

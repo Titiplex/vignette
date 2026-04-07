@@ -8,6 +8,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.titiplex.config.SecurityConfig;
+import org.titiplex.config.components.ScenarioSecurity;
 import org.titiplex.persistence.model.Scenario;
 import org.titiplex.persistence.model.User;
 import org.titiplex.service.LanguageService;
@@ -17,6 +18,8 @@ import org.titiplex.service.UserService;
 import java.time.Instant;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -46,7 +49,7 @@ class ScenarioApiControllerWebMvcTest {
     private JwtDecoder jwtDecoder;
 
     @MockitoBean(name = "scenarioSecurity")
-    private Object scenarioSecurity;
+    private ScenarioSecurity scenarioSecurity;
 
     @Test
     void listAll_isPublic() throws Exception {
@@ -62,7 +65,7 @@ class ScenarioApiControllerWebMvcTest {
         scenario.setAuthor(author);
         scenario.setCreatedAt(Instant.parse("2026-03-20T10:15:30Z"));
 
-        when(scenarioService.listAllScenarios()).thenReturn(List.of(scenario));
+        when(scenarioService.listVisibleScenarios(any())).thenReturn(List.of(scenario));
 
         mvc.perform(get("/api/scenarios"))
                 .andExpect(status().isOk())
@@ -86,7 +89,7 @@ class ScenarioApiControllerWebMvcTest {
         scenario.setAuthor(author);
         scenario.setCreatedAt(Instant.parse("2026-03-20T10:15:30Z"));
 
-        when(scenarioService.getRequiredScenario(11L)).thenReturn(scenario);
+        when(scenarioService.getVisibleScenario(eq(11L), any())).thenReturn(scenario);
 
         mvc.perform(get("/api/scenarios/11"))
                 .andExpect(status().isOk())

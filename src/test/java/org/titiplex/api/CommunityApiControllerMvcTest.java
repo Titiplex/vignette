@@ -30,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = CommunityApiController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@Import(org.titiplex.config.SecurityConfig.class)
+//@Import(org.titiplex.config.SecurityConfig.class)
 class CommunityApiControllerMvcTest {
 
     @Autowired

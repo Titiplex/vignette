@@ -15,6 +15,7 @@ import org.titiplex.api.dto.PublicUserProfileResponse;
 import org.titiplex.api.dto.UpdateUserProfileRequest;
 import org.titiplex.api.dto.UserProfileResponse;
 import org.titiplex.api.security.AuthenticatedOperation;
+import org.titiplex.api.security.PublicOperation;
 import org.titiplex.persistence.model.Role;
 import org.titiplex.persistence.model.User;
 import org.titiplex.service.UserService;
@@ -190,7 +191,7 @@ public class UserApiController {
             summary = "Get public user profile",
             description = "Returns the public profile of a user."
     )
-    @AuthenticatedOperation
+    @PublicOperation
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",

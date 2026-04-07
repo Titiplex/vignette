@@ -66,8 +66,8 @@ class AuthApiControllerWebMvcTest {
                                 }
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").value("refreshed-token"))
-                .andExpect(jsonPath("$.expiresIn").value(3600));
+                .andExpect(jsonPath("$.accessToken").value("jwt-token"))
+                .andExpect(jsonPath("$.expiresInSeconds").value(3600));
     }
 
     @Test
@@ -137,7 +137,7 @@ class AuthApiControllerWebMvcTest {
         mvc.perform(post("/api/auth/refresh")
                         .with(user("alice").roles("USER")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").value("refreshed-token"))
-                .andExpect(jsonPath("$.expiresIn").value(3600));
+                .andExpect(jsonPath("$.accessToken").value("refreshed-token"))
+                .andExpect(jsonPath("$.expiresInSeconds").value(3600));
     }
 }

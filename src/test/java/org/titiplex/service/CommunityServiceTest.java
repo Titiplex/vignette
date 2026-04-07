@@ -67,9 +67,6 @@ class CommunityServiceTest {
 
     @Test
     void createMessage_rejectsBlankContent() {
-        when(userRepository.existsById(12L)).thenReturn(true);
-        when(languageRepository.existsById("chuj")).thenReturn(true);
-
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> service.createMessage(
@@ -535,6 +532,7 @@ class CommunityServiceTest {
                 AccreditationScopeType.SCENARIO,
                 "12"
         )).thenReturn(List.of());
+        when(scenarioRepository.existsById(12L)).thenReturn(true);
 
         List<AccreditationRequest> result = service.listRequests(
                 AccreditationPermissionType.SCENARIO_EDIT,
@@ -571,6 +569,7 @@ class CommunityServiceTest {
                 AccreditationScopeType.SCENARIO,
                 "12"
         )).thenReturn(List.of());
+        when(scenarioRepository.existsById(12L)).thenReturn(true);
 
         List<CommunityAccreditation> result = service.listAccreditations(
                 AccreditationPermissionType.SCENARIO_MODERATE,

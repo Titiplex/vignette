@@ -21,6 +21,7 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import org.titiplex.api.dto.*;
 import org.titiplex.api.security.AuthenticatedOperation;
 import org.titiplex.api.security.PublicOperation;
@@ -324,6 +325,10 @@ public class AuthApiController {
     })
     @PostMapping("/refresh")
     public LoginResponse refresh(@Parameter(hidden = true) Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required");
+        }
+
         Authentication authenticated = requireAuthenticated(auth);
 
         User u = users.getUserByUsername(authenticated.getName());

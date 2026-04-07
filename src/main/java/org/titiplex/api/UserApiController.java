@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import org.titiplex.api.dto.ApiError;
 import org.titiplex.api.dto.PublicUserProfileResponse;
 import org.titiplex.api.dto.UpdateUserProfileRequest;
@@ -92,7 +93,9 @@ public class UserApiController {
             Principal principal
     ) {
         User user = users.getUserByUsername(principal.getName());
-        if (user == null) throw new IllegalStateException("user not found");
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "user not found");
+        }
         return toPrivateProfile(user);
     }
 
@@ -161,7 +164,9 @@ public class UserApiController {
             @Parameter(hidden = true)
             Principal principal) {
         User user = users.getUserByUsername(principal.getName());
-        if (user == null) throw new IllegalStateException("user not found");
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "user not found");
+        }
 
         User updated = users.updateProfile(
                 user,

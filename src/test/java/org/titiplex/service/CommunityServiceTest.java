@@ -429,6 +429,8 @@ class CommunityServiceTest {
 
     @Test
     void createRequest_rejectsScenarioEdit_onGlobalScope() {
+        when(userRepository.existsById(1L)).thenReturn(true);
+
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> service.createRequest(
@@ -440,11 +442,14 @@ class CommunityServiceTest {
                 )
         );
 
-        assertTrue(ex.getMessage().contains("SCENARIO_EDIT"));
+        assertEquals("SCENARIO_EDIT is only valid for SCENARIO scope", ex.getMessage());
     }
 
     @Test
     void createRequest_rejectsScenarioModerate_onLanguageScope() {
+        when(userRepository.existsById(1L)).thenReturn(true);
+        when(languageRepository.existsById("fra")).thenReturn(true);
+
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> service.createRequest(
@@ -456,11 +461,14 @@ class CommunityServiceTest {
                 )
         );
 
-        assertTrue(ex.getMessage().contains("SCENARIO_MODERATE"));
+        assertEquals("SCENARIO_MODERATE is only valid for SCENARIO scope", ex.getMessage());
     }
 
     @Test
     void createRequest_rejectsLanguageEdit_onScenarioScope() {
+        when(userRepository.existsById(1L)).thenReturn(true);
+        when(scenarioRepository.existsById(12L)).thenReturn(true);
+
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> service.createRequest(
@@ -472,7 +480,10 @@ class CommunityServiceTest {
                 )
         );
 
-        assertTrue(ex.getMessage().contains("LANGUAGE_EDIT"));
+        assertEquals(
+                "LANGUAGE_EDIT is only valid for GLOBAL, LANGUAGE or LANGUAGE_FAMILY scope",
+                ex.getMessage()
+        );
     }
 
     @Test
@@ -510,6 +521,8 @@ class CommunityServiceTest {
 
     @Test
     void grantAccreditation_rejectsScenarioModerate_onGlobalScope() {
+        when(userRepository.existsById(2L)).thenReturn(true);
+
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> service.grantAccreditation(
@@ -522,7 +535,7 @@ class CommunityServiceTest {
                 )
         );
 
-        assertTrue(ex.getMessage().contains("SCENARIO_MODERATE"));
+        assertEquals("SCENARIO_MODERATE is only valid for SCENARIO scope", ex.getMessage());
     }
 
     @Test
@@ -550,6 +563,8 @@ class CommunityServiceTest {
 
     @Test
     void listRequests_rejectsLanguageEdit_onScenarioScope() {
+        when(scenarioRepository.existsById(12L)).thenReturn(true);
+
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> service.listRequests(
@@ -559,7 +574,10 @@ class CommunityServiceTest {
                 )
         );
 
-        assertTrue(ex.getMessage().contains("LANGUAGE_EDIT"));
+        assertEquals(
+                "LANGUAGE_EDIT is only valid for GLOBAL, LANGUAGE or LANGUAGE_FAMILY scope",
+                ex.getMessage()
+        );
     }
 
     @Test

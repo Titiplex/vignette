@@ -113,7 +113,8 @@ class LanguageApiControllerTest {
                 null,
                 null,
                 null,
-                null
+                null,
+                List.of()
         );
 
         when(languageService.getLanguage("chuj")).thenReturn(language);

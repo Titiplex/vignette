@@ -50,6 +50,15 @@ const statusVariant = computed(() => {
             {{ scenario.visibilityStatus ?? "UNKNOWN" }}
           </BaseBadge>
         </div>
+        <div v-if="scenario.tags?.length" class="scenario-card__tags">
+          <BaseBadge
+              v-for="tag in scenario.tags"
+              :key="tag"
+              variant="neutral"
+          >
+            #{{ tag }}
+          </BaseBadge>
+        </div>
       </div>
 
       <p class="scenario-card__description">

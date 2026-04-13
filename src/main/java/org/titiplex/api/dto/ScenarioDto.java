@@ -3,6 +3,7 @@ package org.titiplex.api.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
+import java.util.List;
 
 @Schema(name = "Scenario", description = "Scenario information")
 public record ScenarioDto(
@@ -27,6 +28,8 @@ public record ScenarioDto(
         @Schema(description = "Storyboard preset.", example = "GRID_3")
         String storyboardPreset,
         @Schema(description = "Storyboard columns.", example = "3")
-        Integer storyboardColumns
+        Integer storyboardColumns,
+        @Schema(description = "List of tags associated with the scenario.")
+        List<String> tags
 ) {
 }

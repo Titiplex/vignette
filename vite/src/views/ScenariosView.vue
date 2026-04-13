@@ -33,11 +33,16 @@ const filtered = computed(() => {
     const description = (s.description ?? "").toLowerCase();
     const status = String(s.visibilityStatus ?? "").toUpperCase();
 
+    const tags = Array.isArray(s.tags)
+        ? s.tags.map(tag => String(tag).toLowerCase())
+        : [];
+
     const matchesSearch = !q || (
         title.includes(q) ||
         language.includes(q) ||
         author.includes(q) ||
-        description.includes(q)
+        description.includes(q) ||
+        tags.some(tag => tag.includes(q))
     );
 
     const matchesStatus = statusFilter.value === "ALL" || status === statusFilter.value;
@@ -95,7 +100,7 @@ onMounted(load);
         <div class="storyboard-settings-grid">
           <label>
             Search
-            <input v-model="search" placeholder="Search scenarios"/>
+            <input v-model="search" placeholder="Search scenarios by name, authors, languages or tags"/>
           </label>
 
           <label>

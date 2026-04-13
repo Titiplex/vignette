@@ -7,6 +7,7 @@ import BasePageHeader from "../components/ui/BasePageHeader.vue";
 import BaseAlert from "../components/ui/BaseAlert.vue";
 import BaseBadge from "../components/ui/BaseBadge.vue";
 import {useToast} from "../composables/useToast";
+import TagAutocompleteInput from "@/components/TagAutocompleteInput.vue";
 
 const router = useRouter();
 const toast = useToast();
@@ -15,6 +16,7 @@ const form = ref({
   title: "",
   description: "",
   languageId: "",
+  tags: [],
 });
 
 const languages = ref([]);
@@ -69,6 +71,7 @@ async function submit() {
       title: form.value.title.trim(),
       description: form.value.description,
       languageId: form.value.languageId,
+      tags: form.value.tags,
     });
 
     toast.success("Scenario created successfully.");
@@ -180,6 +183,12 @@ onMounted(async () => {
             Next
           </button>
         </div>
+
+        <TagAutocompleteInput
+            v-model="form.tags"
+            label="Tags"
+            placeholder="Add tags to describe the scenario"
+        />
 
         <button type="submit" class="btn btn--primary" :disabled="loading || !isFormValid">
           {{ loading ? "Creating..." : "Create scenario" }}

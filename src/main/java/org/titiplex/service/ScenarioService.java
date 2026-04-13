@@ -13,6 +13,7 @@ import org.titiplex.persistence.model.StoryboardLayoutMode;
 import org.titiplex.persistence.repo.ScenarioRepository;
 
 import java.time.Instant;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -21,11 +22,18 @@ public class ScenarioService {
     private final ScenarioRepository repo;
     private final UserService userService;
     private final LanguageService languageService;
+    private final ScenarioTagService scenarioTagService;
 
-    public ScenarioService(ScenarioRepository scenarioRepository, UserService userService, LanguageService languageService) {
+    public ScenarioService(
+            ScenarioRepository scenarioRepository,
+            UserService userService,
+            LanguageService languageService,
+            ScenarioTagService scenarioTagService
+    ) {
         this.repo = scenarioRepository;
         this.userService = userService;
         this.languageService = languageService;
+        this.scenarioTagService = scenarioTagService;
     }
 
     public boolean existsByIdAndAuthorUsername(Long scenarioId, String username) {
@@ -36,7 +44,7 @@ public class ScenarioService {
         return repo.existsByTitleAndAuthorUsernameAndLanguageId(title, authorName, languageId);
     }
 
-    public Scenario createScenario(String title, String description, Long authorId, String languageId) {
+    public Scenario createScenario(String title, String description, Long authorId, String languageId, List<String> tags) {
         Scenario scenario = new Scenario();
         scenario.setTitle(title);
         scenario.setDescription(description);
@@ -49,6 +57,7 @@ public class ScenarioService {
         scenario.setStoryboardLayoutMode(StoryboardLayoutMode.PRESET);
         scenario.setStoryboardPreset("GRID_3");
         scenario.setStoryboardColumns(3);
+        scenario.setTags(new LinkedHashSet<>(scenarioTagService.resolveTags(tags)));
         return repo.save(scenario);
     }
 
@@ -150,6 +159,10 @@ public class ScenarioService {
             scenario.setDescription(request.description().trim());
         }
 
+        if (request.tags() != null) {
+            scenario.setTags(new LinkedHashSet<>(scenarioTagService.resolveTags(request.tags())));
+        }
+
         return repo.save(scenario);
     }
 
@@ -217,7 +230,8 @@ public class ScenarioService {
                 s.getPublishedAt(),
                 s.getStoryboardLayoutMode().name(),
                 s.getStoryboardPreset(),
-                s.getStoryboardColumns()
+                s.getStoryboardColumns(),
+                scenarioTagService.toNames(s.getTags())
         );
     }
 

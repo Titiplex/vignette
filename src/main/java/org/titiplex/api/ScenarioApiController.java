@@ -126,7 +126,13 @@ public class ScenarioApiController {
             throw new IllegalArgumentException("Scenario already exists for this user and language");
         }
 
-        Long id = scenarioService.createScenario(req.title().trim(), req.description(), userId, req.languageId()).getId();
+        Long id = scenarioService.createScenario(
+                req.title().trim(),
+                req.description(),
+                userId,
+                req.languageId(),
+                req.tags()
+        ).getId();
         return new CreateScenarioResponse(id);
     }
 

@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 @Entity
@@ -71,4 +72,12 @@ public class Scenario {
 
     @Column(name = "storyboard_columns", nullable = false)
     private Integer storyboardColumns = 3;
+
+    @ManyToMany
+    @JoinTable(
+            name = "scenario_tag_link",
+            joinColumns = @JoinColumn(name = "scenario_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private Set<ScenarioTag> tags = new LinkedHashSet<>();
 }

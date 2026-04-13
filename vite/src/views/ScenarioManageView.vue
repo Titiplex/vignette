@@ -16,6 +16,7 @@ import {
   reviewAccreditationRequest,
 } from "../api/community";
 import {useAuth} from "../composables/useAuth";
+import TagAutocompleteInput from "@/components/TagAutocompleteInput.vue";
 
 const props = defineProps({
   id: {type: String, required: true},
@@ -42,6 +43,7 @@ const canManage = computed(() => isOwner.value || isAdmin.value);
 const metadataForm = ref({
   title: "",
   description: "",
+  tags: [],
 });
 
 const savingMetadata = ref(false);
@@ -76,6 +78,7 @@ async function loadScenarioData() {
   metadataForm.value = {
     title: scenario.value.title ?? "",
     description: scenario.value.description ?? "",
+    tags: Array.isArray(scenario.value.tags) ? [...scenario.value.tags] : [],
   };
 
   storyboardForm.value = {
@@ -110,6 +113,7 @@ async function saveMetadata() {
     scenario.value = await updateScenarioMetadata(props.id, {
       title: metadataForm.value.title,
       description: metadataForm.value.description,
+      tags: metadataForm.value.tags,
     });
     success.value = "Scenario metadata saved.";
   } catch (e) {
@@ -310,6 +314,14 @@ onMounted(loadAll);
                 <label class="field--full">
                   Description
                   <textarea v-model="metadataForm.description" rows="4"/>
+                </label>
+
+                <label class="field--full">
+                  <TagAutocompleteInput
+                      v-model="metadataForm.tags"
+                      label="Tags"
+                      placeholder="Add scenario tags"
+                  />
                 </label>
               </div>
 

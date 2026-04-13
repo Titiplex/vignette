@@ -14,8 +14,8 @@
 
 .app-footer__grid {
     display: grid;
-    grid-template-columns: 1.4fr 1fr 1fr 1fr;
-    gap: 24px;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 20px;
     padding: 30px 0 34px;
 }
 

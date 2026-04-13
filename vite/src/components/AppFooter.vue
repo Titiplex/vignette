@@ -14,13 +14,6 @@ const resourceLinks = [
   {label: "GitHub repository", href: "https://github.com/Titiplex/vignette"},
   {label: "API documentation", href: "https://titiplex.github.io/vignette/"},
 ];
-
-const focusLinks = [
-  "Language documentation",
-  "Multimedia elicitation",
-  "Community collaboration",
-  "Low-resource language support",
-];
 </script>
 
 <template>
@@ -51,15 +44,6 @@ const focusLinks = [
             <a :href="link.href" target="_blank" rel="noreferrer">
               {{ link.label }}
             </a>
-          </li>
-        </ul>
-      </section>
-
-      <section>
-        <h3 class="app-footer__heading">Focus</h3>
-        <ul class="app-footer__list">
-          <li v-for="item in focusLinks" :key="item">
-            {{ item }}
           </li>
         </ul>
       </section>

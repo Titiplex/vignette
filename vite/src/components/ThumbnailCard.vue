@@ -8,9 +8,10 @@ const props = defineProps({
   audios: {type: Array, default: () => []},
   selected: {type: Boolean, default: false},
   highlighted: {type: Boolean, default: false},
+  quickRecording: {type: Boolean, default: false},
 });
 
-const emit = defineEmits(["select", "play"]);
+const emit = defineEmits(["select", "play", "quick-record"]);
 
 function thumbnailContentUrl(thumb) {
   if (!thumb?.id) return "";
@@ -50,6 +51,11 @@ function markerStyle(marker) {
 function onPlayClick() {
   emit("select", props.thumb);
   emit("play", props.thumb);
+}
+
+function onQuickRecordClick() {
+  emit("select", props.thumb);
+  emit("quick-record", props.thumb);
 }
 </script>
 
@@ -96,6 +102,23 @@ function onPlayClick() {
       >
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
           <path d="M8 6.5v11l9-5.5-9-5.5z"/>
+        </svg>
+      </button>
+
+      <button
+          type="button"
+          class="storyboard-tile__quick-record"
+          :class="{ 'storyboard-tile__quick-record--active': quickRecording }"
+          :title="quickRecording
+      ? `Stop quick recording for ${thumb.title || `thumbnail ${thumb.idx ?? thumb.id}`}`
+      : `Quick record on ${thumb.title || `thumbnail ${thumb.idx ?? thumb.id}`}`"
+          aria-label="Quick record audio"
+          @click.stop="onQuickRecordClick"
+      >
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 15.5a3.5 3.5 0 0 0 3.5-3.5V7a3.5 3.5 0 1 0-7 0v5a3.5 3.5 0 0 0 3.5 3.5Z"/>
+          <path
+              d="M6 11.5a1 1 0 1 1 2 0 4 4 0 1 0 8 0 1 1 0 1 1 2 0 6 6 0 0 1-5 5.91V20h2a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2h2v-2.59A6 6 0 0 1 6 11.5Z"/>
         </svg>
       </button>
     </div>

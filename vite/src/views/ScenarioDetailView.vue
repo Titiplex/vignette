@@ -9,6 +9,7 @@ import {
   updateScenarioStoryboard,
   updateThumbnailLayout,
   uploadScenarioThumbnail,
+  uploadThumbnailAudio,
 } from "../api/scenarios";
 import {buildApiUrl} from "../api/rest";
 import {useAuth} from "../composables/useAuth";
@@ -60,6 +61,18 @@ const uploadFile = ref(null);
 const highlightedThumbnailId = ref(null);
 
 const infoDialogOpen = ref(false);
+
+const quickRecordingThumbId = ref(null);
+const quickRecordingDialogOpen = ref(false);
+const quickRecordingTitle = ref("");
+const quickRecordingBlob = ref(null);
+const quickRecordingMimeType = ref("audio/webm");
+const quickRecordingError = ref("");
+const quickRecordingUploading = ref(false);
+
+let quickMediaRecorder = null;
+let quickMediaStream = null;
+let quickRecordingChunks = [];
 
 function openInfoDialog() {
   infoDialogOpen.value = true;
@@ -483,6 +496,154 @@ const storyboardItems = computed(() => {
   });
 });
 
+function closeQuickRecordingDialog() {
+  quickRecordingDialogOpen.value = false;
+  quickRecordingTitle.value = "";
+  quickRecordingBlob.value = null;
+  quickRecordingMimeType.value = "audio/webm";
+  quickRecordingError.value = "";
+
+  if (quickRecordingPreviewUrl.value) {
+    URL.revokeObjectURL(quickRecordingPreviewUrl.value);
+    quickRecordingPreviewUrl.value = "";
+  }
+}
+
+async function ensureQuickRecorder() {
+  if (quickMediaRecorder && quickMediaStream) {
+    return;
+  }
+
+  quickMediaStream = await navigator.mediaDevices.getUserMedia({audio: true});
+  quickMediaRecorder = new MediaRecorder(quickMediaStream);
+
+  quickMediaRecorder.ondataavailable = (event) => {
+    if (event.data && event.data.size > 0) {
+      quickRecordingChunks.push(event.data);
+    }
+  };
+
+  quickMediaRecorder.onstop = () => {
+    quickRecordingBlob.value = new Blob(quickRecordingChunks, {
+      type: quickMediaRecorder.mimeType || "audio/webm",
+    });
+    quickRecordingMimeType.value = quickMediaRecorder.mimeType || "audio/webm";
+    quickRecordingChunks = [];
+    quickRecordingDialogOpen.value = true;
+    quickRecordingThumbId.value = null;
+  };
+}
+
+async function startQuickRecording(thumb) {
+  quickRecordingError.value = "";
+  quickRecordingBlob.value = null;
+  quickRecordingTitle.value = "";
+
+  try {
+    await ensureQuickRecorder();
+    quickRecordingChunks = [];
+    quickRecordingThumbId.value = thumb.id;
+    quickMediaRecorder.start();
+    toast.info(`Recording started on ${thumb.title || `thumbnail ${thumb.idx ?? thumb.id}`}.`);
+  } catch (e) {
+    quickRecordingThumbId.value = null;
+    quickRecordingError.value = e.message || "Unable to start quick recording.";
+    toast.error(quickRecordingError.value);
+  }
+}
+
+function stopQuickRecording() {
+  if (!quickMediaRecorder || quickMediaRecorder.state === "inactive") {
+    quickRecordingThumbId.value = null;
+    return;
+  }
+
+  quickMediaRecorder.stop();
+}
+
+async function toggleQuickRecording(thumb) {
+  selectThumb(thumb);
+
+  if (
+      quickRecordingThumbId.value != null &&
+      String(quickRecordingThumbId.value) === String(thumb.id)
+  ) {
+    stopQuickRecording();
+    return;
+  }
+
+  if (quickMediaRecorder && quickMediaRecorder.state !== "inactive") {
+    toast.error("Another quick recording is already in progress.");
+    return;
+  }
+
+  await startQuickRecording(thumb);
+}
+
+async function confirmQuickRecordingUpload() {
+  quickRecordingError.value = "";
+
+  try {
+    const targetThumb = selectedThumb.value;
+    if (!targetThumb?.id) throw new Error("No thumbnail selected.");
+    if (!quickRecordingBlob.value) throw new Error("No quick recording available.");
+
+    quickRecordingUploading.value = true;
+
+    const extension = quickRecordingMimeType.value.includes("ogg")
+        ? "ogg"
+        : quickRecordingMimeType.value.includes("mp4")
+            ? "m4a"
+            : "webm";
+
+    const fileName = `quick-recording.${extension}`;
+
+    const fd = new FormData();
+    fd.append("title", quickRecordingTitle.value || "");
+    fd.append("audio", quickRecordingBlob.value, fileName);
+
+    await uploadThumbnailAudio(targetThumb.id, fd);
+
+    toast.success("Quick recording uploaded successfully.");
+    closeQuickRecordingDialog();
+    await refreshAudios();
+  } catch (e) {
+    quickRecordingError.value = e.message || "Failed to upload quick recording.";
+    toast.error(quickRecordingError.value);
+  } finally {
+    quickRecordingUploading.value = false;
+  }
+}
+
+function discardQuickRecording() {
+  toast.info("Quick recording discarded.");
+  closeQuickRecordingDialog();
+}
+
+const quickRecordingPreviewUrl = ref("");
+
+watch(quickRecordingBlob, (blob) => {
+  if (quickRecordingPreviewUrl.value) {
+    URL.revokeObjectURL(quickRecordingPreviewUrl.value);
+    quickRecordingPreviewUrl.value = "";
+  }
+
+  if (blob) {
+    quickRecordingPreviewUrl.value = URL.createObjectURL(blob);
+  }
+});
+
+watch(
+    () => props.id,
+    () => {
+      if (quickMediaRecorder && quickMediaRecorder.state !== "inactive") {
+        quickMediaRecorder.stop();
+      }
+      quickRecordingThumbId.value = null;
+      closeQuickRecordingDialog();
+    }
+);
+
 onMounted(loadAll);
 </script>
 
@@ -736,6 +897,83 @@ onMounted(loadAll);
               </div>
 
               <div
+                  v-if="quickRecordingDialogOpen"
+                  class="dialog-backdrop"
+                  @click.self="discardQuickRecording"
+              >
+                <section
+                    class="dialog-card"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="quick-recording-title"
+                >
+                  <div class="dialog-card__header">
+                    <div>
+                      <h2 id="quick-recording-title">Confirm quick recording</h2>
+                      <p class="muted">
+                        Review and confirm the upload for the selected thumbnail.
+                      </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="icon-button"
+                        aria-label="Close quick recording dialog"
+                        title="Close"
+                        @click="discardQuickRecording"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                           stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18"></path>
+                        <path d="m6 6 12 12"></path>
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div class="dialog-card__body">
+                    <BaseAlert v-if="quickRecordingError" type="error">
+                      {{ quickRecordingError }}
+                    </BaseAlert>
+
+                    <label>
+                      Audio title
+                      <input
+                          v-model="quickRecordingTitle"
+                          placeholder="Optional title for this quick recording"
+                      />
+                    </label>
+
+                    <audio
+                        v-if="quickRecordingPreviewUrl"
+                        class="quick-recording-preview"
+                        controls
+                        :src="quickRecordingPreviewUrl"
+                    />
+
+                    <div class="toolbar">
+                      <button
+                          type="button"
+                          class="btn btn--ghost"
+                          :disabled="quickRecordingUploading"
+                          @click="discardQuickRecording"
+                      >
+                        Discard
+                      </button>
+
+                      <button
+                          type="button"
+                          class="btn btn--primary"
+                          :disabled="quickRecordingUploading || !quickRecordingBlob"
+                          @click="confirmQuickRecordingUpload"
+                      >
+                        {{ quickRecordingUploading ? "Uploading..." : "Confirm upload" }}
+                      </button>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              <div
                   v-if="storyboardItems.length"
                   class="storyboard-grid"
                   :style="{ '--storyboard-columns': storyboardColumns }"
@@ -747,9 +985,11 @@ onMounted(loadAll);
                     :audios="audioMap[item.id] || []"
                     :selected="selectedThumb?.id === item.id"
                     :highlighted="highlightedThumbnailId === item.id"
+                    :quick-recording="String(quickRecordingThumbId ?? '') === String(item.id)"
                     :style="storyboardItemStyle(item)"
                     @select="selectThumb"
                     @play="async (thumb) => { selectThumb(thumb); await playAllFromContext(); }"
+                    @quick-record="toggleQuickRecording"
                 />
               </div>
 

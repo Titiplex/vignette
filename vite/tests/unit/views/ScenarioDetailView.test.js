@@ -13,6 +13,7 @@ const apiMocks = vi.hoisted(() => ({
     updateScenarioStoryboard: vi.fn(),
     updateThumbnailLayout: vi.fn(),
     uploadScenarioThumbnail: vi.fn(),
+    uploadThumbnailAudio: vi.fn(),
 
     toastSuccess: vi.fn(),
     toastError: vi.fn(),
@@ -63,6 +64,7 @@ vi.mock("@/api/scenarios", () => ({
     updateScenarioStoryboard: apiMocks.updateScenarioStoryboard,
     updateThumbnailLayout: apiMocks.updateThumbnailLayout,
     uploadScenarioThumbnail: apiMocks.uploadScenarioThumbnail,
+    uploadThumbnailAudio: apiMocks.uploadThumbnailAudio,
 }));
 
 vi.mock("@/composables/useAuth", () => ({
@@ -92,16 +94,30 @@ vi.mock("@/composables/useScenarioAutoplay", () => ({
 vi.mock("@/components/ThumbnailCard.vue", () => ({
     default: {
         name: "ThumbnailCard",
-        props: ["thumb", "audios", "selected", "highlighted"],
-        emits: ["select", "play"],
+        props: ["thumb", "audios", "selected", "highlighted", "quickRecording"],
+        emits: ["select", "play", "quick-record"],
         template: `
-          <button
-              class="thumbnail-card-stub"
-              :data-id="thumb.id"
-              @click="$emit('select', thumb)"
-          >
-            {{ thumb.title || thumb.id }}
-          </button>
+          <div class="thumbnail-card-stub-wrap">
+            <button
+                class="thumbnail-card-stub"
+                :data-id="thumb.id"
+                @click="$emit('select', thumb)"
+            >
+              {{ thumb.title || thumb.id }}
+            </button>
+            <button
+                class="thumbnail-card-play"
+                @click="$emit('play', thumb)"
+            >
+              play
+            </button>
+            <button
+                class="thumbnail-card-quick-record"
+                @click="$emit('quick-record', thumb)"
+            >
+              quick-record
+            </button>
+          </div>
         `,
     },
 }));
@@ -192,6 +208,7 @@ function baseScenario(overrides = {}) {
         storyboardLayoutMode: "PRESET",
         storyboardPreset: "GRID_3",
         storyboardColumns: 3,
+        tags: ["animals", "daily life"],
         ...overrides,
     };
 }
@@ -284,6 +301,7 @@ async function mountScenarioView({
     }));
     apiMocks.updateThumbnailLayout.mockResolvedValue({});
     apiMocks.uploadScenarioThumbnail.mockResolvedValue({});
+    apiMocks.uploadThumbnailAudio.mockResolvedValue({});
 
     const {wrapper, router} = await mountWithRouter(ScenarioDetailView, {
         routes: [
@@ -347,6 +365,18 @@ describe("ScenarioDetailView", () => {
         expect(wrapper.text()).toContain("Unknown language");
     });
 
+    it("shows scenario tags in the info dialog", async () => {
+        const {wrapper} = await mountScenarioView();
+
+        const infoButton = wrapper.find('button[aria-label="Open scenario information"]');
+        await infoButton.trigger("click");
+        await flushPromises();
+        await nextTick();
+
+        expect(wrapper.text()).toContain("#animals");
+        expect(wrapper.text()).toContain("#daily life");
+    });
+
     it("shows an error alert when initial loading fails", async () => {
         apiMocks.fetchScenario.mockRejectedValueOnce(new Error("Load failed"));
 
@@ -403,8 +433,12 @@ describe("ScenarioDetailView", () => {
     it("saves storyboard settings with normalized numeric columns", async () => {
         const {wrapper} = await mountScenarioView();
 
-        const inputs = wrapper.findAll('input[type="number"]');
-        const columnsInput = inputs[0];
+        const openSettingsButton = wrapper.find('button[aria-label="Open storyboard settings"]');
+        await openSettingsButton.trigger("click");
+        await flushPromises();
+        await nextTick();
+
+        const columnsInput = wrapper.findAll('input[type="number"]')[0];
         await columnsInput.setValue("99");
 
         const saveButton = wrapper.findAll("button")

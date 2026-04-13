@@ -94,6 +94,16 @@ function closeUploadDialog() {
   uploadDialogOpen.value = false;
 }
 
+const storyboardSettingsDialogOpen = ref(false);
+
+function openStoryboardSettingsDialog() {
+  storyboardSettingsDialogOpen.value = true;
+}
+
+function closeStoryboardSettingsDialog() {
+  storyboardSettingsDialogOpen.value = false;
+}
+
 const selectedThumbnailPanelOpen = ref(false);
 const selectedLayoutPanelOpen = ref(false);
 
@@ -750,6 +760,22 @@ onMounted(loadAll);
                     </div>
                   </div>
 
+                  <div class="card">
+                    <h3>Tags</h3>
+
+                    <div v-if="scenario.tags?.length" class="scenario-tags">
+                      <BaseBadge
+                          v-for="tag in scenario.tags"
+                          :key="tag"
+                          variant="neutral"
+                      >
+                        #{{ tag }}
+                      </BaseBadge>
+                    </div>
+
+                    <p v-else class="muted">No tags.</p>
+                  </div>
+
                   <section class="card">
                     <h3>Description</h3>
                     <p class="text">
@@ -764,57 +790,34 @@ onMounted(loadAll);
 
         <div class="scenario-layout">
           <div class="scenario-layout__main">
-
-            <section v-if="isOwner" class="card form-card--premium">
-              <h2>Publication & storyboard</h2>
-
-              <BaseAlert v-if="!isPublished" type="info">
-                This scenario is still private. Public users cannot see it until you publish it.
-              </BaseAlert>
-
-              <div class="storyboard-settings-grid">
-                <label>
-                  Layout mode
-                  <select v-model="storyboardForm.layoutMode">
-                    <option value="PRESET">Preset</option>
-                    <option value="CUSTOM">Custom</option>
-                  </select>
-                </label>
-
-                <label>
-                  Preset
-                  <select v-model="storyboardForm.preset" :disabled="storyboardForm.layoutMode !== 'PRESET'">
-                    <option value="GRID_3">Grid 3</option>
-                    <option value="GRID_2">Grid 2</option>
-                    <option value="CINEMATIC">Cinematic</option>
-                    <option value="MANGA">Manga</option>
-                  </select>
-                </label>
-
-                <label>
-                  Columns
-                  <input v-model="storyboardForm.columns" type="number" min="1" max="8"/>
-                </label>
-              </div>
-
-              <div class="toolbar">
-                <button class="btn btn--primary" :disabled="savingStoryboard" @click="saveStoryboardSettings">
-                  {{ savingStoryboard ? "Saving..." : "Save storyboard settings" }}
-                </button>
-              </div>
-
-              <p class="muted storyboard-help">
-                Preset mode auto-composes the storyboard. Custom mode uses each thumbnail’s saved grid position and
-                spans.
-              </p>
-            </section>
-
             <section class="section">
               <BasePageHeader
                   title="Storyboard"
                   :subtitle="`${thumbnails.length} thumbnail(s) in this scenario.`"
               >
                 <template #actions>
+                  <button
+                      v-if="isOwner"
+                      type="button"
+                      class="icon-button"
+                      aria-label="Open storyboard settings"
+                      title="Storyboard settings"
+                      @click="openStoryboardSettingsDialog"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"
+                         stroke-linejoin="round">
+                      <path d="M12 3v4"></path>
+                      <path d="M12 17v4"></path>
+                      <path d="M3 12h4"></path>
+                      <path d="M17 12h4"></path>
+                      <path d="m5.64 5.64 2.83 2.83"></path>
+                      <path d="m15.53 15.53 2.83 2.83"></path>
+                      <path d="m5.64 18.36 2.83-2.83"></path>
+                      <path d="m15.53 8.47 2.83-2.83"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                  </button>
+
                   <button
                       v-if="isOwner"
                       type="button"
@@ -892,6 +895,97 @@ onMounted(loadAll);
                     <BaseAlert v-if="uploadError" type="error">
                       {{ uploadError }}
                     </BaseAlert>
+                  </div>
+                </section>
+              </div>
+
+              <div
+                  v-if="storyboardSettingsDialogOpen"
+                  class="dialog-backdrop"
+                  @click.self="closeStoryboardSettingsDialog"
+              >
+                <section
+                    class="dialog-card"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="storyboard-settings-title"
+                >
+                  <div class="dialog-card__header">
+                    <div>
+                      <h2 id="storyboard-settings-title">Publication & storyboard</h2>
+                      <p class="muted">
+                        Manage publication status and storyboard layout.
+                      </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="icon-button"
+                        aria-label="Close storyboard settings"
+                        title="Close"
+                        @click="closeStoryboardSettingsDialog"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                           stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18"></path>
+                        <path d="m6 6 12 12"></path>
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div class="dialog-card__body">
+                    <BaseAlert v-if="!isPublished" type="info">
+                      This scenario is still private. Public users cannot see it until you publish it.
+                    </BaseAlert>
+
+                    <div class="storyboard-settings-grid">
+                      <label>
+                        Layout mode
+                        <select v-model="storyboardForm.layoutMode">
+                          <option value="PRESET">Preset</option>
+                          <option value="CUSTOM">Custom</option>
+                        </select>
+                      </label>
+
+                      <label>
+                        Preset
+                        <select v-model="storyboardForm.preset" :disabled="storyboardForm.layoutMode !== 'PRESET'">
+                          <option value="GRID_3">Grid 3</option>
+                          <option value="GRID_2">Grid 2</option>
+                          <option value="CINEMATIC">Cinematic</option>
+                          <option value="MANGA">Manga</option>
+                        </select>
+                      </label>
+
+                      <label>
+                        Columns
+                        <input v-model="storyboardForm.columns" type="number" min="1" max="8"/>
+                      </label>
+                    </div>
+
+                    <div class="toolbar">
+                      <button
+                          v-if="!isPublished"
+                          class="btn btn--ghost"
+                          :disabled="publishing"
+                          @click="publishCurrentScenario"
+                      >
+                        {{ publishing ? "Publishing..." : "Publish scenario" }}
+                      </button>
+
+                      <button
+                          class="btn btn--primary"
+                          :disabled="savingStoryboard"
+                          @click="saveStoryboardSettings"
+                      >
+                        {{ savingStoryboard ? "Saving..." : "Save storyboard settings" }}
+                      </button>
+                    </div>
+
+                    <p class="muted storyboard-help">
+                      Preset mode auto-composes the storyboard. Custom mode uses each thumbnail’s saved grid position
+                      and spans.
+                    </p>
                   </div>
                 </section>
               </div>
@@ -1345,5 +1439,12 @@ onMounted(loadAll);
     padding: 16px;
     border-radius: 18px;
   }
+}
+
+.scenario-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
 }
 </style>

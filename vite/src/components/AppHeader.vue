@@ -59,9 +59,9 @@ async function doLogout() {
     <div class="app-container app-header__inner">
       <RouterLink to="/" class="app-brand">
         <span class="app-brand__title">Vignette</span>
-        <span class="app-brand__subtitle">
-          Multimedia scenarios for language documentation
-        </span>
+<!--        <span class="app-brand__subtitle">-->
+<!--          Multimedia scenarios for language documentation-->
+<!--        </span>-->
       </RouterLink>
 
       <button

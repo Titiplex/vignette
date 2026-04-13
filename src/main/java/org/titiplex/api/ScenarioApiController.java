@@ -204,7 +204,7 @@ public class ScenarioApiController {
             @Parameter(hidden = true)
             Authentication auth
     ) {
-        return scenarioService.listVisibleScenarios(auth).stream().map(scenarioService::toDto).toList();
+        return scenarioService.listVisibleScenarioDtos(auth);
     }
 
     @Operation(
@@ -364,9 +364,7 @@ public class ScenarioApiController {
             @Parameter(hidden = true)
             Authentication auth
     ) {
-        return scenarioService.listMyScenarios(auth).stream()
-                .map(scenarioService::toDto)
-                .toList();
+        return scenarioService.listMyScenarioDtos(auth);
     }
 
     @Operation(

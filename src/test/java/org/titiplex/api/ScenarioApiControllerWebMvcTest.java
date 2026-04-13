@@ -78,7 +78,8 @@ class ScenarioApiControllerWebMvcTest {
                 null,
                 "PRESET",
                 "GRID_3",
-                3
+                3,
+                List.of()
         );
 
         when(scenarioService.listVisibleScenarios(any())).thenReturn(List.of(scenario));
@@ -118,7 +119,8 @@ class ScenarioApiControllerWebMvcTest {
                 null,
                 "PRESET",
                 "GRID_3",
-                3
+                3,
+                List.of()
         );
 
         when(scenarioService.getVisibleScenario(eq(11L), any())).thenReturn(scenario);
@@ -175,7 +177,7 @@ class ScenarioApiControllerWebMvcTest {
         when(userService.getUserByUsername("alice")).thenReturn(user);
         when(scenarioService.existsByTitleAndAuthorNameAndLanguageId("My scenario", "alice", "chuj"))
                 .thenReturn(false);
-        when(scenarioService.createScenario("My scenario", "This is a test", 12L, "chuj"))
+        when(scenarioService.createScenario("My scenario", "This is a test", 12L, "chuj", List.of()))
                 .thenReturn(created);
 
         mvc.perform(post("/api/scenarios")

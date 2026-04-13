@@ -62,7 +62,8 @@ public class ScenarioService {
     }
 
     public Scenario getRequiredScenario(Long id) {
-        return repo.findById(id).orElseThrow(() -> new NoSuchElementException("Scenario not found"));
+        return repo.findByIdWithTags(id)
+                .orElseThrow(() -> new NoSuchElementException("Scenario not found"));
     }
 
     public Scenario getVisibleScenario(Long id, Authentication authentication) {
@@ -73,15 +74,15 @@ public class ScenarioService {
 
     public List<Scenario> listVisibleScenarios(Authentication authentication) {
         if (isAdmin(authentication)) {
-            return repo.findAllByOrderByCreatedAtDesc();
+            return repo.findAllWithTagsOrderByCreatedAtDesc();
         }
 
         String username = authenticatedUsername(authentication);
         if (username == null) {
-            return repo.findAllByVisibilityStatusOrderByCreatedAtDesc(ScenarioVisibilityStatus.PUBLISHED);
+            return repo.findAllByVisibilityStatusWithTagsOrderByCreatedAtDesc(ScenarioVisibilityStatus.PUBLISHED);
         }
 
-        return repo.findVisibleToUsername(username);
+        return repo.findVisibleToUsernameWithTags(username);
     }
 
     public List<Scenario> listMyScenarios(Authentication authentication) {
@@ -89,7 +90,7 @@ public class ScenarioService {
             throw new InsufficientAuthenticationException("Authentication required");
         }
 
-        return repo.findAllByAuthorUsernameOrderByCreatedAtDesc(authentication.getName());
+        return repo.findAllByAuthorUsernameWithTagsOrderByCreatedAtDesc(authentication.getName());
     }
 
     public List<Scenario> listAllScenarios() {
@@ -254,5 +255,17 @@ public class ScenarioService {
         }
 
         return repo.save(scenario);
+    }
+
+    public List<ScenarioDto> listVisibleScenarioDtos(Authentication authentication) {
+        return listVisibleScenarios(authentication).stream()
+                .map(this::toDto)
+                .toList();
+    }
+
+    public List<ScenarioDto> listMyScenarioDtos(Authentication authentication) {
+        return listMyScenarios(authentication).stream()
+                .map(this::toDto)
+                .toList();
     }
 }

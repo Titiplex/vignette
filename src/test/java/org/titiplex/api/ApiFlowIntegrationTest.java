@@ -143,7 +143,8 @@ class ApiFlowIntegrationTest {
                                 {
                                   "title": "My scenario",
                                   "description": "Integration test scenario",
-                                  "languageId": "chuj"
+                                  "languageId": "chuj",
+                                  "tags": []
                                 }
                                 """))
                 .andExpect(status().isCreated())

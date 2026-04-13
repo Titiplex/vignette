@@ -54,16 +54,16 @@ class ScenarioApiControllerTest {
         when(userService.getUserByUsername("alice")).thenReturn(user);
         when(scenarioService.existsByTitleAndAuthorNameAndLanguageId("  Story  ", "alice", "chuj"))
                 .thenReturn(false);
-        when(scenarioService.createScenario("Story", "A desc", 12L, "chuj"))
+        when(scenarioService.createScenario("Story", "A desc", 12L, "chuj", List.of()))
                 .thenReturn(created);
 
         CreateScenarioResponse result = controller.create(
-                new CreateScenarioRequest("  Story  ", "A desc", "chuj"),
+                new CreateScenarioRequest("  Story  ", "A desc", "chuj", List.of()),
                 auth
         );
 
         assertEquals(44L, result.id());
-        verify(scenarioService).createScenario("Story", "A desc", 12L, "chuj");
+        verify(scenarioService).createScenario("Story", "A desc", 12L, "chuj", List.of());
     }
 
     @Test
@@ -84,7 +84,8 @@ class ScenarioApiControllerTest {
                 null,
                 "PRESET",
                 "GRID_3",
-                3
+                3,
+                List.of()
         );
 
         when(scenarioService.getVisibleScenario(9L, auth)).thenReturn(scenario);
@@ -110,13 +111,15 @@ class ScenarioApiControllerTest {
         ScenarioDto dto1 = new ScenarioDto(
                 1L, "First", "D1", "chuj", "bob",
                 Instant.parse("2026-03-20T10:15:30Z"),
-                "DRAFT", null, "PRESET", "GRID_3", 3
+                "DRAFT", null, "PRESET", "GRID_3", 3,
+                List.of()
         );
         ScenarioDto dto2 = new ScenarioDto(
                 2L, "Second", "D2", "kiche", "bob",
                 Instant.parse("2026-03-21T10:15:30Z"),
                 "PUBLISHED", Instant.parse("2026-03-22T10:15:30Z"),
-                "CUSTOM", "MANGA", 4
+                "CUSTOM", "MANGA", 4,
+                List.of()
         );
 
         when(scenarioService.listVisibleScenarios(auth)).thenReturn(List.of(s1, s2));
@@ -140,7 +143,8 @@ class ScenarioApiControllerTest {
         ScenarioDto dto = new ScenarioDto(
                 15L, "Story", "Desc", "chuj", "alice",
                 Instant.parse("2026-03-20T10:15:30Z"),
-                "DRAFT", null, "CUSTOM", "MANGA", 4
+                "DRAFT", null, "CUSTOM", "MANGA", 4,
+                List.of()
         );
 
         UpdateScenarioStoryboardRequest request = new UpdateScenarioStoryboardRequest("CUSTOM", "MANGA", 4);
@@ -167,7 +171,8 @@ class ScenarioApiControllerTest {
                 21L, "Story", "Desc", "chuj", "alice",
                 Instant.parse("2026-03-20T10:15:30Z"),
                 "PUBLISHED", Instant.parse("2026-03-22T10:15:30Z"),
-                "PRESET", "GRID_3", 3
+                "PRESET", "GRID_3", 3,
+                List.of()
         );
 
         when(scenarioService.publishScenario(21L, auth)).thenReturn(published);
@@ -209,7 +214,7 @@ class ScenarioApiControllerTest {
 
         when(scenarioService.listMyScenarios(auth)).thenReturn(List.of(scenario));
         when(scenarioService.toDto(scenario)).thenReturn(new ScenarioDto(
-                1L, "Mine", null, "fra", "alice", null, "DRAFT", null, "PRESET", "GRID_3", 3
+                1L, "Mine", null, "fra", "alice", null, "DRAFT", null, "PRESET", "GRID_3", 3, List.of()
         ));
 
         List<ScenarioDto> result = controller.listMine(auth);
@@ -226,7 +231,7 @@ class ScenarioApiControllerTest {
                 List.of(new SimpleGrantedAuthority("ROLE_USER"))
         );
 
-        UpdateScenarioMetadataRequest req = new UpdateScenarioMetadataRequest("New title", "New description");
+        UpdateScenarioMetadataRequest req = new UpdateScenarioMetadataRequest("New title", "New description", List.of());
 
         Scenario updated = new Scenario();
         updated.setId(5L);
@@ -234,7 +239,7 @@ class ScenarioApiControllerTest {
 
         when(scenarioService.updateScenarioMetadata(5L, req, auth)).thenReturn(updated);
         when(scenarioService.toDto(updated)).thenReturn(new ScenarioDto(
-                5L, "New title", "New description", "fra", "alice", null, "DRAFT", null, "PRESET", "GRID_3", 3
+                5L, "New title", "New description", "fra", "alice", null, "DRAFT", null, "PRESET", "GRID_3", 3, List.of()
         ));
 
         ScenarioDto result = controller.updateMetadata(5L, req, auth);

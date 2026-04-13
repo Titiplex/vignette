@@ -47,7 +47,7 @@ class ScenarioServiceTest {
         when(languageService.getLanguage("fra")).thenReturn(language);
         when(scenarioRepository.save(any(Scenario.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Scenario created = scenarioService.createScenario("Titre", "Desc", 9L, "fra");
+        Scenario created = scenarioService.createScenario("Titre", "Desc", 9L, "fra", List.of());
 
         assertEquals("Titre", created.getTitle());
         assertEquals("Desc", created.getDescription());

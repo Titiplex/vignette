@@ -49,7 +49,9 @@ async function load() {
 
     const data = await fetchLanguages(params);
     languages.value = data.content ?? [];
+    page.value = data.number ?? 0;
     totalPages.value = data.totalPages ?? 0;
+
   } catch (e) {
     error.value = e.message;
   } finally {

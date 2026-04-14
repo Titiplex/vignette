@@ -12,9 +12,20 @@ function normalizeListParams(input, page = 0, size = 50) {
     return params;
 }
 
-export function fetchLanguages(input = "", page = 0, size = 50) {
+function normalizePageResponse(data) {
+    return {
+        content: data?.content ?? [],
+        number: data?.page?.number ?? data?.number ?? 0,
+        totalPages: data?.page?.totalPages ?? data?.totalPages ?? 0,
+        totalElements: data?.page?.totalElements ?? data?.totalElements ?? 0,
+        size: data?.page?.size ?? data?.size ?? 0,
+    };
+}
+
+export async function fetchLanguages(input = "", page = 0, size = 50) {
     const params = normalizeListParams(input, page, size);
-    return apiFetch(`/api/languages?${params.toString()}`);
+    const data = await apiFetch(`/api/languages?${params.toString()}`);
+    return normalizePageResponse(data);
 }
 
 export function fetchLanguage(id) {

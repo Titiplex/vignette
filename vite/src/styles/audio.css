@@ -255,3 +255,61 @@
         opacity: 0;
     }
 }
+
+.transport-card--compact {
+    padding: 14px 16px;
+    border-radius: 18px;
+}
+
+.transport-card__top--compact {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.transport-card__meta {
+    min-width: 0;
+    flex: 1;
+}
+
+.transport-card__title {
+    margin: 0;
+    font-size: 1.05rem;
+    line-height: 1.2;
+}
+
+.transport-card__subtitle {
+    margin-top: 4px;
+    font-size: 0.9rem;
+}
+
+.transport-toggles--compact {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.transport-controls--compact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.btn--small {
+    padding: 0.55rem 0.8rem;
+    min-height: 38px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+}
+
+.transport-progress {
+    margin-top: 8px;
+}
+
+.transport-progress__times {
+    font-size: 0.88rem;
+    margin-top: 4px;
+}

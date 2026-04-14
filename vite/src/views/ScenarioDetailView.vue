@@ -1112,12 +1112,15 @@ onMounted(loadAll);
                 </BaseBadge>
               </div>
 
-              <div class="transport-card">
-                <div class="transport-card__top">
-                  <div>
+              <div class="transport-card transport-card--compact">
+                <div class="transport-card__top transport-card__top--compact">
+                  <div class="transport-card__meta">
                     <p class="transport-card__title">
                       <template v-if="autoplay.currentItem">
-                        {{ autoplay.currentItem.audioTitle || `Audio #${autoplay.currentItem.audioId}` }}
+                        {{
+                          autoplay.currentItem.audioTitle?.trim()
+                          || (autoplay.currentItem.audioId != null ? `Audio #${autoplay.currentItem.audioId}` : "Untitled audio")
+                        }}
                       </template>
                       <template v-else>
                         No audio selected
@@ -1126,10 +1129,14 @@ onMounted(loadAll);
 
                     <p class="muted transport-card__subtitle">
                       <template v-if="autoplay.currentItem">
-                        Thumbnail #{{ autoplay.currentItem.thumbnailIdx ?? autoplay.currentItem.thumbnailId }}
+                        {{
+                          autoplay.currentItem.thumbnailIdx != null
+                              ? `Thumb #${autoplay.currentItem.thumbnailIdx}`
+                              : (autoplay.currentItem.thumbnailId != null ? `Thumb #${autoplay.currentItem.thumbnailId}` : "Thumb unknown")
+                        }}
                         <span v-if="autoplay.currentItem.audioIdx != null">
-                          · Audio order {{ autoplay.currentItem.audioIdx }}
-                        </span>
+            · #{{ autoplay.currentItem.audioIdx }}
+          </span>
                         · {{ playerStateLabel }}
                       </template>
                       <template v-else>
@@ -1138,23 +1145,23 @@ onMounted(loadAll);
                     </p>
                   </div>
 
-                  <div class="transport-toggles">
+                  <div class="transport-toggles transport-toggles--compact">
                     <button
                         type="button"
-                        class="btn"
+                        class="btn btn--small"
                         :class="autoplay.autoContinue ? 'btn--primary' : 'btn--ghost'"
                         @click="toggleAutoContinue"
                     >
-                      Auto-continue {{ autoplay.autoContinue ? "On" : "Off" }}
+                      Auto
                     </button>
 
                     <button
                         type="button"
-                        class="btn"
+                        class="btn btn--small"
                         :class="autoplay.loopScenario ? 'btn--primary' : 'btn--ghost'"
                         @click="toggleLoopScenario"
                     >
-                      Loop {{ autoplay.loopScenario ? "On" : "Off" }}
+                      Loop
                     </button>
                   </div>
                 </div>
@@ -1174,29 +1181,21 @@ onMounted(loadAll);
                   </div>
                 </div>
 
-                <div class="transport-controls">
-                  <button
-                      type="button"
-                      class="btn btn--ghost"
-                      :disabled="!playbackQueue.length"
-                      @click="autoplay.previous"
-                  >
-                    Previous
+                <div class="transport-controls transport-controls--compact">
+                  <button type="button" class="btn btn--ghost btn--small" :disabled="!playbackQueue.length"
+                          @click="autoplay.previous">
+                    Prev
                   </button>
 
-                  <button
-                      type="button"
-                      class="btn btn--ghost"
-                      :disabled="!playbackQueue.length"
-                      @click="autoplay.replayCurrent"
-                  >
+                  <button type="button" class="btn btn--ghost btn--small" :disabled="!playbackQueue.length"
+                          @click="autoplay.replayCurrent">
                     Replay
                   </button>
 
                   <button
                       v-if="!autoplay.isPlaying"
                       type="button"
-                      class="btn btn--primary"
+                      class="btn btn--primary btn--small"
                       :disabled="!playbackQueue.length || autoplay.isLoading"
                       @click="autoplay.isPaused ? autoplay.resume() : playAllFromContext()"
                   >
@@ -1206,27 +1205,19 @@ onMounted(loadAll);
                   <button
                       v-else
                       type="button"
-                      class="btn btn--primary"
+                      class="btn btn--primary btn--small"
                       @click="autoplay.pause"
                   >
                     Pause
                   </button>
 
-                  <button
-                      type="button"
-                      class="btn btn--ghost"
-                      :disabled="!playbackQueue.length"
-                      @click="autoplay.next"
-                  >
+                  <button type="button" class="btn btn--ghost btn--small" :disabled="!playbackQueue.length"
+                          @click="autoplay.next">
                     Next
                   </button>
 
-                  <button
-                      type="button"
-                      class="btn btn--ghost"
-                      :disabled="autoplay.currentIndex < 0"
-                      @click="autoplay.stop"
-                  >
+                  <button type="button" class="btn btn--ghost btn--small" :disabled="autoplay.currentIndex < 0"
+                          @click="autoplay.stop">
                     Stop
                   </button>
                 </div>

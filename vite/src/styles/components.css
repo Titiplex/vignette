@@ -446,3 +446,11 @@
     flex-direction: column;
     gap: 16px;
 }
+
+.hline {
+    border: 1px solid
+}
+
+div .hline {
+    margin: 20px;
+}

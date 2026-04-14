@@ -28,10 +28,6 @@ const navItems = computed(() => {
     {to: "/about", label: "About"},
   ];
 
-  if (isAuthenticated.value) {
-    base.splice(3, 0, {to: "/workspace", label: "Workspace"});
-  }
-
   if (isAdmin.value) {
     base.splice(4, 0, {to: "/admin", label: "Admin"});
   }

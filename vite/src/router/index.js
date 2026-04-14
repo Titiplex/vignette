@@ -118,16 +118,6 @@ const routes = [
         },
     },
     {
-        path: "/workspace",
-        name: "workspace",
-        component: WorkspaceHomeView,
-        meta: {
-            requiresAuth: true,
-            title: "Workspace",
-            description: "Private workspace for scenario and contribution management.",
-        },
-    },
-    {
         path: "/scenarios/:id/manage",
         name: "scenario-manage",
         component: ScenarioManageView,

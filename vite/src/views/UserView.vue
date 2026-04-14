@@ -2,7 +2,7 @@
 import {computed, onMounted, ref} from "vue";
 import {RouterLink} from "vue-router";
 import {fetchMyProfile, updateMyProfile} from "../api/users";
-import {fetchScenarios} from "../api/scenarios";
+import {fetchMyScenarios, fetchScenarios} from "../api/scenarios";
 import {useAuth} from "../composables/useAuth";
 
 const {currentUser, loadMe} = useAuth();
@@ -23,8 +23,7 @@ const error = ref("");
 const success = ref("");
 const loading = ref(false);
 const loadingWorks = ref(false);
-
-const visibleScenarioCount = computed(() => myScenarios.value.length);
+computed(() => myScenarios.value.length);
 
 async function loadProfile() {
   const data = await fetchMyProfile();
@@ -84,11 +83,34 @@ async function save() {
   }
 }
 
+const privateCount = computed(() =>
+    myScenarios.value.filter((s) => s.visibilityStatus !== "PUBLISHED").length
+);
+
+const publishedCount = computed(() =>
+    myScenarios.value.filter((s) => s.visibilityStatus === "PUBLISHED").length
+);
+
+async function loadWorkspace() {
+  loading.value = true;
+  error.value = "";
+
+  try {
+    await loadMe();
+    myScenarios.value = await fetchMyScenarios();
+  } catch (e) {
+    error.value = e.message || "Failed to load workspace.";
+  } finally {
+    loading.value = false;
+  }
+}
+
 onMounted(async () => {
   try {
     await Promise.all([
       loadProfile(),
       loadMyWorks(),
+      loadWorkspace(),
     ]);
   } catch (e) {
     error.value = e.message;
@@ -164,51 +186,93 @@ onMounted(async () => {
           <p v-else class="muted">No affiliations listed.</p>
         </section>
       </div>
+    </section>
 
-      <section class="card">
-        <div class="section-heading">
-          <div>
-            <h2>My work</h2>
-            <p class="muted">
-              Quick access to your visible scenarios.
-            </p>
-          </div>
-          <RouterLink to="/create-scenario" class="btn btn--primary">
-            New scenario
-          </RouterLink>
-        </div>
+    <div>
+      <hr class="hline">
+    </div>
 
-        <p class="muted">
-          {{ visibleScenarioCount }} scenario(s) currently visible from your account.
-        </p>
-
-        <div v-if="loadingWorks" class="loader-block">
-          <span class="loader-spinner"></span>
-          <span class="muted">Loading your work...</span>
-        </div>
-
-        <div v-else-if="myScenarios.length" class="card-grid">
-          <article v-for="scenario in myScenarios" :key="scenario.id" class="card">
-            <h3>{{ scenario.title || "Untitled scenario" }}</h3>
-            <p class="text">
-              {{ scenario.description || "No description provided." }}
-            </p>
-            <p class="muted">
-              Created: {{ scenario.createdAt || "-" }}
-            </p>
-            <RouterLink :to="`/scenarios/${scenario.id}`">
-              Open scenario
-            </RouterLink>
-          </article>
-        </div>
-
-        <div v-else class="empty-state">
-          <h3>No visible scenario yet</h3>
+    <section class="card section">
+      <div class="section-heading">
+        <div>
+          <h2>Workspace</h2>
           <p class="muted">
-            You have not published or created any visible scenario yet.
+            Private overview for your scenarios, publication state and management shortcuts.
           </p>
         </div>
-      </section>
+      </div>
+
+      <div class="card-grid">
+        <section class="card">
+          <h3>My scenarios</h3>
+          <p class="text">{{ myScenarios.length }}</p>
+        </section>
+
+        <section class="card">
+          <h3>Published</h3>
+          <p class="text">{{ publishedCount }}</p>
+        </section>
+
+        <section class="card">
+          <h3>Private / draft</h3>
+          <p class="text">{{ privateCount }}</p>
+        </section>
+      </div>
+
+      <div v-if="loadingWorks" class="loader-block">
+        <span class="loader-spinner"></span>
+        <span class="muted">Loading workspace...</span>
+      </div>
+
+      <div v-else-if="myScenarios.length" class="card-grid">
+        <article v-for="scenario in myScenarios" :key="scenario.id" class="card">
+          <div class="toolbar toolbar--spread">
+            <h3>{{ scenario.title || "Untitled scenario" }}</h3>
+            <span class="badge">{{ scenario.visibilityStatus || "UNKNOWN" }}</span>
+          </div>
+
+          <p class="text">
+            {{ scenario.description || "No description provided." }}
+          </p>
+
+          <p class="muted">
+            Language: {{ scenario.languageId || "-" }}
+          </p>
+
+          <div class="toolbar">
+            <RouterLink :to="`/scenarios/${scenario.id}`" class="btn btn--ghost">
+              Open
+            </RouterLink>
+            <RouterLink :to="`/scenarios/${scenario.id}/manage`" class="btn btn--primary">
+              Manage
+            </RouterLink>
+          </div>
+        </article>
+      </div>
+
+      <div v-else class="empty-state">
+        <h3>No scenario available</h3>
+        <p class="muted">
+          You do not have any scenario yet.
+        </p>
+      </div>
     </section>
   </main>
 </template>
+
+<style scoped>
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.82rem;
+  background: var(--surface-alt);
+}
+
+.toolbar--spread {
+  justify-content: space-between;
+  align-items: center;
+}
+</style>

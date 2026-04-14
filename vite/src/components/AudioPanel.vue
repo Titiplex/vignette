@@ -4,7 +4,6 @@ import {updateAudioMarker, uploadThumbnailAudio} from "../api/scenarios";
 import {buildApiUrl} from "../api/rest";
 import {useToast} from "../composables/useToast";
 import BaseBadge from "./ui/BaseBadge.vue";
-import DiscussionThread from "./community/DiscussionThread.vue";
 
 const props = defineProps({
   selectedThumb: {type: Object, default: null},
@@ -466,17 +465,6 @@ watch(
         <p v-else class="muted">
           No audio clips are attached to this thumbnail yet.
         </p>
-      </section>
-
-      <section v-if="discussionAudio" class="audio-panel__section">
-        <DiscussionThread
-            title="Audio discussion"
-            :subtitle="`Comments and annotation debate for ${discussionAudio.title || `Audio #${discussionAudio.id}`}.`"
-            target-type="AUDIO"
-            :target-id="discussionAudio.id"
-            empty-title="No comments on this clip yet"
-            empty-message="Use this space for transcription, translation, gloss or interpretation notes."
-        />
       </section>
 
       <template v-if="isOwner">

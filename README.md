@@ -25,27 +25,40 @@
 It lets users create, explore, and manage linguistic content built around scenarios, thumbnails, audio, and
 community-oriented features.
 
-## Table of contents
-
-- [Project Information](#project-information)
-- [Overview](#overview)
-- [Goals](#goals)
-- [Technologies](#technologies)
-- [Project structure](#structure)
-- [Links](#links)
-- [Getting started](#getting-started)
-    - [Prerequisites](#prerequisites)
-    - [Backend setup](#back-end)
-    - [Frontend setup](#front-end)
-- [Configuration](#configuration)
-    - [Development profile](#development-profile)
-    - [Production profile](#production-profile)
-    - [Environment variables](#environment-variables)
-- [API documentation](#api-documentation)
-- [Roadmap ideas](#roadmap-ideas)
-- [Contributing](#contributing)
-- [Security](#security)
-- [License](#license)
+<!-- TOC -->
+* [Vignette Project](#vignette-project)
+  * [Project Information](#project-information)
+  * [Overview](#overview)
+  * [Goals](#goals)
+  * [Technologies](#technologies)
+  * [Dependencies](#dependencies)
+  * [Structure](#structure)
+  * [Links](#links)
+  * [Getting started](#getting-started)
+    * [Prerequisites](#prerequisites)
+    * [Back-End](#back-end)
+      * [Building and launching the application](#building-and-launching-the-application)
+      * [Test backend code](#test-backend-code)
+      * [Package the backend as a jar file](#package-the-backend-as-a-jar-file)
+    * [Front-End](#front-end)
+      * [Install and launch](#install-and-launch)
+      * [Build](#build)
+      * [Test frontend code](#test-frontend-code)
+  * [Configuration](#configuration)
+    * [Development profile](#development-profile)
+    * [Production profile](#production-profile)
+  * [Environment variables](#environment-variables)
+    * [Required or recommended](#required-or-recommended)
+    * [Production database variables](#production-database-variables)
+  * [API documentation](#api-documentation)
+    * [Local API docs](#local-api-docs)
+    * [Published API docs](#published-api-docs)
+  * [Roadmap ideas](#roadmap-ideas)
+  * [Contributing](#contributing)
+  * [Security](#security)
+  * [License](#license)
+  * [Code of Conduct](#code-of-conduct)
+<!-- TOC -->
 
 ## Project Information
 
@@ -80,6 +93,10 @@ The backend is built in Java with Spring Boot and follows a API REST architectur
 The frontend is built with Vite and Vue.js.
 The API docs is made with Swagger and OpenAPI, and published on Github Pages.
 
+## Dependencies
+
+Languages data and metadata are directly imported from [Glottolog](https://glottolog.org)
+
 ## Structure
 
 ```text
@@ -91,7 +108,6 @@ The API docs is made with Swagger and OpenAPI, and published on Github Pages.
 │   │   ├── api/
 │   │   ├── bootstrap/
 │   │   ├── config/
-│   │   ├── handler/
 │   │   ├── persistence/
 │   │   └── service/
 │   └── main/resources/
@@ -101,6 +117,10 @@ The API docs is made with Swagger and OpenAPI, and published on Github Pages.
 ```
 
 ## Links
+
+- [API docs](https://titiplex.github.io/vignette/)
+- [Repository](https://github.com/titiplex/vignette/)
+- [Project report](https://protolabo.github.io/vignette/) (in french)
 
 ## Getting started
 
